@@ -5,14 +5,14 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/provider/auth_provider.dart';
+import 'package:geography_geyser/provider/login_provider.dart';
+
 import 'package:geography_geyser/views/auth/forgot_pass/pass_reset.dart';
 import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/google_login_btn.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
-import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,11 +26,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-
+    // Provider is available if needed, but we rely on static methods in LoginProvider
     return Scaffold(
       backgroundColor: AppColors.splashBG,
       resizeToAvoidBottomInset: true,
@@ -108,11 +108,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           label: AppStrings.emailLabel,
                           hint: AppStrings.emailPlaceholder,
                           controller: emailController,
-                          errorText: authProvider.emailError,
-                          onChanged: (value) {
-                            // Clear error on change
-                            authProvider.clearErrors();
-                          },
                         ),
                         AppSpacing.h16,
 
@@ -123,11 +118,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: passwordController,
                           isPassword: true,
                           obscureText: _obscurePassword,
-                          errorText: authProvider.passwordError,
-                          onChanged: (value) {
-                            // Clear error on change
-                            authProvider.clearErrors();
-                          },
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
@@ -143,41 +133,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         AppSpacing.h4,
-
-                        // Error Message Display
-                        if (authProvider.errorMessage != null)
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16.w,
-                              vertical: 12.h,
-                            ),
-                            margin: EdgeInsets.only(bottom: 16.h),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border.all(color: Colors.red.shade200),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  color: Colors.red.shade700,
-                                  size: 20.sp,
-                                ),
-
-                                AppSpacing.w8,
-                                Expanded(
-                                  child: Text(
-                                    authProvider.errorMessage!,
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Colors.red.shade700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
 
                         // Forgot Password
                         Align(
@@ -206,25 +161,60 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Login Button
                         CustomLoginButton(
                           text: AppStrings.logInTitle,
-                          isLoading: authProvider.isLoading,
-                          onPressed: authProvider.isLoading
+                          isLoading: _isLoading,
+                          onPressed: _isLoading
                               ? null
                               : () async {
-                                  authProvider.clearErrors();
+                                  final email = emailController.text.trim();
+                                  final password = passwordController.text;
 
-                                  final success = await authProvider.loginUser(
-                                    email: emailController.text.trim(),
-                                    password: passwordController.text,
-                                  );
+                                  if (email.isEmpty || password.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Please enter email and password',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                                  if (success && mounted) {
-                                    // Navigate to home page on success
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+
+                                  try {
+                                    await LoginProvider.login(
+                                      email,
+                                      password,
+                                      context,
+                                    );
+
+                                    if (!context.mounted) return;
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => HomePageScreen(),
+                                        builder: (_) => HomePageScreen(),
                                       ),
                                     );
+                                  } catch (e) {
+                                    String message = 'Login failed';
+                                    if (e is Map && e['message'] != null) {
+                                      message = e['message'].toString();
+                                    }
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(message)),
+                                      );
+                                    }
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
                                   }
                                 },
                         ),

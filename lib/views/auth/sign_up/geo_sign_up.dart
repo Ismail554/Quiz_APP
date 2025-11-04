@@ -5,6 +5,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/provider/auth_provider/signup_provider/signup_provider.dart';
 import 'package:geography_geyser/utils/validators.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/google_login_btn.dart';
@@ -31,6 +32,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
   String? _emailError;
   String? _passwordError;
   String? _confirmPasswordError;
+    bool _isLoading = false;
 
   // Dispose controllers to avoid memory leaks
   @override
@@ -207,39 +209,80 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                     AppSpacing.h16,
 
                     // Sign Up Button
-                    CustomLoginButton(
-                      onPressed: () {
-                        // Trigger validations if fields are empty
-                        setState(() {
-                          _emailError = Validators.validateEmail(
-                            _emailController.text,
-                          );
-                          _passwordError = Validators.validatePassword(
-                            _passwordController.text,
-                          );
-                          _confirmPasswordError =
-                              Validators.validateConfirmPassword(
-                                _confirmPasswordController.text,
-                                _passwordController.text,
-                              );
-                        });
+                  CustomLoginButton(
+  text: AppStrings.signUpButton,
+  isLoading: _isLoading, // <-- add this in your state class
+  onPressed: _isLoading
+      ? null
+      : () async {
+          // Step 1: Validate all fields
+          setState(() {
+            _emailError = Validators.validateEmail(
+              _emailController.text,
+            );
+            _passwordError = Validators.validatePassword(
+              _passwordController.text,
+            );
+            _confirmPasswordError = Validators.validateConfirmPassword(
+              _confirmPasswordController.text,
+              _passwordController.text,
+            );
+          });
 
-                        final isValid =
-                            _emailError == null &&
-                            _passwordError == null &&
-                            _confirmPasswordError == null;
+          final isValid = _emailError == null &&
+              _passwordError == null &&
+              _confirmPasswordError == null;
 
-                        if (isValid) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VerifyOtpScreen(),
-                            ),
-                          );
-                        }
-                      },
-                      text: AppStrings.signUpButton,
-                    ),
+          if (!isValid) return;
+
+          // Step 2: Run Signup API
+          setState(() => _isLoading = true);
+
+          try {
+            final response = await SignupProvider.signup(
+              _emailController.text.trim(),
+              _fullNameController.text.trim(), // make sure you have this controller
+              _passwordController.text.trim(),
+              context,
+            );
+
+            // Step 3: Handle success
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Signup successful! 🎉"),
+                ),
+              );
+
+              // Step 4: Navigate next (like OTP verify or home)
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VerifyOtpScreen(),
+                ),
+              );
+            }
+          } catch (e) {
+            // Step 5: Handle errors
+            String message = 'Signup failed 😕';
+            if (e is Map && e['message'] != null) {
+              message = e['message'].toString();
+            }
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+            }
+          } finally {
+            // Step 6: Stop loader
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
+          }
+        },
+),
+
                     AppSpacing.h20,
 
                     // OR divider

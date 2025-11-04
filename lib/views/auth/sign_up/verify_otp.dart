@@ -6,6 +6,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/provider/auth_provider/signup_provider/verify_otp_provider.dart';
 import 'package:geography_geyser/views/auth/sign_up/reg_congratulations.dart';
 import 'package:pinput/pinput.dart';
 
@@ -21,6 +22,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   final FocusNode _pinFocusNode = FocusNode();
   int _resendTimer = 60;
   Timer? _timer;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -87,7 +89,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     );
 
     return Scaffold(
-         backgroundColor: AppColors.bgColor,
+      backgroundColor: AppColors.bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -207,20 +209,77 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         width: double.infinity,
                         height: 46.h,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_pinController.text.length == 6) {
-                              debugPrint(
-                                'Verifying PIN: ${_pinController.text}',
-                              );
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      RegCongratulations_Screen(),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  final otp = _pinController.text.trim();
+
+                                  if (otp.length != 6) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Please enter 6-digit OTP",
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  setState(() => _isLoading = true);
+
+                                  try {
+                                    final response =
+                                        await VerifyProvider.verifyOtp(
+                                          otp,
+                                          context,
+                                        );
+
+                                    if (response['success'] == true) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text("OTP Verified ✅"),
+                                          ),
+                                        );
+
+                                        // ✅ Navigate ONLY on success
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                RegCongratulations_Screen(),
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      // ❌ OTP failed → navigator disabled automatically
+                                      throw {
+                                        'message':
+                                            response['message'] ??
+                                            'OTP verification failed',
+                                      };
+                                    }
+                                  } catch (e) {
+                                    String message = 'OTP verification failed';
+                                    if (e is Map && e['message'] != null) {
+                                      message = e['message'].toString();
+                                    }
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(message)),
+                                      );
+                                    }
+                                  } finally {
+                                    if (mounted)
+                                      setState(() => _isLoading = false);
+                                  }
+                                },
+
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.buttonColor,
                             shape: RoundedRectangleBorder(
@@ -228,18 +287,17 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: Text(
-                            AppStrings.verifyAccountTitle,
-                            // 'Verify Account',
-                            style: FontManager.buttonTextRegular(),
-                            // TextStyle(
-                            //   fontSize: 16.sp,
-                            //   fontWeight: FontWeight.w600,
-                            //   color: AppColors.white,
-                            // ),
-                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : Text(
+                                  AppStrings.verifyAccountTitle,
+                                  style: FontManager.buttonTextRegular(),
+                                ),
                         ),
                       ),
+
                       AppSpacing.h20,
                       // Resend Code Timer
                       Text(
