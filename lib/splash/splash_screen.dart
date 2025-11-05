@@ -5,6 +5,8 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
+import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,13 +20,33 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    //  Splash delay, then navigate to LoginScreen
+    // Check authentication status after splash delay
     Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+      _checkAuthAndNavigate();
     });
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    // Check if refresh_token exists
+    final refreshToken = await SecureStorageHelper.getRefreshToken();
+
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      // User is logged in, navigate to HomePage
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePageScreen()),
+        );
+      }
+    } else {
+      // User is not logged in, navigate to LoginScreen
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    }
   }
 
   @override

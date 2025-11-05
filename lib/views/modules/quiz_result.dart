@@ -152,7 +152,7 @@ class QuizResult_Screen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ModuleHome_screen(),
+                            builder: (context) => ModuleHomeScreen(),
                           ),
                         );
                       },

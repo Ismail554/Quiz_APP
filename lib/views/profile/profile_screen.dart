@@ -5,6 +5,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/provider/login_provider.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
 import 'package:geography_geyser/views/modules/quiz_result.dart';
@@ -388,14 +389,18 @@ class ProfileScreen extends StatelessWidget {
                 AppSpacing.w12,
                 Expanded(
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.of(context).pop();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      );
+                      // Clear secure storage and all login data
+                      await LoginProvider.logout();
+                      if (context.mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
+                      }
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: AppColors.buttonColor,

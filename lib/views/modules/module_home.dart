@@ -8,15 +8,15 @@ import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/modules/select_time.dart';
 import 'package:provider/provider.dart';
 
-class ModuleHome_screen extends StatefulWidget {
+class ModuleHomeScreen extends StatefulWidget {
   final bool hideback;
-  const ModuleHome_screen({super.key, this.hideback = false});
+  const ModuleHomeScreen({super.key, this.hideback = false});
 
   @override
-  State<ModuleHome_screen> createState() => _ModuleHome_screenState();
+  State<ModuleHomeScreen> createState() => _ModuleHomeScreenState();
 }
 
-class _ModuleHome_screenState extends State<ModuleHome_screen> {
+class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
   int? selectedIndex; // Tracks which module is selected
   final ScrollController _scrollController = ScrollController();
   bool _scrollListenerAdded = false;

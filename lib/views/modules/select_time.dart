@@ -19,8 +19,18 @@ class SelectTime_screen extends StatefulWidget {
 
 class _SelectTime_screenState extends State<SelectTime_screen> {
   int? selectedIndex; //  Tracks which timer is selected
+  final ScrollController _scrollController = ScrollController();
+  bool _scrollListenerAdded = false;
 
-  final List<int> timeOptions = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30];
+  
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+
+  final List<int> timeOptions = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30];//static data
 
   @override
   Widget build(BuildContext context) {

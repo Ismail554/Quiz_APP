@@ -18,7 +18,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
   final List<Widget> _pages = [
     const HomeContent(),
-    const ModuleHome_screen(),
+    const ModuleHomeScreen(),
     const ProfileScreen(hideSettingsCard: false),
   ];
 
@@ -210,7 +210,7 @@ class HomeContent extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ModuleHome_screen()),
+                  MaterialPageRoute(builder: (context) => ModuleHomeScreen()),
                 );
               },
             ),
