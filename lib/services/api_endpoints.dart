@@ -5,4 +5,6 @@ class ApiEndpoints {
       "https://dihydric-yael-therianthropic.ngrok-free.dev";
 
   static String get loginUrl => "$_baseUrl/auth/login/";
+
+
 }

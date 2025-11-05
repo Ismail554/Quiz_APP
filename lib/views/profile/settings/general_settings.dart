@@ -5,10 +5,14 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
+import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class GeneralSettings_Screen extends StatefulWidget {
   const GeneralSettings_Screen({super.key});
@@ -20,12 +24,13 @@ class GeneralSettings_Screen extends StatefulWidget {
 class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _nameController = TextEditingController();
+  bool _isLoading = false;
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImageFromSource(ImageSource source) async {
     try {
-      // Try gallery first
       final XFile? pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 80,
@@ -37,42 +42,16 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
         });
       }
     } catch (e) {
-      debugPrint('Gallery error: $e');
-
-      // If gallery fails, try camera as fallback
-      try {
-        final XFile? pickedFile = await _picker.pickImage(
-          source: ImageSource.camera,
-          maxWidth: 1024,
-          maxHeight: 1024,
-          imageQuality: 80,
-        );
-
-        if (pickedFile != null) {
-          setState(() {
-            _imageFile = File(pickedFile.path);
-          });
-        }
-      } catch (cameraError) {
-        debugPrint('Camera error: $cameraError');
-        // Show user-friendly error message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Unable to access camera or gallery. Please check permissions.',
-              ),
-              backgroundColor: Colors.red,
-              action: SnackBarAction(
-                label: 'Settings',
-                textColor: Colors.white,
-                onPressed: () {
-                  // You can add navigation to app settings here
-                },
-              ),
+      debugPrint('${source.name} error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Unable to access ${source.name}. Please check permissions.',
             ),
-          );
-        }
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -107,32 +86,67 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
     );
   }
 
-  Future<void> _pickImageFromSource(ImageSource source) async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 80,
+  Future<void> _updateProfile() async {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your name')),
       );
+      return;
+    }
 
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = File(pickedFile.path);
-        });
+    setState(() => _isLoading = true);
+
+    try {
+      final token = await SecureStorageHelper.getToken();
+
+      if (token == null || token.isEmpty) {
+        throw Exception("Token not found! Please login again.");
       }
-    } catch (e) {
-      debugPrint('${source.name} error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Unable to access ${source.name}. Please check permissions.',
-            ),
-            backgroundColor: Colors.red,
-          ),
+
+      final url = Uri.parse("${ApiService.baseUrl}/auth/profile-update/");
+      var request = http.MultipartRequest('PATCH', url);
+
+      //Add Bearer token
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Add text field
+      request.fields['full_name'] = _nameController.text.trim();
+
+      // Add image file if selected
+      if (_imageFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('profile_pic', _imageFile!.path),
         );
       }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("Status Code: ${response.statusCode}");
+      debugPrint("Response Body: ${response.body}");
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Profile updated!')),
+        );
+
+        // Optional: navigate to homepage or refresh UI
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (_) => const HomePageScreen()),
+        // );
+      } else {
+        throw Exception(data['message'] ?? 'Update failed!');
+      }
+    } catch (e) {
+      debugPrint("Profile update error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -158,7 +172,7 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
                       backgroundImage: _imageFile != null
                           ? FileImage(_imageFile!)
                           : const AssetImage("assets/images/man.png")
-                                as ImageProvider,
+                              as ImageProvider,
                     ),
                     Positioned(
                       bottom: 0,
@@ -184,52 +198,31 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
                   style: FontManager.titleText(color: AppColors.blue),
                 ),
                 AppSpacing.h40,
-                // name field
+
+                // 🧍 Name field
                 BuildTextField(
+                  controller: _nameController,
                   label: AppStrings.nameLabel,
                   hint: AppStrings.nameFieldValue,
                 ),
                 AppSpacing.h12,
-                // email field
+
+                // ✉️ Email field (read-only)
                 BuildTextField(
                   isReadOnly: true,
                   label: AppStrings.emailLabel,
                   hint: AppStrings.emailFieldValue,
                 ),
-                AppSpacing.h8,
-                Divider(),
-                AppSpacing.h6,
-                //Enter password field
-                BuildTextField(
-                  label: AppStrings.enterPassword,
-                  hint: AppStrings.currentPasswordEditLabel,
-                ),
-                AppSpacing.h4,
-                Row(
-                  children: [
-                    Icon(Icons.warning_amber_rounded, size: 12),
 
-                    AppSpacing.w6,
-                    Expanded(
-                      child: Text(
-                        AppStrings.genChangeWarning,
-                        style: FontManager.subSubtitleText(),
-                        softWrap: true,
-                        overflow: TextOverflow.visible,
-                      ),
-                    ),
-                  ],
-                ),
                 AppSpacing.h32,
+
+                // 💾 Save Changes Button
                 CustomLoginButton(
-                  text: AppStrings.saveChangesButton,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePageScreen()),
-                    );
-                    debugPrint("Save Changes Pressed");
-                  },
+                  text: _isLoading
+                      ? "Saving..."
+                      : AppStrings.saveChangesButton,
+                  isLoading: _isLoading,
+                  onPressed: _isLoading ? null : _updateProfile,
                 ),
               ],
             ),
