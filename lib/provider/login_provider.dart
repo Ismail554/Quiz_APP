@@ -34,12 +34,12 @@ class LoginProvider extends ChangeNotifier {
         await _storeLoginData(responseData);
 
         // Print tokens after successful login
-        print('✅ Login Successful!');
+        print('Login Successful!');
         if (responseData.containsKey('access_token')) {
-          print('🔑 Access Token: ${responseData['access_token']}');
+          print('Access Token: ${responseData['access_token']}');
         }
         if (responseData.containsKey('refresh_token')) {
-          print('🔑 Refresh Token: ${responseData['refresh_token']}');
+          print('Refresh Token: ${responseData['refresh_token']}');
         }
 
         return responseData;
@@ -59,11 +59,11 @@ class LoginProvider extends ChangeNotifier {
   static Future<void> _storeLoginData(Map<String, dynamic> data) async {
     if (data.containsKey('access_token')) {
       await SecureStorageHelper.setToken(data['access_token']);
-      print(' Access Token stored in FlutterSecureStorage');
+     // print(' Access Token stored in FlutterSecureStorage');
     }
     if (data.containsKey('refresh_token')) {
       await SecureStorageHelper.setRefreshToken(data['refresh_token']);
-      print(' Refresh Token stored in FlutterSecureStorage');
+      // print(' Refresh Token stored in FlutterSecureStorage');
     }
 
     // Example extra: store user email in SharedPreferences
@@ -84,7 +84,7 @@ class LoginProvider extends ChangeNotifier {
 
   // ---------------- PRINT ALL STORED DATA ----------------
   static Future<void> printAllStorageData() async {
-    print("========== 🧠 Checking Stored Data ==========");
+    print("========== Checking Stored Data ==========");
 
     // Secure Storage
     final secureStorage = FlutterSecureStorage();

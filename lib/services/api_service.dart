@@ -8,6 +8,7 @@ class ApiService {
    static String get signupUrl => "$_baseUrl/auth/register/";
     static String get verifyOtpUrl => "$_baseUrl/auth/verify-otp/";
 
+    static String get moduleListUrl => "$_baseUrl/student/module-list/";
 
 
 }

@@ -158,7 +158,7 @@ class _QuizScreenState extends State<QuizScreen> {
           selectedIndex == quizData[currentQuestionIndex]['correctAnswer'];
     });
 
-    // Auto-progress after 3 seconds
+    // Auto-progress after 2 seconds
     Timer(Duration(seconds: 2), () {
       if (mounted) {
         if (currentQuestionIndex < totalQuestions - 1) {
@@ -223,33 +223,34 @@ class _QuizScreenState extends State<QuizScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Question ${currentQuestionIndex + 1} of $totalQuestions',
+                          'Question no: ${currentQuestionIndex + 1}',
                           style: FontManager.bodyText(),
                         ),
                         Row(
                           children: [
                             Icon(
                               Icons.access_time,
-                              color: AppColors.blue,
-                              size: 16.sp,
+                              color: AppColors.red,
+                              size: 18.sp,
                             ),
                             AppSpacing.w4,
                             Text(
                               formattedTime,
                               style: FontManager.bodyText().copyWith(
-                                color: AppColors.blue,
+                                color: AppColors.red,
+                                fontSize: 18.sp,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
 
                             AppSpacing.w16,
-                            Text(
-                              'Left: ${totalQuestions - currentQuestionIndex}',
-                              style: FontManager.bodyText().copyWith(
-                                color: AppColors.red,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            // Text(
+                            //   'Left: ${totalQuestions - currentQuestionIndex}',
+                            //   style: FontManager.bodyText().copyWith(
+                            //     color: AppColors.red,
+                            //     fontWeight: FontWeight.w600,
+                            //   ),
+                            // ),
                           ],
                         ),
                       ],

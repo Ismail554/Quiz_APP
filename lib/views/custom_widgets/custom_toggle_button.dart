@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 
@@ -41,7 +42,7 @@ class _CustomToggleButtonState extends State<CustomToggleButton> {
       child: Padding(
         padding: const EdgeInsets.all(2.0),
         child: Container(
-          height: 56,
+          height: 56.h,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(28),
@@ -69,7 +70,7 @@ class _CustomToggleButtonState extends State<CustomToggleButton> {
             color: isSelected
                 ?
                   // Color(0xFF4D9EFF)
-                  AppColors.blue
+                  AppColors.buttonColor
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(28),
           ),

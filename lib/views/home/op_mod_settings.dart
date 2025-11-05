@@ -25,9 +25,9 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       backgroundColor: AppColors.bgColor,
+      backgroundColor: AppColors.bgColor,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.bgColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
