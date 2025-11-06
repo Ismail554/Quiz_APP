@@ -5,7 +5,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/provider/login_provider.dart';
+import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
 import 'package:geography_geyser/views/modules/quiz_result.dart';

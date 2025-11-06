@@ -15,6 +15,7 @@ class BuildTextField extends StatelessWidget {
   final String? errorText;
   final Color bgcolor;
   final bool isReadOnly;
+  final TextInputAction? textInputAction;
   final Function(String)? onChanged;
 
   const BuildTextField({
@@ -29,8 +30,9 @@ class BuildTextField extends StatelessWidget {
     this.suffixIcon,
     this.obscureText = false,
     this.errorText,
-    this.onChanged, 
-     this.isReadOnly = false,
+    this.onChanged,
+    this.isReadOnly = false,
+    this.textInputAction,
   });
 
   @override
@@ -52,6 +54,7 @@ class BuildTextField extends StatelessWidget {
 
         // Input field
         TextField(
+          textInputAction: textInputAction,
           readOnly: isReadOnly,
           controller: controller,
           keyboardType: keyboardType,

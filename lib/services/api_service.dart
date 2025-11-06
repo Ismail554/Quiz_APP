@@ -13,4 +13,6 @@ class ApiService {
 
     //General settings
   static String get updateProfile => "$_baseUrl/auth/profile-update/";
+  //Privacy settings
+    static String get updatePrivacy=> "$_baseUrl/auth/password-update/";
 }
