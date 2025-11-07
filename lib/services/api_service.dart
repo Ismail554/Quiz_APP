@@ -11,8 +11,13 @@ class ApiService {
   static String get moduleListUrl => "$_baseUrl/student/module-list/";
   static String get timeListUrl => "$_baseUrl/student/time-list/";
 
-    //General settings
+  //General settings
   static String get updateProfile => "$_baseUrl/auth/profile-update/";
   //Privacy settings
-    static String get updatePrivacy=> "$_baseUrl/auth/password-update/";
+  static String get updatePrivacy => "$_baseUrl/auth/password-update/";
+
+  // Homepage
+  static String get getProfile => "$_baseUrl/auth/profile-update/";
+    static String get userState => "$_baseUrl/student/student-state/";
+
 }
