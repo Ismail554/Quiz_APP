@@ -6,85 +6,128 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
+import 'package:geography_geyser/provider/home_provider.dart';
+import 'package:geography_geyser/provider/userstats_provider.dart';
+import 'package:geography_geyser/services/api_service.dart';
+import 'package:provider/provider.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
-import 'package:geography_geyser/views/modules/quiz_result.dart';
 import 'package:geography_geyser/views/profile/settings/general_settings.dart';
 import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
+import 'package:geography_geyser/models/home_model.dart';
+import 'package:geography_geyser/models/userstats_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final bool hideSettingsCard;
 
   const ProfileScreen({super.key, this.hideSettingsCard = false});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 🔹 Load user data
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.userModel == null && !userProvider.isLoading) {
+        await userProvider.fetchUserData();
+      }
+
+      // 🔹 Load stats from storage first, then from API
+      final statsProvider =
+          Provider.of<UserStatsProvider>(context, listen: false);
+      await statsProvider.loadUserStatsFromStorage();
+      await statsProvider.fetchUserStats();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Back Button (only show when navigated to as a pushed screen)
-              if (hideSettingsCard) ...[
-                InkWell(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Row(
-                    children: [
-                      Icon(Icons.arrow_back, color: AppColors.black),
-                      AppSpacing.w8,
-                      Text(
-                        AppStrings.backButton,
-                        // 'Back',
-                        style: FontManager.bodyText(color: AppColors.black),
+        child: Consumer2<UserProvider, UserStatsProvider>(
+          builder: (context, userProvider, statsProvider, child) {
+            final user = userProvider.userModel;
+            final stats = statsProvider.userStats;
+
+            final isLoading =
+                userProvider.isLoading || statsProvider.isLoading;
+
+            if (isLoading && (user == null || stats == null)) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Back Button (only show when navigated to as a pushed screen)
+                  if (widget.hideSettingsCard) ...[
+                    InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.arrow_back, color: AppColors.black),
+                          AppSpacing.w8,
+                          Text(
+                            AppStrings.backButton,
+                            style:
+                                FontManager.bodyText(color: AppColors.black),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                AppSpacing.h24,
-              ],
+                    ),
+                    AppSpacing.h24,
+                  ],
 
-              // Profile Header
-              buildProfileHeader(),
+                  // Profile Header
+                  buildProfileHeader(user, stats),
 
-              AppSpacing.h24,
+                  AppSpacing.h24,
 
-              // Progress Section
-              buildProgressSection(),
+                  // Progress Section
+                  buildProgressSection(stats),
 
-              AppSpacing.h24,
+                  AppSpacing.h24,
 
-              // Subject Performance Section
-              buildSubjectPerformanceSection(),
+                  // Subject Performance Section
+                  buildSubjectPerformanceSection(),
 
-              AppSpacing.h40,
-              // Settings Card (conditionally shown)
-              if (!hideSettingsCard) ...[
-                buildSettingsCard(context),
-                AppSpacing.h24,
-              ],
-            ],
-          ),
+                  AppSpacing.h40,
+                  // Settings Card (conditionally shown)
+                  if (!widget.hideSettingsCard) ...[
+                    buildSettingsCard(context),
+                    AppSpacing.h24,
+                  ],
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
   /// PROFILE HEADER
-  Widget buildProfileHeader() {
+  Widget buildProfileHeader(HomeModel? user, UserStatsModel? stats) {
     return Center(
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50.r,
-            backgroundImage: AssetImage('assets/images/man.png'),
-          ),
+          _buildProfileAvatar(user?.profilePic),
           AppSpacing.h16,
-          Text(AppStrings.userName, style: FontManager.bigTitle(fontSize: 18)),
+          Text(
+            user?.fullName ?? AppStrings.userName,
+            style: FontManager.bigTitle(fontSize: 18),
+          ),
           AppSpacing.h8,
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -96,7 +139,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               AppSpacing.w8,
               Text(
-                AppStrings.userXp,
+                "XP: ${stats?.totalXp ?? '--'}",
                 style: FontManager.bodyText(color: Colors.orange),
               ),
             ],
@@ -104,6 +147,59 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Build profile avatar with network image fallback
+  Widget _buildProfileAvatar(String? profilePicUrl) {
+    if (profilePicUrl != null && profilePicUrl.isNotEmpty) {
+      // Handle relative URLs by prepending base URL
+      String imageUrl = profilePicUrl;
+      if (!profilePicUrl.startsWith('http://') &&
+          !profilePicUrl.startsWith('https://')) {
+        // Remove leading slash if present and combine with base URL
+        String cleanUrl = profilePicUrl.startsWith('/')
+            ? profilePicUrl.substring(1)
+            : profilePicUrl;
+        imageUrl = '${ApiService.baseUrl}/$cleanUrl';
+      }
+
+      return CircleAvatar(
+        radius: 50.r,
+        backgroundColor: Colors.grey[300],
+        child: ClipOval(
+          child: Image.network(
+            imageUrl,
+            width: 100,
+            height: 100,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                'assets/images/man.png',
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              );
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    } else {
+      return CircleAvatar(
+        radius: 50.r,
+        backgroundImage: AssetImage('assets/images/man.png'),
+      );
+    }
   }
 
   /// SETTINGS CARD
@@ -207,7 +303,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   /// PROGRESS SECTION
-  Widget buildProgressSection() {
+  Widget buildProgressSection(UserStatsModel? stats) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -217,12 +313,16 @@ class ProfileScreen extends StatelessWidget {
           children: [
             buildProgressCard(
               label: AppStrings.quizAttemptedLabel,
-              value: AppStrings.quizAttemptedValue,
+              value: stats != null
+                  ? '${stats.totalAttemptedQuizzes}'
+                  : AppStrings.quizAttemptedValue,
             ),
             AppSpacing.h12,
             buildProgressCard(
               label: AppStrings.averageScoreLabel,
-              value: AppStrings.averageScoreValue,
+              value: stats != null
+                  ? '${stats.averageScore.toStringAsFixed(1)}%'
+                  : AppStrings.averageScoreValue,
             ),
             AppSpacing.h12,
             buildProgressCard(

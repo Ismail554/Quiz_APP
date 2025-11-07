@@ -6,6 +6,7 @@ import 'package:geography_geyser/provider/home_provider.dart';
 import 'package:geography_geyser/provider/module_provider/subject_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
+import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/splash/splash_screen.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/congratulations.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/verify_screen.dart';
@@ -25,8 +26,9 @@ void main() {
         ChangeNotifierProvider(create: (_) => SubjectProvider()),
         ChangeNotifierProvider(create: (_) => ProfileUpdateProvider()),
         ChangeNotifierProvider(create: (_) => PrivacySettingsProvider()),
-          ChangeNotifierProvider(create: (_) => UserProvider()),
-                ],
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => UserStatsProvider()),
+      ],
       child: const MyApp(),
     ),
   );

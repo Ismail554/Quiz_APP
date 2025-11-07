@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
+import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/views/modules/module_home.dart';
 import 'package:geography_geyser/views/profile/profile_screen.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
@@ -64,6 +65,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 }
 
+
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
@@ -75,192 +77,227 @@ class _HomeContentState extends State<HomeContent> {
   @override
   void initState() {
     super.initState();
-    // Fetch user data when the widget is initialized
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<UserProvider>(context, listen: false);
-      if (provider.userModel == null && !provider.isLoading) {
-        provider.fetchUserData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 🔹 Load user data
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.userModel == null && !userProvider.isLoading) {
+        await userProvider.fetchUserData();
       }
+
+      // 🔹 Load stats from storage first, then from API
+      final statsProvider = Provider.of<UserStatsProvider>(context, listen: false);
+      await statsProvider.loadUserStatsFromStorage();
+      await statsProvider.fetchUserStats();
     });
+  }
+
+  /// 🔄 Refresh both user info & stats
+  Future<void> _onRefresh(BuildContext context) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final statsProvider = Provider.of<UserStatsProvider>(context, listen: false);
+
+    await Future.wait([
+      userProvider.fetchUserData(),
+      statsProvider.fetchUserStats(),
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          // Show loading indicator while fetching data
-          if (userProvider.isLoading && userProvider.userModel == null) {
-            return Center(child: CircularProgressIndicator());
+      child: Consumer2<UserProvider, UserStatsProvider>(
+        builder: (context, userProvider, statsProvider, child) {
+          final user = userProvider.userModel;
+          final stats = statsProvider.userStats;
+
+          final isLoading = userProvider.isLoading || statsProvider.isLoading;
+
+          if (isLoading && (user == null || stats == null)) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-          final user = userProvider.userModel;
-
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // --- Profile Card ---
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16.r),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBG,
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: Row(
-                    children: [
-                      // Profile Picture
-                      _buildProfileAvatar(user?.profilePic),
-
-                      AppSpacing.w16,
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user?.fullName ?? 'Loading...',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            AppSpacing.h4,
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.emoji_events_outlined,
-                                  color: Colors.orange,
-                                  size: 18,
+          return RefreshIndicator(
+            onRefresh: () => _onRefresh(context),
+            color: AppColors.blue,
+            backgroundColor: Colors.white,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // --- 🧍 Profile Card ---
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16.r),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBG,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Row(
+                      children: [
+                        _buildProfileAvatar(user?.profilePic),
+                        AppSpacing.w16,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user?.fullName ?? 'Loading...',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
                                 ),
-
-                                AppSpacing.w4,
-                                Text(
-                                  "XP: 39,900",
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    color: Colors.orange,
-                                    fontWeight: FontWeight.w600,
+                              ),
+                              AppSpacing.h4,
+                              Row(
+                                children: [
+                                  const Icon(Icons.emoji_events_outlined,
+                                      color: Colors.orange, size: 18),
+                                  AppSpacing.w4,
+                                  Text(
+                                    "XP: ${stats?.totalXp ?? '--'}",
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              AppSpacing.h8,
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w,
+                                  vertical: 6.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                  color: Colors.white,
+                                  border: Border.all(
+                                    color: Colors.blue,
+                                    width: 1,
                                   ),
                                 ),
-                              ],
-                            ),
+                                child: Text(
+                                  "${AppStrings.strongestModuleLabel}${stats?.strongestModule ?? '--'}",
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: AppColors.blue,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                            AppSpacing.h8,
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10.w,
-                                vertical: 6.h,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10.r),
-                                color: Colors.white,
-                                border: Border.all(
-                                  color: Colors.blue,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                AppStrings.strongestModuleLabel +
-                                    AppStrings.waterCycleSubject,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: AppColors.blue,
-                                ),
-                              ),
-                            ),
-                          ],
+                  AppSpacing.h20,
+
+                  // --- 📊 Stats Cards ---
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InfoCard(
+                          icon: Icons.blinds_outlined,
+                          title: 'Average Score',
+                          value:
+                              "${(stats?.averageScore ?? 0).toStringAsFixed(1)}%",
+                        ),
+                      ),
+                      AppSpacing.w12,
+                      Expanded(
+                        child: InfoCard(
+                          icon: Icons.local_fire_department_outlined,
+                          title: 'Daily Quiz Streak',
+                          value: "${stats?.dailyStreak ?? 0}",
                         ),
                       ),
                     ],
                   ),
-                ),
 
-                AppSpacing.h20,
-
-                // --- Stats Cards (2x2 Grid) ---
-                Row(
-                  children: [
-                    Expanded(
-                      child: InfoCard(
-                        icon: Icons.blinds_outlined,
-                        title: 'Average Score',
-                        value: '85%',
+                  AppSpacing.h12,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InfoCard(
+                          icon: Icons.query_stats_outlined,
+                          title: 'Total Attempt Quiz',
+                          value: "${stats?.totalAttemptedQuizzes ?? 0}",
+                        ),
                       ),
-                    ),
-
-                    AppSpacing.w12,
-                    Expanded(
-                      child: InfoCard(
-                        icon: Icons.local_fire_department_outlined,
-                        title: 'Daily Quiz Streak',
-                        value: '08',
+                      AppSpacing.w12,
+                      Expanded(
+                        child: InfoCard(
+                          icon: Icons.access_time_outlined,
+                          title: 'Last Activity',
+                          value: stats != null
+                              ? _formatDate(stats.lastActivity)
+                              : "--",
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
-                AppSpacing.h12,
-                Row(
-                  children: [
-                    Expanded(
-                      child: InfoCard(
-                        icon: Icons.query_stats_outlined,
-                        title: 'Total Attempt Quiz',
-                        value: '130',
-                      ),
-                    ),
+                  AppSpacing.h20,
 
-                    AppSpacing.w12,
-
-                    /// Special card for Last Activity with proper text layout
-                    Expanded(child: LastActivityCard()),
-                  ],
-                ),
-
-                AppSpacing.h20,
-
-                // --- Action Buttons ---
-                ActionButton(
-                  icon: Icons.bar_chart_outlined,
-                  label: 'Student Stats',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProfileScreen(hideSettingsCard: true),
-                      ),
-                    );
-                  },
-                ),
-                ActionButton(
-                  icon: Icons.quiz_outlined,
-                  label: 'Take a Quiz',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ModuleHomeScreen(),
-                      ),
-                    );
-                  },
-                ),
-                // ActionButton(
-                //   icon: Icons.settings_outlined,
-                //   label: 'Module Settings',
-                //   onTap: () {
-                //     // Handle Module Settings navigation
-                //   },
-                // ),
-              ],
+                  // --- ⚙️ Action Buttons ---
+                  ActionButton(
+                    icon: Icons.bar_chart_outlined,
+                    label: 'Student Stats',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const ProfileScreen(hideSettingsCard: true),
+                        ),
+                      );
+                    },
+                  ),
+                  ActionButton(
+                    icon: Icons.quiz_outlined,
+                    label: 'Take a Quiz',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ModuleHomeScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           );
         },
       ),
     );
   }
+
+  /// 🧍 Profile Avatar Builder
+  Widget _buildProfileAvatar(String? imageUrl) {
+    return CircleAvatar(
+      radius: 32.r,
+      backgroundColor: Colors.grey.shade300,
+      backgroundImage:
+          (imageUrl != null && imageUrl.isNotEmpty) ? NetworkImage(imageUrl) : null,
+      child: (imageUrl == null || imageUrl.isEmpty)
+          ? const Icon(Icons.person, size: 36, color: Colors.grey)
+          : null,
+    );
+  }
+
+  /// 🕓 Format date
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+}
+
 
   /// Build profile avatar with network image fallback
   Widget _buildProfileAvatar(String? profilePicUrl) {
@@ -314,7 +351,7 @@ class _HomeContentState extends State<HomeContent> {
       );
     }
   }
-}
+
 
 /// ✅ Custom Info Card Widget
 class InfoCard extends StatelessWidget {
