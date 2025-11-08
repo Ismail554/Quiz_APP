@@ -12,8 +12,13 @@ import 'package:geography_geyser/views/modules/select_quantity.dart';
 
 class SelectTime_screen extends StatefulWidget {
   final int? selectedQuantityIndex;
+  final String? moduleId;
 
-  const SelectTime_screen({super.key, this.selectedQuantityIndex});
+  const SelectTime_screen({
+    super.key,
+    this.selectedQuantityIndex,
+    this.moduleId,
+  });
 
   @override
   State<SelectTime_screen> createState() => _SelectTime_screenState();
@@ -166,6 +171,7 @@ class _SelectTime_screenState extends State<SelectTime_screen> {
                           MaterialPageRoute(
                             builder: (context) => SelectQuantityScreen(
                               selectedTimeInMinutes: selectedTime,
+                              moduleId: widget.moduleId,
                             ),
                           ),
                         );

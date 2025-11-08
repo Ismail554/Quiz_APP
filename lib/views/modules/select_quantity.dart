@@ -9,8 +9,13 @@ import 'package:geography_geyser/views/modules/quiz_screen.dart';
 
 class SelectQuantityScreen extends StatefulWidget {
   final int? selectedTimeInMinutes;
+  final String? moduleId;
 
-  const SelectQuantityScreen({super.key, this.selectedTimeInMinutes});
+  const SelectQuantityScreen({
+    super.key,
+    this.selectedTimeInMinutes,
+    this.moduleId,
+  });
 
   @override
   State<SelectQuantityScreen> createState() => _SelectQuantityScreenState();
@@ -88,6 +93,7 @@ class _SelectQuantityScreenState extends State<SelectQuantityScreen> {
                       builder: (context) => QuizScreen(
                         totalQuestions: selectedQuantity,
                         timeInMinutes: widget.selectedTimeInMinutes,
+                        moduleId: widget.moduleId,
                       ),
                     ),
                   );

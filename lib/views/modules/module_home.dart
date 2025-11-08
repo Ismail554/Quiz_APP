@@ -147,7 +147,8 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const SelectTime_screen(),
+                                builder: (context) =>
+                                    SelectTime_screen(moduleId: subject.id),
                               ),
                             );
                           },

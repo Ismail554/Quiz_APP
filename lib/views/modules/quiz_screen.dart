@@ -5,15 +5,23 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:geography_geyser/models/quiz_model.dart';
+import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/views/modules/quiz_result.dart';
 import 'package:geography_geyser/views/modules/time_out_dialog.dart';
+import 'package:provider/provider.dart';
 
 class QuizScreen extends StatefulWidget {
   final int? totalQuestions;
   final int? timeInMinutes;
+  final String? moduleId;
 
-  const QuizScreen({super.key, this.totalQuestions, this.timeInMinutes});
+  const QuizScreen({
+    super.key,
+    this.totalQuestions,
+    this.timeInMinutes,
+    this.moduleId,
+  });
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -29,76 +37,29 @@ class _QuizScreenState extends State<QuizScreen> {
   bool showAnswerFeedback = false;
   bool isCorrectAnswer = false;
 
-  // Fake quiz data for testing
-  final List<Map<String, dynamic>> quizData = [
-    {
-      'question': 'What is migration?',
-      'options': [
-        'Water Cycle',
-        'Movement of People',
-        'Rock Breaking',
-        'Plant Process',
-      ],
-      'correctAnswer': 1, // Index of correct answer
-    },
-    {
-      'question': 'What causes earthquakes?',
-      'options': [
-        'Tectonic Plates',
-        'Weather Changes',
-        'Ocean Currents',
-        'Solar Activity',
-      ],
-      'correctAnswer': 0,
-    },
-    {
-      'question': 'Which is the largest ocean?',
-      'options': ['Atlantic', 'Pacific', 'Indian', 'Arctic'],
-      'correctAnswer': 1,
-    },
-    {
-      'question': 'What is the capital of Australia?',
-      'options': ['Sydney', 'Melbourne', 'Canberra', 'Perth'],
-      'correctAnswer': 2,
-    },
-    {
-      'question': 'Which continent has the most countries?',
-      'options': ['Asia', 'Africa', 'Europe', 'North America'],
-      'correctAnswer': 1,
-    },
-    {
-      'question': 'What is the longest river in the world?',
-      'options': ['Amazon', 'Nile', 'Mississippi', 'Yangtze'],
-      'correctAnswer': 1,
-    },
-    {
-      'question': 'Which country has the largest population?',
-      'options': ['India', 'China', 'USA', 'Brazil'],
-      'correctAnswer': 1,
-    },
-    {
-      'question': 'What is the smallest country in the world?',
-      'options': ['Monaco', 'Vatican City', 'Liechtenstein', 'San Marino'],
-      'correctAnswer': 1,
-    },
-    {
-      'question': 'Which mountain range is the longest?',
-      'options': ['Himalayas', 'Andes', 'Rockies', 'Alps'],
-      'correctAnswer': 1,
-    },
-    {
-      'question': 'What is the largest desert in the world?',
-      'options': ['Sahara', 'Arabian', 'Gobi', 'Kalahari'],
-      'correctAnswer': 0,
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
     // Initialize total questions and time based on selected options
     _initializeQuizSettings();
-    startTimer();
+
+    // Fetch quiz data from API
+    if (widget.moduleId != null && widget.moduleId!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<QuizProvider>(
+          context,
+          listen: false,
+        ).fetchQuiz(widget.moduleId!).then((_) {
+          // Start timer only after quiz is loaded
+          if (mounted) {
+            startTimer();
+          }
+        });
+      });
+    } else {
+      // If no moduleId, start timer anyway (fallback)
+      startTimer();
+    }
   }
 
   void _initializeQuizSettings() {
@@ -148,20 +109,23 @@ class _QuizScreenState extends State<QuizScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  void handleAnswerSelection(int selectedIndex) {
+  void handleAnswerSelection(int selectedIndex, QuestionModel question) {
     if (showAnswerFeedback) return; // Prevent multiple selections
 
     setState(() {
       selectedAnswerIndex = selectedIndex;
       showAnswerFeedback = true;
-      isCorrectAnswer =
-          selectedIndex == quizData[currentQuestionIndex]['correctAnswer'];
+      isCorrectAnswer = selectedIndex == question.correctAnswerIndex;
     });
 
     // Auto-progress after 2 seconds
     Timer(Duration(seconds: 2), () {
       if (mounted) {
-        if (currentQuestionIndex < totalQuestions - 1) {
+        final provider = Provider.of<QuizProvider>(context, listen: false);
+        final questions = provider.quizData?.questions ?? [];
+        final actualTotalQuestions = questions.length;
+
+        if (currentQuestionIndex < actualTotalQuestions - 1) {
           setState(() {
             currentQuestionIndex++;
             selectedAnswerIndex = null;
@@ -184,110 +148,165 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16.w),
+        child: Consumer<QuizProvider>(
+          builder: (context, provider, child) {
+            // Loading state
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            // Error state
+            if (provider.errorMessage != null) {
+              return Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Top section (close button + quiz info)
-                    IconButton(
-                      icon: Icon(Icons.close, color: AppColors.black),
-                      onPressed: () {
-                        showCancelQuizDialog(context);
-                      },
+                    Icon(
+                      Icons.error_outline,
+                      size: 64.sp,
+                      color: AppColors.red,
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.purple,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Text(
-                        AppStrings.quizTitleMigrations,
-                        style: FontManager.buttonTextRegular().copyWith(
-                          color: AppColors.white,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                    ),
-                    AppSpacing.h12,
-
-                    // Question info row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Question no: ${currentQuestionIndex + 1}',
-                          style: FontManager.bodyText(),
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              color: AppColors.red,
-                              size: 18.sp,
-                            ),
-                            AppSpacing.w4,
-                            Text(
-                              formattedTime,
-                              style: FontManager.bodyText().copyWith(
-                                color: AppColors.red,
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-
-                            AppSpacing.w16,
-                            // Text(
-                            //   'Left: ${totalQuestions - currentQuestionIndex}',
-                            //   style: FontManager.bodyText().copyWith(
-                            //     color: AppColors.red,
-                            //     fontWeight: FontWeight.w600,
-                            //   ),
-                            // ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    AppSpacing.h20,
-
-                    // Question text
+                    AppSpacing.h16,
                     Text(
-                      quizData[currentQuestionIndex]['question'],
-                      style: FontManager.boldHeading(
-                        fontSize: 20,
-                        color: AppColors.black,
-                      ),
+                      provider.errorMessage!,
+                      style: FontManager.bodyText(),
+                      textAlign: TextAlign.center,
                     ),
                     AppSpacing.h24,
-
-                    // Options
-                    ...List.generate(
-                      quizData[currentQuestionIndex]['options'].length,
-                      (index) {
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 12.h),
-                          child: Custom_Q_choice(
-                            quizData[currentQuestionIndex]['options'][index],
-                            AppColors.white,
-                            index,
-                          ),
-                        );
+                    ElevatedButton(
+                      onPressed: () {
+                        if (widget.moduleId != null) {
+                          provider.fetchQuiz(widget.moduleId!);
+                        }
                       },
+                      child: Text('Retry'),
                     ),
-                    AppSpacing.h20,
                   ],
                 ),
-              ),
-            ),
-          ],
+              );
+            }
+
+            // No quiz data
+            if (provider.quizData == null ||
+                provider.quizData!.questions.isEmpty) {
+              return const Center(child: Text('No quiz data available'));
+            }
+
+            final questions = provider.quizData!.questions;
+            final actualTotalQuestions = questions.length;
+
+            // Check if current question index is valid
+            if (currentQuestionIndex >= actualTotalQuestions) {
+              // Quiz completed
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => QuizResult_Screen()),
+                );
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final currentQuestion = questions[currentQuestionIndex];
+
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top section (close button + quiz info)
+                        IconButton(
+                          icon: Icon(Icons.close, color: AppColors.black),
+                          onPressed: () {
+                            showCancelQuizDialog(context);
+                          },
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.purple,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Text(
+                            AppStrings.quizTitleMigrations,
+                            style: FontManager.buttonTextRegular().copyWith(
+                              color: AppColors.white,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ),
+                        AppSpacing.h12,
+
+                        // Question info row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Question no: ${currentQuestionIndex + 1}',
+                              style: FontManager.bodyText(),
+                            ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  color: AppColors.red,
+                                  size: 18.sp,
+                                ),
+                                AppSpacing.w4,
+                                Text(
+                                  formattedTime,
+                                  style: FontManager.bodyText().copyWith(
+                                    color: AppColors.red,
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                AppSpacing.w16,
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        AppSpacing.h20,
+
+                        // Question text
+                        Text(
+                          currentQuestion.questionText,
+                          style: FontManager.boldHeading(
+                            fontSize: 20,
+                            color: AppColors.black,
+                          ),
+                        ),
+                        AppSpacing.h24,
+
+                        // Options
+                        ...List.generate(currentQuestion.optionsList.length, (
+                          index,
+                        ) {
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 12.h),
+                            child: Custom_Q_choice(
+                              currentQuestion.optionsList[index],
+                              AppColors.white,
+                              index,
+                              currentQuestion,
+                            ),
+                          );
+                        }),
+                        AppSpacing.h20,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -378,10 +397,14 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget Custom_Q_choice(String text, Color backgroundColor, int optionIndex) {
+  Widget Custom_Q_choice(
+    String text,
+    Color backgroundColor,
+    int optionIndex,
+    QuestionModel question,
+  ) {
     final isSelected = selectedAnswerIndex == optionIndex;
-    final isCorrectAnswer =
-        optionIndex == quizData[currentQuestionIndex]['correctAnswer'];
+    final isCorrectAnswer = optionIndex == question.correctAnswerIndex;
 
     Color getAnswerColor() {
       if (!showAnswerFeedback) {
@@ -411,7 +434,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return InkWell(
       onTap: () {
-        handleAnswerSelection(optionIndex);
+        handleAnswerSelection(optionIndex, question);
       },
       borderRadius: BorderRadius.circular(8.r),
       child: Container(
