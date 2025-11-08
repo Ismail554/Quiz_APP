@@ -7,6 +7,7 @@ import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/models/quiz_model.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
+import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
 import 'package:geography_geyser/views/modules/quiz_result.dart';
 import 'package:geography_geyser/views/modules/time_out_dialog.dart';
 import 'package:provider/provider.dart';
@@ -36,6 +37,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Timer? _timer;
   bool showAnswerFeedback = false;
   bool isCorrectAnswer = false;
+  int correctAnswersCount = 0; // Track total correct answers
 
   @override
   void initState() {
@@ -91,11 +93,8 @@ class _QuizScreenState extends State<QuizScreen> {
             context,
             onOkPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-                (route) => false,
-              );
+              // Finish quiz with current correct answers count before navigating
+              _finishQuizAndNavigate();
             },
           );
         }
@@ -109,13 +108,68 @@ class _QuizScreenState extends State<QuizScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _finishQuizAndNavigate() async {
+    final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+    final quizFinishProvider = Provider.of<QuizFinishProvider>(
+      context,
+      listen: false,
+    );
+
+    // Get quiz_id from quiz data
+    final quizId = quizProvider.quizData?.quizId;
+
+    if (quizId != null && quizId.isNotEmpty) {
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Call finish quiz API
+      await quizFinishProvider.finishQuiz(quizId, correctAnswersCount);
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Navigate to result screen regardless of API success/failure
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
+          (route) => false,
+        );
+      }
+    } else {
+      // If no quiz_id, navigate directly to result screen
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   void handleAnswerSelection(int selectedIndex, QuestionModel question) {
     if (showAnswerFeedback) return; // Prevent multiple selections
+
+    final isCorrect = selectedIndex == question.correctAnswerIndex;
 
     setState(() {
       selectedAnswerIndex = selectedIndex;
       showAnswerFeedback = true;
-      isCorrectAnswer = selectedIndex == question.correctAnswerIndex;
+      isCorrectAnswer = isCorrect;
+
+      // Increment correct answers count if answer is correct
+      if (isCorrect) {
+        correctAnswersCount++;
+      }
     });
 
     // Auto-progress after 2 seconds
@@ -133,11 +187,8 @@ class _QuizScreenState extends State<QuizScreen> {
             isCorrectAnswer = false;
           });
         } else {
-          // Quiz completed, navigate to results
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-          );
+          // Quiz completed, finish quiz and navigate to results
+          _finishQuizAndNavigate();
         }
       }
     });
@@ -199,10 +250,7 @@ class _QuizScreenState extends State<QuizScreen> {
             if (currentQuestionIndex >= actualTotalQuestions) {
               // Quiz completed
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-                );
+                _finishQuizAndNavigate();
               });
               return const Center(child: CircularProgressIndicator());
             }
@@ -363,13 +411,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).pop(); // Close dialog
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => QuizResult_Screen(),
-                          ),
-                          (route) => false,
-                        );
+                        // Finish quiz before navigating
+                        _finishQuizAndNavigate();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.red,

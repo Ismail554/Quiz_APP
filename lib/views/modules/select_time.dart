@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geography_geyser/provider/module_provider/selecttime_provider.dart';
+import 'package:geography_geyser/views/modules/quiz_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
@@ -8,7 +9,6 @@ import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/cutom_timer.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
-import 'package:geography_geyser/views/modules/select_quantity.dart';
 
 class SelectTime_screen extends StatefulWidget {
   final int? selectedQuantityIndex;
@@ -166,12 +166,12 @@ class _SelectTime_screenState extends State<SelectTime_screen> {
                             ? provider.timeList[selectedIndex!].duration
                             : customTimeMinutes;
 
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SelectQuantityScreen(
-                              selectedTimeInMinutes: selectedTime,
+                            builder: (context) => QuizScreen(
                               moduleId: widget.moduleId,
+                              timeInMinutes: selectedTime,
                             ),
                           ),
                         );

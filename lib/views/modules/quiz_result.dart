@@ -5,9 +5,11 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/custom_module.dart';
+import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/modules/module_home.dart';
 import 'package:geography_geyser/views/modules/select_time.dart';
+import 'package:provider/provider.dart';
 
 class QuizResult_Screen extends StatelessWidget {
   const QuizResult_Screen({super.key});
@@ -17,194 +19,306 @@ class QuizResult_Screen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            children: [
-              // Title
-              Text(
-                AppStrings.quizCompleteTitle,
-                style: FontManager.bigTitle(
-                  fontSize: 28,
-                  color: AppColors.blue,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              AppSpacing.h24,
+        child: Consumer<QuizFinishProvider>(
+          builder: (context, provider, child) {
+            // Loading state
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-              // Result Summary Card
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(20.w),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
+            // Error state
+            if (provider.errorMessage != null) {
+              return Center(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    buildResultRow(
-                      icon: Icons.check_circle,
-                      iconColor: AppColors.green,
-                      label: AppStrings.correctLabel,
-                      value: AppStrings.correctValue,
-                      valueColor: AppColors.green,
+                    Icon(
+                      Icons.error_outline,
+                      size: 64.sp,
+                      color: AppColors.red,
                     ),
-                    // AppSpacing.h8,
-                    buildResultRow(
-                      icon: Icons.cancel,
-                      iconColor: AppColors.red,
-                      label: AppStrings.incorrectLabel,
-                      value: AppStrings.incorrectValue,
-                      valueColor: AppColors.red,
-                    ),
-                    // AppSpacing.h8,
-                    buildResultRow(
-                      icon: Icons.emoji_events,
-                      iconColor: AppColors.yellow,
-                      label: AppStrings.scoreLabel,
-                      value: AppStrings.scoreValue,
-                      valueColor: AppColors.yellow,
-                    ),
-                    // AppSpacing.h8,
-                    buildResultRow(
-                      icon: Icons.star,
-                      iconColor: AppColors.yellow,
-                      label: AppStrings.gradeLabel,
-                      value: AppStrings.gradeValue,
-                      valueColor: AppColors.yellow,
-                    ),
-                    AppSpacing.h8,
-                    buildXPGainedRow(
-                      labelText: AppStrings.xpGainedLabel,
-                      valueText: AppStrings.xpGainedValue,
+                    AppSpacing.h16,
+                    Text(
+                      provider.errorMessage!,
+                      style: FontManager.bodyText(),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-              ),
-              AppSpacing.h32,
+              );
+            }
 
-              // Attend another Quiz section
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  AppStrings.attendAnotherQuizInstruction,
-                  style: FontManager.boldHeading(
-                    fontSize: 18,
-                    color: AppColors.grey4B,
-                  ),
-                ),
-              ),
-              AppSpacing.h16,
+            // Get quiz finish data
+            final quizData = provider.quizFinishData;
 
-              // Quiz topic options
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.blueTransparent),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: CustomModule(
-                  text: AppStrings.carbonCycleSubject,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SelectTime_screen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              // CustomQuizTopicOption(AppStrings.quizButtonCarbonCycle),
-              AppSpacing.h12,
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.blueTransparent),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: CustomModule(
-                  text: AppStrings.coastsSubject,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SelectTime_screen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              // CustomQuizTopicOption(AppStrings.quizButtonCoasts),
-              AppSpacing.h32,
+            // If no data, show default/fallback UI
+            if (quizData == null) {
+              return _buildFallbackUI(context);
+            }
 
-              // Bottom action buttons
-              Row(
+            // Calculate values from API data
+            final correctAnswers = quizData.correctAnswers;
+            final totalQuestions = quizData.totalQuestions;
+            final incorrectAnswers = totalQuestions - correctAnswers;
+            final score = quizData.score;
+            final grade = quizData.grade;
+            final xpGained = quizData.xpGained;
+            final attendAnotherQuiz = quizData.attendAnotherQuiz;
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ModuleHomeScreen(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.green,
-                        foregroundColor: AppColors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
+                  // Title
+                  Text(
+                    AppStrings.quizCompleteTitle,
+                    style: FontManager.bigTitle(
+                      fontSize: 28,
+                      color: AppColors.blue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  AppSpacing.h24,
+
+                  // Result Summary Card
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(20.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(12.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
-                      ),
-                      child: Text(
-                        AppStrings.retryQuizButton,
-                        style: FontManager.buttonText().copyWith(
-                          color: AppColors.white,
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        buildResultRow(
+                          icon: Icons.check_circle,
+                          iconColor: AppColors.green,
+                          label: AppStrings.correctLabel,
+                          value: correctAnswers.toString(),
+                          valueColor: AppColors.green,
                         ),
-                      ),
+                        buildResultRow(
+                          icon: Icons.cancel,
+                          iconColor: AppColors.red,
+                          label: AppStrings.incorrectLabel,
+                          value: incorrectAnswers.toString(),
+                          valueColor: AppColors.red,
+                        ),
+                        buildResultRow(
+                          icon: Icons.emoji_events,
+                          iconColor: AppColors.yellow,
+                          label: AppStrings.scoreLabel,
+                          value: '$score%',
+                          valueColor: AppColors.yellow,
+                        ),
+                        buildResultRow(
+                          icon: Icons.star,
+                          iconColor: AppColors.yellow,
+                          label: AppStrings.gradeLabel,
+                          value: grade,
+                          valueColor: AppColors.yellow,
+                        ),
+                        AppSpacing.h8,
+                        buildXPGainedRow(
+                          labelText: AppStrings.xpGainedLabel,
+                          valueText: '+$xpGained XP',
+                        ),
+                      ],
                     ),
                   ),
-                  AppSpacing.w16,
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HomePageScreen(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.buttonColor,
-                        foregroundColor: AppColors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                      ),
+                  AppSpacing.h32,
+
+                  // Attend another Quiz section
+                  if (attendAnotherQuiz.isNotEmpty) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
                       child: Text(
-                        AppStrings.returnMenuButton,
-                        style: FontManager.buttonText().copyWith(
-                          color: AppColors.white,
+                        AppStrings.attendAnotherQuizInstruction,
+                        style: FontManager.boldHeading(
+                          fontSize: 18,
+                          color: AppColors.grey4B,
                         ),
                       ),
                     ),
+                    AppSpacing.h16,
+
+                    // Dynamic quiz topic options from API
+                    ...attendAnotherQuiz.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final quiz = entry.value;
+                      final isLast = index == attendAnotherQuiz.length - 1;
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppColors.blueTransparent,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: CustomModule(
+                            text: quiz.moduleName,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      SelectTime_screen(moduleId: quiz.id),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    AppSpacing.h32,
+                  ],
+
+                  // Bottom action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ModuleHomeScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.green,
+                            foregroundColor: AppColors.white,
+                            padding: EdgeInsets.symmetric(vertical: 16.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          child: Text(
+                            AppStrings.retryQuizButton,
+                            style: FontManager.buttonText().copyWith(
+                              color: AppColors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      AppSpacing.w16,
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HomePageScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.buttonColor,
+                            foregroundColor: AppColors.white,
+                            padding: EdgeInsets.symmetric(vertical: 16.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          child: Text(
+                            AppStrings.returnMenuButton,
+                            style: FontManager.buttonText().copyWith(
+                              color: AppColors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackUI(BuildContext context) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        children: [
+          Text(
+            AppStrings.quizCompleteTitle,
+            style: FontManager.bigTitle(fontSize: 28, color: AppColors.blue),
+            textAlign: TextAlign.center,
+          ),
+          AppSpacing.h24,
+          Text('No quiz data available', style: FontManager.bodyText()),
+          AppSpacing.h32,
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ModuleHomeScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.green,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                  child: Text(
+                    AppStrings.retryQuizButton,
+                    style: FontManager.buttonText().copyWith(
+                      color: AppColors.white,
+                    ),
+                  ),
+                ),
+              ),
+              AppSpacing.w16,
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomePageScreen()),
+                      (route) => false,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.buttonColor,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                  child: Text(
+                    AppStrings.returnMenuButton,
+                    style: FontManager.buttonText().copyWith(
+                      color: AppColors.white,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
