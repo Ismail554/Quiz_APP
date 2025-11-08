@@ -27,23 +27,48 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isDisposed = false;
+  bool _isInitialized = false;
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // 🔹 Load user data
+      if (_isDisposed || _isInitialized) return;
+      _isInitialized = true;
+
+      // 🔹 Load user data from storage first, then from API only if needed
+      if (!mounted || _isDisposed) return;
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.loadUserDataFromStorage();
+
+      // Only fetch from API if we don't have user data from storage
+      if (!mounted || _isDisposed) return;
       if (userProvider.userModel == null && !userProvider.isLoading) {
         await userProvider.fetchUserData();
       }
 
-      // 🔹 Load stats from storage first, then from API
-      final statsProvider =
-          Provider.of<UserStatsProvider>(context, listen: false);
+      // 🔹 Load stats from storage first, then from API only if needed
+      if (!mounted || _isDisposed) return;
+      final statsProvider = Provider.of<UserStatsProvider>(
+        context,
+        listen: false,
+      );
       await statsProvider.loadUserStatsFromStorage();
-      await statsProvider.fetchUserStats();
+
+      // Only fetch from API if we don't have stats from storage
+      if (!mounted || _isDisposed) return;
+      if (statsProvider.userStats == null && !statsProvider.isLoading) {
+        await statsProvider.fetchUserStats();
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   @override
@@ -56,10 +81,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final user = userProvider.userModel;
             final stats = statsProvider.userStats;
 
-            final isLoading =
-                userProvider.isLoading || statsProvider.isLoading;
+            // Only show loading if we have no data AND we're currently loading
+            final isLoading = userProvider.isLoading || statsProvider.isLoading;
+            final hasNoData = user == null || stats == null;
 
-            if (isLoading && (user == null || stats == null)) {
+            if (isLoading && hasNoData) {
               return const Center(child: CircularProgressIndicator());
             }
 
@@ -80,8 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           AppSpacing.w8,
                           Text(
                             AppStrings.backButton,
-                            style:
-                                FontManager.bodyText(color: AppColors.black),
+                            style: FontManager.bodyText(color: AppColors.black),
                           ),
                         ],
                       ),
@@ -186,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                            loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               );

@@ -39,7 +39,6 @@ class SubjectProvider extends ChangeNotifier {
       final headers = <String, String>{
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Required for ngrok
       };
 
       // Add auth token if available
@@ -52,13 +51,10 @@ class SubjectProvider extends ChangeNotifier {
         ApiService.moduleListUrl,
       ).replace(queryParameters: {'page': _currentPage.toString()});
 
-      debugPrint('Fetching modules from: $url');
-      debugPrint('Headers: $headers');
-
       final response = await http.get(url, headers: headers);
 
-      debugPrint(' Response Status: ${response.statusCode}');
-      debugPrint(' Response Body: ${response.body}');
+      debugPrint('Response Status:==== ${response.statusCode}');
+      debugPrint('Response Body:==== ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -76,20 +72,20 @@ class SubjectProvider extends ChangeNotifier {
           }
 
           debugPrint(
-            '✅ Loaded ${newSubjects.length} modules. Total: ${_subjects.length}',
+            'Loaded ${newSubjects.length} modules. Total: ${_subjects.length}',
           );
 
           // Check pagination
           if (data['next'] == null) {
             _hasMore = false;
-            debugPrint('📄 No more pages available');
+            debugPrint('No more pages available');
           } else {
             _currentPage++;
             _hasMore = true;
-            debugPrint('📄 More pages available. Next page: $_currentPage');
+            debugPrint('More pages available. Next page: $_currentPage');
           }
         } else {
-          debugPrint('⚠️ No results field in response');
+          debugPrint('No results field in response');
           throw Exception("Invalid response format: missing 'results' field");
         }
       } else {

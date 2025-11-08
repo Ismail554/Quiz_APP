@@ -65,7 +65,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 }
 
-
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
@@ -74,28 +73,57 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
+  bool _isDisposed = false;
+  bool _isInitialized = false;
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // 🔹 Load user data
+      if (_isDisposed || _isInitialized) return;
+      _isInitialized = true;
+
+      // 🔹 Load user data from storage first, then from API only if needed
+      if (!mounted || _isDisposed) return;
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.loadUserDataFromStorage();
+
+      // Only fetch from API if we don't have user data from storage
+      if (!mounted || _isDisposed) return;
       if (userProvider.userModel == null && !userProvider.isLoading) {
         await userProvider.fetchUserData();
       }
 
-      // 🔹 Load stats from storage first, then from API
-      final statsProvider = Provider.of<UserStatsProvider>(context, listen: false);
+      // 🔹 Load stats from storage first, then from API only if needed
+      if (!mounted || _isDisposed) return;
+      final statsProvider = Provider.of<UserStatsProvider>(
+        context,
+        listen: false,
+      );
       await statsProvider.loadUserStatsFromStorage();
-      await statsProvider.fetchUserStats();
+
+      // Only fetch from API if we don't have stats from storage
+      if (!mounted || _isDisposed) return;
+      if (statsProvider.userStats == null && !statsProvider.isLoading) {
+        await statsProvider.fetchUserStats();
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   /// 🔄 Refresh both user info & stats
   Future<void> _onRefresh(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final statsProvider = Provider.of<UserStatsProvider>(context, listen: false);
+    final statsProvider = Provider.of<UserStatsProvider>(
+      context,
+      listen: false,
+    );
 
     await Future.wait([
       userProvider.fetchUserData(),
@@ -111,9 +139,11 @@ class _HomeContentState extends State<HomeContent> {
           final user = userProvider.userModel;
           final stats = statsProvider.userStats;
 
+          // Only show loading if we have no data AND we're currently loading
           final isLoading = userProvider.isLoading || statsProvider.isLoading;
+          final hasNoData = user == null || stats == null;
 
-          if (isLoading && (user == null || stats == null)) {
+          if (isLoading && hasNoData) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -147,14 +177,17 @@ class _HomeContentState extends State<HomeContent> {
                                 user?.fullName ?? 'Loading...',
                                 style: TextStyle(
                                   fontSize: 18.sp,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                               AppSpacing.h4,
                               Row(
                                 children: [
-                                  const Icon(Icons.emoji_events_outlined,
-                                      color: Colors.orange, size: 18),
+                                  const Icon(
+                                    Icons.emoji_events_outlined,
+                                    color: Colors.orange,
+                                    size: 18,
+                                  ),
                                   AppSpacing.w4,
                                   Text(
                                     "XP: ${stats?.totalXp ?? '--'}",
@@ -279,27 +312,7 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  /// 🧍 Profile Avatar Builder
-  Widget _buildProfileAvatar(String? imageUrl) {
-    return CircleAvatar(
-      radius: 32.r,
-      backgroundColor: Colors.grey.shade300,
-      backgroundImage:
-          (imageUrl != null && imageUrl.isNotEmpty) ? NetworkImage(imageUrl) : null,
-      child: (imageUrl == null || imageUrl.isEmpty)
-          ? const Icon(Icons.person, size: 36, color: Colors.grey)
-          : null,
-    );
-  }
-
-  /// 🕓 Format date
-  String _formatDate(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-  }
-}
-
-
-  /// Build profile avatar with network image fallback
+  /// 🧍 Profile Avatar Builder with network image fallback
   Widget _buildProfileAvatar(String? profilePicUrl) {
     if (profilePicUrl != null && profilePicUrl.isNotEmpty) {
       // Handle relative URLs by prepending base URL
@@ -314,19 +327,19 @@ class _HomeContentState extends State<HomeContent> {
       }
 
       return CircleAvatar(
-        radius: 35,
+        radius: 32.r,
         backgroundColor: Colors.grey[300],
         child: ClipOval(
           child: Image.network(
             imageUrl,
-            width: 70,
-            height: 70,
+            width: 64,
+            height: 64,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Image.asset(
                 'assets/images/man.png',
-                width: 70,
-                height: 70,
+                width: 64,
+                height: 64,
                 fit: BoxFit.cover,
               );
             },
@@ -346,12 +359,18 @@ class _HomeContentState extends State<HomeContent> {
       );
     } else {
       return CircleAvatar(
-        radius: 35,
+        radius: 32.r,
+        backgroundColor: Colors.grey.shade300,
         backgroundImage: AssetImage('assets/images/man.png'),
       );
     }
   }
 
+  /// 🕓 Format date
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+}
 
 /// ✅ Custom Info Card Widget
 class InfoCard extends StatelessWidget {

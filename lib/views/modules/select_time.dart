@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geography_geyser/provider/module_provider/selecttime_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
@@ -18,22 +20,69 @@ class SelectTime_screen extends StatefulWidget {
 }
 
 class _SelectTime_screenState extends State<SelectTime_screen> {
-  int? selectedIndex; //  Tracks which timer is selected
-  final ScrollController _scrollController = ScrollController();
-  bool _scrollListenerAdded = false;
+  int? selectedIndex;
+  final TextEditingController _customTimeController = TextEditingController();
+  int? customTimeMinutes;
 
-  
+  @override
+  void initState() {
+    super.initState();
+    // Fetch time list
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SelectTimeProvider>(
+        context,
+        listen: false,
+      ).fetchSelectTimes();
+    });
+
+    // Listen to custom time field changes
+    _customTimeController.addListener(_onCustomTimeChanged);
+  }
+
   @override
   void dispose() {
-    _scrollController.dispose();
+    _customTimeController.removeListener(_onCustomTimeChanged);
+    _customTimeController.dispose();
     super.dispose();
   }
 
+  void _onCustomTimeChanged() {
+    final text = _customTimeController.text.trim();
+    setState(() {
+      if (text.isNotEmpty) {
+        // Unselect timer when user types in custom field
+        if (selectedIndex != null) {
+          selectedIndex = null;
+        }
 
-  final List<int> timeOptions = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30];//static data
+        // Parse the input to extract minutes
+        customTimeMinutes = _parseMinutesFromText(text);
+      } else {
+        customTimeMinutes = null;
+      }
+    });
+  }
+
+  int? _parseMinutesFromText(String text) {
+    // Remove common words and extract number
+    final cleanedText = text
+        .toLowerCase()
+        .replaceAll('minutes', '')
+        .replaceAll('minute', '')
+        .replaceAll('mins', '')
+        .replaceAll('min', '')
+        .replaceAll('m', '')
+        .trim();
+
+    // Try to parse as integer
+    final number = int.tryParse(cleanedText);
+    return number;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<SelectTimeProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       appBar: AppBar(
@@ -43,79 +92,89 @@ class _SelectTime_screenState extends State<SelectTime_screen> {
           style: FontManager.appBarText(),
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      AppSpacing.h16,
+      body: provider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            AppSpacing.h16,
 
-                      /// Generate all timer blocks
-                      Column(
-                        children: List.generate(timeOptions.length, (index) {
-                          final minutes = timeOptions[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: CustomModTimer(
-                              minutes: minutes,
-                              isSelected: selectedIndex == index,
-                              onPressed: () {
-                                setState(() {
-                                  if (selectedIndex == index) {
-                                    // Deselect if same is tapped again
-                                    selectedIndex = null;
-                                  } else {
-                                    // Select new index
-                                    selectedIndex = index;
-                                  }
-                                });
-                              },
+                            /// Generate all timer blocks from API data
+                            Column(
+                              children: List.generate(provider.timeList.length, (
+                                index,
+                              ) {
+                                final item = provider.timeList[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: CustomModTimer(
+                                    minutes: item.duration,
+                                    isSelected: selectedIndex == index,
+                                    onPressed: () {
+                                      setState(() {
+                                        final wasSelected =
+                                            selectedIndex == index;
+                                        selectedIndex = wasSelected
+                                            ? null
+                                            : index;
+                                        // Clear custom time field when timer is selected (not when deselected)
+                                        if (!wasSelected &&
+                                            selectedIndex != null) {
+                                          _customTimeController.clear();
+                                          customTimeMinutes = null;
+                                        }
+                                      });
+                                    },
+                                  ),
+                                );
+                              }),
                             ),
-                          );
-                        }),
-                      ),
+                            AppSpacing.h12,
 
-                      AppSpacing.h12,
-
-                      ///  Custom time field
-                      BuildTextField(
-                        label: AppStrings.customizeTimeLabel,
-                        hint: "EX: 12 Minutes",
-                        bgcolor: AppColors.white,
-                      ),
-
-                      AppSpacing.h16,
-                    ],
-                  ),
-                ),
-              ),
-
-              ///  Button at bottom
-              CustomLoginButton(
-                text: AppStrings.continueButton,
-                onPressed: () {
-                  // Pass the actual time value (in minutes) instead of index
-                  final selectedTime = selectedIndex != null
-                      ? timeOptions[selectedIndex!]
-                      : null;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SelectQuantityScreen(
-                        selectedTimeInMinutes: selectedTime,
+                            ///  Custom time field
+                            BuildTextField(
+                              label: AppStrings.customizeTimeLabel,
+                              hint: "EX: 12 Minutes",
+                              bgcolor: AppColors.white,
+                              controller: _customTimeController,
+                              keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.done,
+                            ),
+                            AppSpacing.h16,
+                          ],
+                        ),
                       ),
                     ),
-                  );
-                },
+
+                    ///  Continue Button
+                    CustomLoginButton(
+                      text: AppStrings.continueButton,
+                      onPressed: () {
+                        // Get selected time from either timer or custom field
+                        final selectedTime = selectedIndex != null
+                            ? provider.timeList[selectedIndex!].duration
+                            : customTimeMinutes;
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SelectQuantityScreen(
+                              selectedTimeInMinutes: selectedTime,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

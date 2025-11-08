@@ -8,8 +8,7 @@ class ApiService {
   static String get signupUrl => "$_baseUrl/auth/register/";
   static String get verifyOtpUrl => "$_baseUrl/auth/verify-otp/";
 
-  static String get moduleListUrl => "$_baseUrl/student/module-list/";
-  static String get timeListUrl => "$_baseUrl/student/time-list/";
+
 
   //General settings
   static String get updateProfile => "$_baseUrl/auth/profile-update/";
@@ -19,5 +18,10 @@ class ApiService {
   // Homepage
   static String get getProfile => "$_baseUrl/auth/profile-update/";
     static String get userState => "$_baseUrl/student/student-state/";
+
+    // Module section
+        static String get timeListUrl => "$_baseUrl/student/time-list/";
+          static String get moduleListUrl => "$_baseUrl/student/module-list/";
+
 
 }

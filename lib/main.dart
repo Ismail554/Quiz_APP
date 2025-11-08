@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/provider/auth_provider/signup_provider/signup_provider.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
+import 'package:geography_geyser/provider/module_provider/selecttime_provider.dart';
 import 'package:geography_geyser/provider/module_provider/subject_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
@@ -28,6 +29,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => PrivacySettingsProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => UserStatsProvider()),
+          ChangeNotifierProvider(create: (_) => SelectTimeProvider()),
       ],
       child: const MyApp(),
     ),

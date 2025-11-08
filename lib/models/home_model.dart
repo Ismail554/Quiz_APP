@@ -3,11 +3,7 @@ class HomeModel {
   final String? email;
   final String? profilePic;
 
-  HomeModel({
-    this.fullName,
-    this.email,
-    this.profilePic,
-  });
+  HomeModel({this.fullName, this.email, this.profilePic});
 
   factory HomeModel.fromJson(Map<String, dynamic> json) {
     return HomeModel(
@@ -15,5 +11,9 @@ class HomeModel {
       email: json['email'] as String?,
       profilePic: json['profile_pic'] as String?,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'full_name': fullName, 'email': email, 'profile_pic': profilePic};
   }
 }

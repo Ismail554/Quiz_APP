@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
@@ -7,6 +8,7 @@ import 'package:geography_geyser/provider/module_provider/subject_provider.dart'
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/modules/select_time.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ModuleHomeScreen extends StatefulWidget {
   final bool hideback;
@@ -117,11 +119,11 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
             }
 
             if (provider.isLoading && provider.subjects.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
+              return _buildShimmerLoading();
             }
 
             if (provider.subjects.isEmpty) {
-              return const Center(child: Text("No modules found 😢"));
+              return const Center(child: Text("No modules found"));
             }
 
             return SingleChildScrollView(
@@ -153,15 +155,72 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                       );
                     }),
                     if (provider.isLoading && provider.hasMore)
-                      const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: CircularProgressIndicator(),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: _buildShimmerItem(),
                       ),
                   ],
                 ),
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  /// Build shimmer loading placeholder for initial load
+  Widget _buildShimmerLoading() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: List.generate(
+            10, // Show 6 shimmer items
+            (index) => Padding(
+              padding: const EdgeInsets.only(bottom: 14.0),
+              child: _buildShimmerItem(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build a single shimmer item matching CustomModule structure
+  Widget _buildShimmerItem() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      period: const Duration(milliseconds: 1200),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+          borderRadius: BorderRadius.circular(8.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: 2,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 200.w,
+              height: 20.h,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+            ),
+          ],
         ),
       ),
     );
