@@ -8,6 +8,7 @@ import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/models/quiz_model.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
+import 'package:geography_geyser/provider/module_provider/delete_xp_provider.dart';
 import 'package:geography_geyser/views/modules/quiz_result.dart';
 import 'package:geography_geyser/views/modules/time_out_dialog.dart';
 import 'package:provider/provider.dart';
@@ -130,6 +131,54 @@ class _QuizScreenState extends State<QuizScreen> {
 
       // Call finish quiz API
       await quizFinishProvider.finishQuiz(quizId, correctAnswersCount);
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Navigate to result screen regardless of API success/failure
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
+          (route) => false,
+        );
+      }
+    } else {
+      // If no quiz_id, navigate directly to result screen
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteXpAndNavigate() async {
+    final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+    final deleteXpProvider = Provider.of<DeleteXpProvider>(
+      context,
+      listen: false,
+    );
+
+    // Get quiz_id from quiz data
+    final quizId = quizProvider.quizData?.quizId;
+
+    if (quizId != null && quizId.isNotEmpty) {
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Call delete XP API
+      await deleteXpProvider.deleteXp(quizId);
 
       // Close loading dialog
       if (mounted) {
@@ -411,8 +460,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).pop(); // Close dialog
-                        // Finish quiz before navigating
-                        _finishQuizAndNavigate();
+                        // Delete XP and navigate when user quits quiz
+                        _deleteXpAndNavigate();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.red,

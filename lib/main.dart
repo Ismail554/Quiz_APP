@@ -5,6 +5,7 @@ import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
+import 'package:geography_geyser/provider/module_provider/delete_xp_provider.dart';
 import 'package:geography_geyser/provider/module_provider/selecttime_provider.dart';
 import 'package:geography_geyser/provider/module_provider/subject_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
@@ -34,6 +35,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => SelectTimeProvider()),
         ChangeNotifierProvider(create: (_) => QuizProvider()),
         ChangeNotifierProvider(create: (_) => QuizFinishProvider()),
+        ChangeNotifierProvider(create: (_) => DeleteXpProvider()),
       ],
       child: const MyApp(),
     ),
