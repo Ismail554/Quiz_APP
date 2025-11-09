@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Provider is available if needed, but we rely on static methods in LoginProvider
+
     return Scaffold(
       backgroundColor: AppColors.splashBG,
       resizeToAvoidBottomInset: true,
@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  AppSpacing.h64,
+                  AppSpacing.h80,
 
                   // Logo & Title
                   Column(

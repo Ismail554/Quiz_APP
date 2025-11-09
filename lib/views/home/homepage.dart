@@ -65,57 +65,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 }
 
-class HomeContent extends StatefulWidget {
+class HomeContent extends StatelessWidget {
   const HomeContent({super.key});
 
-  @override
-  State<HomeContent> createState() => _HomeContentState();
-}
-
-class _HomeContentState extends State<HomeContent> {
-  bool _isDisposed = false;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_isDisposed || _isInitialized) return;
-      _isInitialized = true;
-
-      // 🔹 Load user data from storage first, then from API only if needed
-      if (!mounted || _isDisposed) return;
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.loadUserDataFromStorage();
-
-      // Only fetch from API if we don't have user data from storage
-      if (!mounted || _isDisposed) return;
-      if (userProvider.userModel == null && !userProvider.isLoading) {
-        await userProvider.fetchUserData();
-      }
-
-      // 🔹 Load stats from storage first, then from API only if needed
-      if (!mounted || _isDisposed) return;
-      final statsProvider = Provider.of<UserStatsProvider>(
-        context,
-        listen: false,
-      );
-      await statsProvider.loadUserStatsFromStorage();
-
-      // Only fetch from API if we don't have stats from storage
-      if (!mounted || _isDisposed) return;
-      if (statsProvider.userStats == null && !statsProvider.isLoading) {
-        await statsProvider.fetchUserStats();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-    super.dispose();
-  }
+  static bool _isInitialized = false;
 
   /// 🔄 Refresh both user info & stats
   Future<void> _onRefresh(BuildContext context) async {
@@ -131,8 +84,44 @@ class _HomeContentState extends State<HomeContent> {
     ]);
   }
 
+  void _initializeData(BuildContext context) {
+    if (_isInitialized) return;
+    _isInitialized = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) return;
+
+      // 🔹 Load user data from storage first, then from API only if needed
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.loadUserDataFromStorage();
+
+      // Only fetch from API if we don't have user data from storage
+      if (context.mounted &&
+          userProvider.userModel == null &&
+          !userProvider.isLoading) {
+        await userProvider.fetchUserData();
+      }
+
+      // 🔹 Load stats from storage first, then from API only if needed
+      if (!context.mounted) return;
+      final statsProvider = Provider.of<UserStatsProvider>(
+        context,
+        listen: false,
+      );
+      await statsProvider.loadUserStatsFromStorage();
+
+      // Only fetch from API if we don't have stats from storage
+      if (context.mounted &&
+          statsProvider.userStats == null &&
+          !statsProvider.isLoading) {
+        await statsProvider.fetchUserStats();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    _initializeData(context);
     return SafeArea(
       child: Consumer2<UserProvider, UserStatsProvider>(
         builder: (context, userProvider, statsProvider, child) {

@@ -17,40 +17,33 @@ import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
 import 'package:geography_geyser/models/home_model.dart';
 import 'package:geography_geyser/models/userstats_model.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatelessWidget {
   final bool hideSettingsCard;
 
   const ProfileScreen({super.key, this.hideSettingsCard = false});
 
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
+  static bool _isInitialized = false;
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isDisposed = false;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
+  void _initializeData(BuildContext context) {
+    if (_isInitialized) return;
+    _isInitialized = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_isDisposed || _isInitialized) return;
-      _isInitialized = true;
+      if (!context.mounted) return;
 
       // 🔹 Load user data from storage first, then from API only if needed
-      if (!mounted || _isDisposed) return;
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.loadUserDataFromStorage();
 
       // Only fetch from API if we don't have user data from storage
-      if (!mounted || _isDisposed) return;
-      if (userProvider.userModel == null && !userProvider.isLoading) {
+      if (context.mounted &&
+          userProvider.userModel == null &&
+          !userProvider.isLoading) {
         await userProvider.fetchUserData();
       }
 
       // 🔹 Load stats from storage first, then from API only if needed
-      if (!mounted || _isDisposed) return;
+      if (!context.mounted) return;
       final statsProvider = Provider.of<UserStatsProvider>(
         context,
         listen: false,
@@ -58,21 +51,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await statsProvider.loadUserStatsFromStorage();
 
       // Only fetch from API if we don't have stats from storage
-      if (!mounted || _isDisposed) return;
-      if (statsProvider.userStats == null && !statsProvider.isLoading) {
+      if (context.mounted &&
+          statsProvider.userStats == null &&
+          !statsProvider.isLoading) {
         await statsProvider.fetchUserStats();
       }
     });
   }
 
   @override
-  void dispose() {
-    _isDisposed = true;
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    _initializeData(context);
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       body: SafeArea(
@@ -95,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Back Button (only show when navigated to as a pushed screen)
-                  if (widget.hideSettingsCard) ...[
+                  if (hideSettingsCard) ...[
                     InkWell(
                       onTap: () {
                         Navigator.pop(context);
@@ -129,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   AppSpacing.h40,
                   // Settings Card (conditionally shown)
-                  if (!widget.hideSettingsCard) ...[
+                  if (!hideSettingsCard) ...[
                     buildSettingsCard(context),
                     AppSpacing.h24,
                   ],
