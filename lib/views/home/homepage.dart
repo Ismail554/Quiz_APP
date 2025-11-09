@@ -403,7 +403,11 @@ class InfoCard extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16.sp, color: Colors.black),
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: Colors.black,
+              fontWeight: FontWeight.w600,
+            ),
           ),
 
           AppSpacing.h4,
@@ -413,7 +417,7 @@ class InfoCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w400,
               height: 1,
               overflow: TextOverflow.ellipsis,
               color: Colors.black,

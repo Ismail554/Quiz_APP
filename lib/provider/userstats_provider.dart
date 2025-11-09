@@ -25,13 +25,23 @@ class UserStatsProvider extends ChangeNotifier {
     try {
       final token = await SecureStorageHelper.getToken();
       final fetchStats = ApiService.userState;
-       final headers = <String, String>{
+
+      // Build headers with ngrok skip warning and auth token
+      final headers = <String, String>{
         'Content-Type': 'application/json',
-        'Accept': 'application/json',    
-       'Authorization' : 'Bearer $token' 
+        'Accept': 'application/json',
+        'ngrok-skip-browser-warning': 'true', // Required for ngrok
       };
 
-      final response = await http.get(Uri.parse(fetchStats));
+      // Add auth token if available
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await http.get(Uri.parse(fetchStats), headers: headers);
+
+      debugPrint('User Stats API Status: ${response.statusCode}');
+      debugPrint('User Stats API Response: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -41,6 +51,7 @@ class UserStatsProvider extends ChangeNotifier {
         await _storage.write(key: _storageKey, value: jsonEncode(data));
       } else {
         debugPrint('Failed to load user stats: ${response.statusCode}');
+        debugPrint('Response body: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error fetching stats: $e');
