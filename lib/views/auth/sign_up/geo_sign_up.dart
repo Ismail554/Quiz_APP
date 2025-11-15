@@ -32,7 +32,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
   String? _emailError;
   String? _passwordError;
   String? _confirmPasswordError;
-    bool _isLoading = false;
+  bool _isLoading = false;
 
   // Dispose controllers to avoid memory leaks
   @override
@@ -71,16 +71,22 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                     ),
                   ),
                 ),
-                AppSpacing.h16,
-                // Name and title
-                Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    AppStrings.appName,
-                    style: FontManager.splashTitle(fontSize: 24.sp),
-                    textAlign: TextAlign.center,
-                  ),
+                Text(
+                  AppStrings.appName,
+
+                  style: FontManager.splashTitle(fontSize: 24.sp),
+                  textAlign: TextAlign.center,
                 ),
+                // AppSpacing.h8,
+                // // Name and title
+                // Align(
+                //   alignment: Alignment.center,
+                //   child: Text(
+                //     AppStrings.appName,
+                //     style: FontManager.splashTitle(fontSize: 24.sp),
+                //     textAlign: TextAlign.center,
+                //   ),
+                // ),
                 AppSpacing.h24,
               ],
             ),
@@ -103,7 +109,6 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                       alignment: Alignment.topRight,
                       child: Text(
                         AppStrings.signUpButton,
-
                         style: TextStyle(
                           fontFamily: 'SegoeUI',
                           fontSize: 24.sp,
@@ -118,6 +123,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                     BuildTextField(
                       label: AppStrings.fullNameLabel,
                       hint: 'Enter Full Name',
+                      textInputAction: TextInputAction.next,
                       controller: _fullNameController,
                     ),
                     AppSpacing.h16,
@@ -128,6 +134,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                       hint: 'Enter Email',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       errorText: _emailError,
                       onChanged: (value) {
                         setState(() {
@@ -143,6 +150,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                       obscureText: _obscurePassword,
                       hint: 'Enter Password',
                       controller: _passwordController,
+                      textInputAction: TextInputAction.next,
                       isPassword: true,
                       errorText: _passwordError,
                       onChanged: (value) {
@@ -181,6 +189,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                       hint: 'Enter Password',
                       obscureText: _obscureConfirmPassword,
                       controller: _confirmPasswordController,
+                      textInputAction: TextInputAction.done,
                       isPassword: true,
                       errorText: _confirmPasswordError,
                       onChanged: (value) {
@@ -209,79 +218,82 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                     AppSpacing.h16,
 
                     // Sign Up Button
-                  CustomLoginButton(
-  text: AppStrings.signUpButton,
-  isLoading: _isLoading, // <-- add this in your state class
-  onPressed: _isLoading
-      ? null
-      : () async {
-          // Step 1: Validate all fields
-          setState(() {
-            _emailError = Validators.validateEmail(
-              _emailController.text,
-            );
-            _passwordError = Validators.validatePassword(
-              _passwordController.text,
-            );
-            _confirmPasswordError = Validators.validateConfirmPassword(
-              _confirmPasswordController.text,
-              _passwordController.text,
-            );
-          });
+                    CustomLoginButton(
+                      text: AppStrings.signUpButton,
+                      isLoading: _isLoading, // <-- add this in your state class
+                      onPressed: _isLoading
+                          ? null
+                          : () async {
+                              // Step 1: Validate all fields
+                              setState(() {
+                                _emailError = Validators.validateEmail(
+                                  _emailController.text,
+                                );
+                                _passwordError = Validators.validatePassword(
+                                  _passwordController.text,
+                                );
+                                _confirmPasswordError =
+                                    Validators.validateConfirmPassword(
+                                      _confirmPasswordController.text,
+                                      _passwordController.text,
+                                    );
+                              });
 
-          final isValid = _emailError == null &&
-              _passwordError == null &&
-              _confirmPasswordError == null;
+                              final isValid =
+                                  _emailError == null &&
+                                  _passwordError == null &&
+                                  _confirmPasswordError == null;
 
-          if (!isValid) return;
+                              if (!isValid) return;
 
-          // Step 2: Run Signup API
-          setState(() => _isLoading = true);
+                              // Step 2: Run Signup API
+                              setState(() => _isLoading = true);
 
-          try {
-            final response = await SignupProvider.signup(
-              _emailController.text.trim(),
-              _fullNameController.text.trim(), // make sure you have this controller
-              _passwordController.text.trim(),
-              context,
-            );
+                              try {
+                                final response = await SignupProvider.signup(
+                                  _emailController.text.trim(),
+                                  _fullNameController.text
+                                      .trim(), // make sure you have this controller
+                                  _passwordController.text.trim(),
+                                  context,
+                                );
 
-            // Step 3: Handle success
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Signup successful! 🎉"),
-                ),
-              );
+                                // Step 3: Handle success
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Signup successful!"),
+                                    ),
+                                  );
 
-              // Step 4: Navigate next (like OTP verify or home)
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => VerifyOtpScreen(),
-                ),
-              );
-            }
-          } catch (e) {
-            // Step 5: Handle errors
-            String message = 'Signup failed 😕';
-            if (e is Map && e['message'] != null) {
-              message = e['message'].toString();
-            }
+                                  // Step 4: Navigate next (like OTP verify or home)
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => VerifyOtpScreen(),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                // Step 5: Handle errors
+                                String message = 'Signup failed';
+                                if (e is Map && e['message'] != null) {
+                                  message = e['message'].toString();
+                                }
 
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-            }
-          } finally {
-            // Step 6: Stop loader
-            if (mounted) {
-              setState(() => _isLoading = false);
-            }
-          }
-        },
-),
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(message)),
+                                  );
+                                }
+                              } finally {
+                                // Step 6: Stop loader
+                                if (mounted) {
+                                  setState(() => _isLoading = false);
+                                }
+                              }
+                            },
+                    ),
 
                     AppSpacing.h20,
 

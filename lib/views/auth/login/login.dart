@@ -30,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: AppColors.splashBG,
       resizeToAvoidBottomInset: true,
@@ -107,6 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         BuildTextField(
                           label: AppStrings.emailLabel,
                           hint: AppStrings.emailPlaceholder,
+                          textInputAction: TextInputAction.next,
                           controller: emailController,
                         ),
                         AppSpacing.h16,
@@ -117,6 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           hint: AppStrings.passwordPlaceholder,
                           controller: passwordController,
                           isPassword: true,
+                          textInputAction: TextInputAction.done,
                           obscureText: _obscurePassword,
                           suffixIcon: IconButton(
                             icon: Icon(
