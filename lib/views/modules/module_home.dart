@@ -19,29 +19,8 @@ class ModuleHomeScreen extends StatefulWidget {
 }
 
 class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
-  int? selectedIndex; // Tracks which module is selected
-  final ScrollController _scrollController = ScrollController();
-  bool _scrollListenerAdded = false;
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  // final List<String> moduleOptions = [
-  //   AppStrings.tectonicsSubject,
-  //   AppStrings.coastsSubject,
-  //   AppStrings.waterCycleSubject,
-  //   AppStrings.carbonCycleSubject,
-  //   AppStrings.globalisationSubject,
-  //   AppStrings.moduleSuperpowers,
-  //   AppStrings.coastsSubject,
-  //   AppStrings.waterCycleSubject,
-  //   AppStrings.carbonCycleSubject,
-  //   AppStrings.globalisationSubject,
-  //   AppStrings.moduleSuperpowers,
-  // ];
+  int? selectedIndex;
+  bool _hasInitialized = false;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +30,7 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
         backgroundColor: AppColors.bgColor,
         leading: widget.hideback
             ? IconButton(
-                icon: InkWell(child: Icon(Icons.arrow_back)),
+                icon: const Icon(Icons.arrow_back),
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
                     context,
@@ -71,98 +50,76 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
       ),
       body: SafeArea(
         child: Consumer<SubjectProvider>(
-          builder: (context, provider, child) {
-            // Fetch modules if list is empty
-            if (provider.subjects.isEmpty && !provider.isLoading) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                provider.fetchSubjects().catchError((error) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Failed to load modules: ${error.toString()}',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                });
-              });
-            }
+          builder: (context, provider, _) {
+            final isLoading = provider.isLoading;
+            final subjects = provider.subjects;
+            final errorMessage = provider.errorMessage;
 
-            // Setup scroll listener for pagination (only once)
-            if (!_scrollListenerAdded) {
-              _scrollListenerAdded = true;
-              _scrollController.addListener(() {
-                final currentProvider = Provider.of<SubjectProvider>(
-                  context,
-                  listen: false,
-                );
-                if (_scrollController.position.pixels >=
-                    _scrollController.position.maxScrollExtent * 0.8) {
-                  if (!currentProvider.isLoading && currentProvider.hasMore) {
-                    currentProvider.fetchSubjects(isLoadMore: true).catchError((
-                      error,
-                    ) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to load more modules'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                      }
-                    });
-                  }
+            // ✅ Initialize only once
+            if (!_hasInitialized &&
+                subjects.isEmpty &&
+                !isLoading &&
+                errorMessage == null) {
+              _hasInitialized = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  provider.fetchSubjects().catchError((error) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to load modules: $error'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  });
                 }
               });
             }
 
-            if (provider.isLoading && provider.subjects.isEmpty) {
+            // Loading state
+            if (isLoading && subjects.isEmpty) {
               return _buildShimmerLoading();
             }
 
-            if (provider.subjects.isEmpty) {
-              return const Center(child: Text("No modules found"));
+            // Error state
+            if (errorMessage != null && subjects.isEmpty && !isLoading) {
+              return _buildErrorState(errorMessage, provider);
             }
 
-            return SingleChildScrollView(
-              controller: _scrollController,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    ...List.generate(provider.subjects.length, (index) {
-                      final subject = provider.subjects[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 14.0),
-                        child: CustomModule(
-                          text: subject.moduleName,
-                          isSelected: selectedIndex == index,
-                          onPressed: () {
-                            setState(() {
-                              selectedIndex = index;
-                            });
+            // Empty list state (no error, just no data)
+            if (subjects.isEmpty && !isLoading) {
+              return _buildEmptyState(provider);
+            }
 
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    SelectTime_screen(moduleId: subject.id),
-                              ),
-                            );
-                          },
+            // Final UI: Use ListView.builder for better performance
+            return ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: subjects.length,
+              // ✅ Add cacheExtent for better scrolling performance
+              cacheExtent: 500,
+              itemBuilder: (context, index) {
+                final subject = subjects[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14.0),
+                  child: CustomModule(
+                    key: ValueKey(subject.id),
+                    text: subject.moduleName,
+                    isSelected: selectedIndex == index,
+                    onPressed: () {
+                      // ✅ Don't call setState if navigating immediately
+                      selectedIndex = index;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              SelectTime_screen(moduleId: subject.id),
                         ),
                       );
-                    }),
-                    if (provider.isLoading && provider.hasMore)
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: _buildShimmerItem(),
-                      ),
-                  ],
-                ),
-              ),
+                    },
+                  ),
+                );
+              },
             );
           },
         ),
@@ -170,25 +127,21 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
     );
   }
 
-  /// Build shimmer loading placeholder for initial load
+  /// Initial shimmer loading
   Widget _buildShimmerLoading() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: List.generate(
-            10, // Show 6 shimmer items
-            (index) => Padding(
-              padding: const EdgeInsets.only(bottom: 14.0),
-              child: _buildShimmerItem(),
-            ),
-          ),
-        ),
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: 10,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 14.0),
+          child: _buildShimmerItem(),
+        );
+      },
     );
   }
 
-  /// Build a single shimmer item matching CustomModule structure
+  /// Shimmer item design
   Widget _buildShimmerItem() {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
@@ -219,6 +172,92 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(4.r),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Error state widget
+  Widget _buildErrorState(String errorMessage, SubjectProvider provider) {
+    final isNoInternet =
+        errorMessage.toLowerCase().contains('internet') ||
+        errorMessage.toLowerCase().contains('connection');
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isNoInternet ? Icons.wifi_off : Icons.error_outline,
+              size: 64,
+              color: Colors.grey[400]!,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              errorMessage,
+              textAlign: TextAlign.center,
+              style: FontManager.headerSubtitleText(
+                fontSize: 16,
+                color: Colors.grey[600]!,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => provider.refreshSubjects(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Empty state widget (no data from server)
+  Widget _buildEmptyState(SubjectProvider provider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]!),
+            const SizedBox(height: 16),
+            Text(
+              'No modules available',
+              textAlign: TextAlign.center,
+              style: FontManager.headerSubtitleText(
+                fontSize: 18,
+                color: Colors.grey[600]!,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Please check back later',
+              textAlign: TextAlign.center,
+              style: FontManager.bodyText(color: Colors.grey[500]!),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => provider.refreshSubjects(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],

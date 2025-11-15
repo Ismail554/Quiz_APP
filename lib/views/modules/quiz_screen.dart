@@ -388,7 +388,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         ) {
                           return Padding(
                             padding: EdgeInsets.only(bottom: 12.h),
-                            child: Custom_Q_choice(
+                            child: customQchoice(
                               currentQuestion.optionsList[index],
                               AppColors.white,
                               index,
@@ -489,7 +489,7 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget Custom_Q_choice(
+  Widget customQchoice(
     String text,
     Color backgroundColor,
     int optionIndex,

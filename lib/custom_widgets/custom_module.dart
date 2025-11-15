@@ -35,27 +35,40 @@ class CustomModule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Pre-compute values to avoid recalculating in build
+    final effectiveBorderRadius = borderRadius ?? 8.r;
+    final effectivePadding = padding ?? EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w);
+    final effectiveBackgroundColor = isSelected
+        ? const Color(0xFFE8F4FF)
+        : (backgroundColor ?? AppColors.white);
+    final effectiveBorderColor = isSelected
+        ? Colors.blueAccent
+        : (borderColor ?? Colors.grey.shade300);
+    final effectiveBorderWidth = isSelected ? 1.5 : 1.0;
+    final effectiveShadowColor = (shadowColor ?? Colors.black).withOpacity(0.1);
+    final effectiveTextStyle = textStyle ??
+        FontManager.headerSubtitleText(
+          fontSize: fontSize ?? 20,
+          color: Colors.black,
+        );
+    final upperText = text.toUpperCase();
+
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(borderRadius ?? 8.r),
+      borderRadius: BorderRadius.circular(effectiveBorderRadius),
       child: Container(
         width: double.infinity,
-        padding:
-            padding ?? EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+        padding: effectivePadding,
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFE8F4FF)
-              : (backgroundColor ?? AppColors.white),
+          color: effectiveBackgroundColor,
           border: Border.all(
-            color: isSelected
-                ? Colors.blueAccent
-                : (borderColor ?? Colors.grey.shade300),
-            width: isSelected ? 1.5 : 1,
+            color: effectiveBorderColor,
+            width: effectiveBorderWidth,
           ),
-          borderRadius: BorderRadius.circular(borderRadius ?? 8.r),
+          borderRadius: BorderRadius.circular(effectiveBorderRadius),
           boxShadow: [
             BoxShadow(
-              color: (shadowColor ?? Colors.black).withOpacity(0.1),
+              color: effectiveShadowColor,
               blurRadius: 8,
               spreadRadius: 2,
               offset: const Offset(0, 3),
@@ -68,14 +81,9 @@ class CustomModule extends StatelessWidget {
             if (leading != null) ...[leading!, SizedBox(width: 8.w)],
             Flexible(
               child: Text(
-                text.toUpperCase(),
+                upperText,
                 textAlign: TextAlign.center,
-                style:
-                    textStyle ??
-                    FontManager.headerSubtitleText(
-                      fontSize: fontSize ?? 20,
-                      color: Colors.black,
-                    ),
+                style: effectiveTextStyle,
               ),
             ),
             if (trailing != null) ...[SizedBox(width: 8.w), trailing!],

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/app_constants.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
@@ -21,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     // Check authentication status after splash delay
-    Timer(const Duration(seconds: 3), () {
+    Timer(const Duration(seconds: AppConstants.splashDelay), () {
       _checkAuthAndNavigate();
     });
   }
