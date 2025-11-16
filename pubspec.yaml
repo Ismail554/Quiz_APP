@@ -28,6 +28,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   shimmer: ^3.0.0
   connectivity_plus: ^7.0.0
+  audioplayers: ^6.5.1
 
 flutter_icons:
   android: true

@@ -5,6 +5,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/core/sound_helper.dart';
 import 'package:geography_geyser/models/quiz_model.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
@@ -209,6 +210,11 @@ class _QuizScreenState extends State<QuizScreen> {
     if (showAnswerFeedback) return; // Prevent multiple selections
 
     final isCorrect = selectedIndex == question.correctAnswerIndex;
+    if (isCorrect) {
+      SoundHelper.playCorrect();
+    } else {
+      SoundHelper.playWrong();
+    }
 
     setState(() {
       selectedAnswerIndex = selectedIndex;
