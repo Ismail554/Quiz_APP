@@ -270,7 +270,9 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                                   Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => VerifyOtpScreen(),
+                                      builder: (_) => VerifyOtpScreen(
+                                        email: _emailController.text.trim(),
+                                      ),
                                     ),
                                   );
                                 }

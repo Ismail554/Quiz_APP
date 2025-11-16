@@ -17,7 +17,7 @@ class SignupProvider extends ChangeNotifier {
     BuildContext context,
   ) async {
     isLoading.value = true;
-    print('📝 Trying signup with: $email / $fullName / $password');
+    print('Trying signup with: $email / $fullName / $password');
 
     try {
       final response = await http.post(

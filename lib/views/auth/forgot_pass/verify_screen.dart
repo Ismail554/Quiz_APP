@@ -6,12 +6,14 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/views/auth/forgot_pass/congratulations.dart';
+import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/new_pass.dart';
 import 'package:pinput/pinput.dart';
 
 class VerifyScreen extends StatefulWidget {
-  const VerifyScreen({super.key});
+  final String? email;
+
+  const VerifyScreen({super.key, this.email});
 
   @override
   State<VerifyScreen> createState() => _VerifyScreenState();
@@ -22,11 +24,22 @@ class _VerifyScreenState extends State<VerifyScreen> {
   final FocusNode _pinFocusNode = FocusNode();
   int _resendTimer = 60;
   Timer? _timer;
+  String? _storedEmail;
 
   @override
   void initState() {
     super.initState();
     _startTimer();
+    _loadEmailFromStorage();
+  }
+
+  Future<void> _loadEmailFromStorage() async {
+    final email = await SecureStorageHelper.getResetPasswordEmail();
+    if (mounted) {
+      setState(() {
+        _storedEmail = email;
+      });
+    }
   }
 
   void _startTimer() {
@@ -47,6 +60,23 @@ class _VerifyScreenState extends State<VerifyScreen> {
     _pinController.dispose();
     _pinFocusNode.dispose();
     super.dispose();
+  }
+
+  String _maskEmail(String email) {
+    if (email.isEmpty) return email;
+
+    final parts = email.split('@');
+    if (parts.length != 2) return email;
+
+    final localPart = parts[0];
+    final domain = parts[1];
+
+    if (localPart.isEmpty) return email;
+
+    // Show first letter and mask the rest
+    final maskedLocal = localPart[0] + ('*' * (localPart.length - 1));
+
+    return '$maskedLocal@$domain';
   }
 
   @override
@@ -137,7 +167,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
                     ),
                     AppSpacing.h10,
                     Text(
-                      AppStrings.otpInstructionEmailExample,
+                      (widget.email != null && widget.email!.isNotEmpty)
+                          ? _maskEmail(widget.email!)
+                          : (_storedEmail != null && _storedEmail!.isNotEmpty)
+                          ? _maskEmail(_storedEmail!)
+                          : AppStrings.otpInstructionEmailExample,
                       style: FontManager.subSubtitleText(),
                     ),
                     AppSpacing.h32,

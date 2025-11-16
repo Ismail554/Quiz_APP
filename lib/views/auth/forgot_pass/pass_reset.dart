@@ -3,6 +3,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/verify_screen.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
@@ -19,6 +20,14 @@ class PassResetScreen extends StatefulWidget {
 }
 
 class _PassResetScreenState extends State<PassResetScreen> {
+  final TextEditingController _emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,18 +73,30 @@ class _PassResetScreenState extends State<PassResetScreen> {
                         BuildTextField(
                           label: "Email",
                           hint: "Enter your email",
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
                           prefixIcon: Icon(Icons.mail_outline_rounded),
                         ),
                         AppSpacing.h14,
                         CustomLoginButton(
                           text: "Send",
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VerifyScreen(),
-                              ),
-                            );
+                          onPressed: () async {
+                            final email = _emailController.text.trim();
+                            if (email.isNotEmpty) {
+                              // Store email in secure storage
+                              await SecureStorageHelper.setResetPasswordEmail(
+                                email,
+                              );
+
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VerifyScreen(),
+                                  ),
+                                );
+                              }
+                            }
                           },
                         ),
                         AppSpacing.h10,

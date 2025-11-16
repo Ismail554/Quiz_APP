@@ -11,7 +11,9 @@ import 'package:geography_geyser/views/auth/sign_up/reg_congratulations.dart';
 import 'package:pinput/pinput.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
-  const VerifyOtpScreen({super.key});
+  final String? email;
+
+  const VerifyOtpScreen({super.key, this.email});
 
   @override
   State<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
@@ -48,6 +50,23 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     _pinController.dispose();
     _pinFocusNode.dispose();
     super.dispose();
+  }
+
+  String _maskEmail(String email) {
+    if (email.isEmpty) return email;
+
+    final parts = email.split('@');
+    if (parts.length != 2) return email;
+
+    final localPart = parts[0];
+    final domain = parts[1];
+
+    if (localPart.isEmpty) return email;
+
+    // Show first letter and mask the rest
+    final maskedLocal = localPart[0] + ('*' * (localPart.length - 1));
+
+    return '$maskedLocal@$domain';
   }
 
   @override
@@ -153,7 +172,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                       ),
                       AppSpacing.h10,
                       Text(
-                        AppStrings.otpInstructionEmailExample,
+                        widget.email != null && widget.email!.isNotEmpty
+                            ? _maskEmail(widget.email!)
+                            : AppStrings.otpInstructionEmailExample,
                         style: FontManager.subSubtitleText(),
                       ),
                       AppSpacing.h32,
