@@ -79,6 +79,7 @@ class AppStrings {
   static const String userXp = "XP:39,900";
   static const String editProfileOption = "Edit Profile";
   static const String moduleSettingOption = "Module Setting";
+  static const String accountdelection = "Account Management";
   static const String logOutOption = "Log out";
   static const String progressTitle = "Progress";
   static const String quizAttemptedLabel = "Quiz Attempted";
@@ -123,7 +124,8 @@ class AppStrings {
   // --- Image 1: Settings Options ---
   static const String generalSetting = "General Setting";
   static const String genChangeWarning = "Enter password to apply the changes.";
-
+  static const String accountdeleteDescription =
+      "Deleting your account is permanent. All your data will be removed and cannot be recovered";
   static const String privacySetting = "Privacy Setting";
 
   // --- Image 2: Logout Confirmation Dialog ---

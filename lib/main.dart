@@ -17,6 +17,7 @@ import 'package:geography_geyser/views/auth/forgot_pass/verify_screen.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
 import 'package:geography_geyser/views/modules/quiz_complete.dart';
+import 'package:geography_geyser/views/profile/profile_screen.dart';
 import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
 import 'package:provider/provider.dart';
 
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         home: child,
       ),
       child: SplashScreen(),
+      //   child: ProfileScreen(),
     );
   }
 }

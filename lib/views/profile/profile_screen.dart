@@ -9,6 +9,7 @@ import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/services/api_service.dart';
+import 'package:geography_geyser/views/profile/account_delete.dart';
 import 'package:provider/provider.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
@@ -271,6 +272,18 @@ class ProfileScreen extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => OptionalModuleSettings(),
                 ),
+              );
+            },
+          ),
+          // Account Deletion
+          Divider(height: 1, color: Colors.grey[300]),
+          buildSettingRow(
+            icon: Icons.bakery_dining_rounded,
+            text: AppStrings.accountdelection,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AccountDelete()),
               );
             },
           ),
