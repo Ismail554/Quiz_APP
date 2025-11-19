@@ -1,8 +1,6 @@
 class ApiService {
-  static String get _baseUrl =>
-      "https://dihydric-yael-therianthropic.ngrok-free.dev";
-  static String get baseUrl =>
-      "https://dihydric-yael-therianthropic.ngrok-free.dev";
+  static String get _baseUrl => "http://10.10.13.22:8001";
+  static String get baseUrl => "http://10.10.13.22:8001";
 
   static String get loginUrl => "$_baseUrl/auth/login/";
   static String get signupUrl => "$_baseUrl/auth/register/";

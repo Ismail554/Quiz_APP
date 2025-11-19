@@ -250,10 +250,9 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                               setState(() => _isLoading = true);
 
                               try {
-                                final response = await SignupProvider.signup(
+                                await SignupProvider.signup(
                                   _emailController.text.trim(),
-                                  _fullNameController.text
-                                      .trim(), // make sure you have this controller
+                                  _fullNameController.text.trim(),
                                   _passwordController.text.trim(),
                                   context,
                                 );
@@ -278,14 +277,29 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                                 }
                               } catch (e) {
                                 // Step 5: Handle errors
-                                String message = 'Signup failed';
-                                if (e is Map && e['message'] != null) {
-                                  message = e['message'].toString();
+                                String message =
+                                    'Signup failed. Please try again.';
+
+                                if (e is Map<String, dynamic>) {
+                                  message =
+                                      e['message']?.toString() ??
+                                      e['error']?.toString() ??
+                                      message;
+                                } else if (e is String) {
+                                  message = e;
+                                } else {
+                                  message = e.toString();
                                 }
+
+                                print('Signup Error in UI: $e');
 
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(message)),
+                                    SnackBar(
+                                      content: Text(message),
+                                      backgroundColor: Colors.red,
+                                      duration: const Duration(seconds: 4),
+                                    ),
                                   );
                                 }
                               } finally {
