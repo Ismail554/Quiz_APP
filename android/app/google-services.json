@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "377329867932",
+    "project_id": "geography-682b7",
+    "storage_bucket": "geography-682b7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:377329867932:android:c5ea4f29468750f8a86159",
+        "android_client_info": {
+          "package_name": "com.example.geography_geyser"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALIgwlbl6ta9sjU5K0TtIoEYJNLDOYZHA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

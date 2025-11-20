@@ -5,6 +5,8 @@ import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginProvider extends ChangeNotifier {
   static final ValueNotifier<bool> isLoading = ValueNotifier(false);
@@ -59,7 +61,7 @@ class LoginProvider extends ChangeNotifier {
   static Future<void> _storeLoginData(Map<String, dynamic> data) async {
     if (data.containsKey('access_token')) {
       await SecureStorageHelper.setToken(data['access_token']);
-     // print(' Access Token stored in FlutterSecureStorage');
+      // print(' Access Token stored in FlutterSecureStorage');
     }
     if (data.containsKey('refresh_token')) {
       await SecureStorageHelper.setRefreshToken(data['refresh_token']);
@@ -71,8 +73,116 @@ class LoginProvider extends ChangeNotifier {
     await prefs.setString('user_email', data['email'] ?? '');
   }
 
+  // ---------------- GOOGLE SIGN IN ----------------
+  static Future<Map<String, dynamic>> signInWithGoogle(
+    BuildContext context,
+  ) async {
+    isLoading.value = true;
+    try {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        // User canceled the sign-in
+        isLoading.value = false;
+        throw {'message': 'Google sign-in was canceled'};
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase with the Google credential
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+
+      final User? user = userCredential.user;
+
+      if (user == null) {
+        isLoading.value = false;
+        throw {'message': 'Failed to sign in with Google'};
+      }
+
+      // Get the ID token for your backend
+      final String? idToken = await user.getIdToken();
+
+      // Optionally, send the token to your backend API
+      // You can integrate this with your existing API service
+      try {
+        final response = await http.post(
+          Uri.parse(
+            ApiService.loginUrl,
+          ), // Adjust this to your Google login endpoint
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'id_token': idToken,
+            'email': user.email,
+            'name': user.displayName,
+            'photo_url': user.photoURL,
+          }),
+        );
+
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          await _storeLoginData(responseData);
+          print('Google Login Successful!');
+          isLoading.value = false;
+          return responseData;
+        } else {
+          // If backend integration fails, still store Firebase auth data
+          await _storeFirebaseAuthData(user, idToken);
+          isLoading.value = false;
+          return {
+            'access_token': idToken,
+            'email': user.email,
+            'name': user.displayName,
+          };
+        }
+      } catch (e) {
+        // If backend call fails, use Firebase auth directly
+        print('Backend integration failed, using Firebase auth: $e');
+        await _storeFirebaseAuthData(user, idToken);
+        isLoading.value = false;
+        return {
+          'access_token': idToken,
+          'email': user.email,
+          'name': user.displayName,
+        };
+      }
+    } catch (e) {
+      print("Google Sign-In Error: $e");
+      isLoading.value = false;
+      rethrow;
+    }
+  }
+
+  // ---------------- STORE FIREBASE AUTH DATA ----------------
+  static Future<void> _storeFirebaseAuthData(User user, String? idToken) async {
+    if (idToken != null) {
+      await SecureStorageHelper.setToken(idToken);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_email', user.email ?? '');
+    await prefs.setString('user_name', user.displayName ?? '');
+    if (user.photoURL != null) {
+      await prefs.setString('user_photo_url', user.photoURL!);
+    }
+  }
+
   // ---------------- LOGOUT ----------------
   static Future<void> logout() async {
+    // Sign out from Google
+    await GoogleSignIn().signOut();
+    // Sign out from Firebase
+    await FirebaseAuth.instance.signOut();
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
 

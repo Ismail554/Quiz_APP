@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
+import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
+import 'package:geography_geyser/views/home/homepage.dart';
 
-class GoogleLoginBtn extends StatelessWidget {
+class GoogleLoginBtn extends StatefulWidget {
   const GoogleLoginBtn({super.key});
+
+  @override
+  State<GoogleLoginBtn> createState() => _GoogleLoginBtnState();
+}
+
+class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -12,35 +21,75 @@ class GoogleLoginBtn extends StatelessWidget {
       width: double.infinity,
       height: 48.h,
       child: OutlinedButton(
-        onPressed: () {
-          debugPrint('Google Login Pressed');
-        },
+        onPressed: _isLoading
+            ? null
+            : () async {
+                setState(() {
+                  _isLoading = true;
+                });
+
+                try {
+                  await LoginProvider.signInWithGoogle(context);
+
+                  if (!context.mounted) return;
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HomePageScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  String message = 'Google sign-in failed';
+                  if (e is Map && e['message'] != null) {
+                    message = e['message'].toString();
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(message)),
+                  );
+                } finally {
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                }
+              },
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: Colors.grey[400]!, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/google_logo.png',
-              width: 20.w,
-              height: 20.h,
-            ),
-            AppSpacing.w8,
-            Text(
-              // 'Google',
-              AppStrings.googleLogin,
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
+        child: _isLoading
+            ? SizedBox(
+                height: 20.h,
+                width: 20.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/google_logo.png',
+                    width: 20.w,
+                    height: 20.h,
+                  ),
+                  AppSpacing.w8,
+                  Text(
+                    // 'Google',
+                    AppStrings.googleLogin,
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
