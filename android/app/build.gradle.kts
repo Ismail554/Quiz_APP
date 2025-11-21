@@ -7,8 +7,12 @@ plugins {
 }
 
 android {
+     testOptions {
+        unitTests.returnDefaultValues = true
+    }
     namespace = "com.example.geography_geyser"
-    compileSdk = flutter.compileSdkVersion
+    // Explicitly set compileSdk to 34 to ensure compatibility
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -26,7 +30,8 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Explicitly set targetSdk to 34 to ensure compatibility
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
