@@ -4,20 +4,35 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
+import 'package:geography_geyser/provider/settings_provider/account_delete_provider.dart';
+import 'package:geography_geyser/views/auth/login/login.dart';
+
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
+import 'package:provider/provider.dart';
 
 class AccountDelete extends StatefulWidget {
-  AccountDelete({super.key});
+  const AccountDelete({super.key});
 
   @override
   State<AccountDelete> createState() => _AccountDeleteState();
-   final TextEditingController _passwordController = TextEditingController();
 }
 
 class _AccountDeleteState extends State<AccountDelete> {
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Accessing the specific AccountDeleteProvider
+    final accountDeleteProvider = Provider.of<AccountDeleteProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       appBar: AppBar(
@@ -37,18 +52,38 @@ class _AccountDeleteState extends State<AccountDelete> {
                 ),
                 AppSpacing.h20,
                 BuildTextField(
-                  // controller: _nameController,
+                  controller: _passwordController,
                   label: AppStrings.enterPass,
                   hint: "*******".toString(),
+                  obscureText: true, // Added based on your request
                 ),
                 AppSpacing.h8,
                 Text(AppStrings.deletePassWar, style: FontManager.alertText()),
                 AppSpacing.h32,
-                CustomLoginButton(
-                  text: "Delete Account",
-                  backgroundColor: AppColors.red,
-                  onPressed: () => showAccountDelete(context),
-                ),
+
+                // Using the specific provider's loading state
+                accountDeleteProvider.isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: AppColors.red),
+                      )
+                    : CustomLoginButton(
+                        text: "Delete Account",
+                        backgroundColor: AppColors.red,
+                        onPressed: () {
+                          if (_passwordController.text.isNotEmpty) {
+                            showAccountDelete(
+                              context,
+                              _passwordController.text,
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Please enter your password"),
+                              ),
+                            );
+                          }
+                        },
+                      ),
               ],
             ),
           ),
@@ -58,11 +93,11 @@ class _AccountDeleteState extends State<AccountDelete> {
   }
 }
 
-void showAccountDelete(BuildContext context) {
+void showAccountDelete(BuildContext context, String password) {
   showDialog(
     context: context,
     barrierDismissible: true,
-    builder: (BuildContext context) {
+    builder: (BuildContext dialogContext) {
       return AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
@@ -82,7 +117,7 @@ void showAccountDelete(BuildContext context) {
             children: [
               Expanded(
                 child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.bgColor,
                     shape: RoundedRectangleBorder(
@@ -101,7 +136,33 @@ void showAccountDelete(BuildContext context) {
               AppSpacing.w12,
               Expanded(
                 child: TextButton(
-                  onPressed: () {},
+                  // Trigger API call via Provider
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop(); // Close dialog
+
+                    try {
+                      // Call the delete function on the AccountDeleteProvider
+                      // using the context passed from the parent widget
+                      await Provider.of<AccountDeleteProvider>(
+                        context,
+                        listen: false,
+                      ).deleteAccount(password, context);
+
+                      // If deletion is successful, logout and navigate to login screen
+                      if (context.mounted) {
+                        await LoginProvider.logout();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    } catch (e) {
+                      // The provider is expected to handle showing errors.
+                    }
+                  },
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.red,
                     shape: RoundedRectangleBorder(

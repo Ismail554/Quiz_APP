@@ -9,6 +9,7 @@ import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.d
 import 'package:geography_geyser/provider/module_provider/delete_xp_provider.dart';
 import 'package:geography_geyser/provider/module_provider/selecttime_provider.dart';
 import 'package:geography_geyser/provider/module_provider/subject_provider.dart';
+import 'package:geography_geyser/provider/settings_provider/account_delete_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
@@ -16,7 +17,7 @@ import 'package:geography_geyser/splash/splash_screen.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/congratulations.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/verify_screen.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
-import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart'; 
+import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
 import 'package:geography_geyser/views/modules/quiz_complete.dart';
 import 'package:geography_geyser/views/profile/profile_screen.dart';
 import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
@@ -40,6 +41,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => QuizProvider()),
         ChangeNotifierProvider(create: (_) => QuizFinishProvider()),
         ChangeNotifierProvider(create: (_) => DeleteXpProvider()),
+        ChangeNotifierProvider(create: (_) => AccountDeleteProvider()),
       ],
       child: const MyApp(),
     ),
