@@ -9,8 +9,13 @@ class QuizFinishProvider extends ChangeNotifier {
   bool isLoading = false;
   QuizFinishModel? quizFinishData;
   String? errorMessage;
+  int? attemptedQuestions; // Store attempted questions count
 
-  Future<bool> finishQuiz(String quizId, int correctAnswers) async {
+  Future<bool> finishQuiz(
+    String quizId,
+    int correctAnswers,
+    int attempted,
+  ) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -31,7 +36,11 @@ class QuizFinishProvider extends ChangeNotifier {
       final response = await http.post(
         Uri.parse(ApiService.quizFinishUrl),
         headers: headers,
-        body: json.encode({'quiz_id': quizId, 'correct': correctAnswers}),
+        body: json.encode({
+          'quiz_id': quizId,
+          'correct': correctAnswers,
+          'attempted': attempted,
+        }),
       );
 
       if (kDebugMode) {
@@ -42,6 +51,7 @@ class QuizFinishProvider extends ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
         quizFinishData = QuizFinishModel.fromJson(data);
+        attemptedQuestions = attempted; // Store attempted count
         errorMessage = null;
         isLoading = false;
         notifyListeners();
@@ -69,6 +79,7 @@ class QuizFinishProvider extends ChangeNotifier {
   void clearQuizFinish() {
     quizFinishData = null;
     errorMessage = null;
+    attemptedQuestions = null;
     notifyListeners();
   }
 }

@@ -12,7 +12,20 @@
           "package_name": "com.example.geography_geyser"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "377329867932-mes5rn144638hnn7cjhofaiuki1lt6pn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.geography_geyser",
+            "certificate_hash": "b6a57d1f50e209bde458107221234e7f688dfe35"
+          }
+        },
+        {
+          "client_id": "377329867932-b8bmk1d883nh74memeevuub0f9amnovk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyALIgwlbl6ta9sjU5K0TtIoEYJNLDOYZHA"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "377329867932-b8bmk1d883nh74memeevuub0f9amnovk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

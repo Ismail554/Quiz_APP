@@ -57,8 +57,11 @@ class QuizResult_Screen extends StatelessWidget {
             }
 
             // Calculate values from API data
+            // Use attempted questions from provider instead of totalQuestions from API
+            final attempted =
+                provider.attemptedQuestions ?? quizData.totalQuestions;
             final correctAnswers = quizData.correctAnswers;
-            final totalQuestions = quizData.totalQuestions;
+            final totalQuestions = attempted; // Use attempted as totalQuestions
             final incorrectAnswers = totalQuestions - correctAnswers;
             final score = quizData.score;
             final grade = quizData.grade;

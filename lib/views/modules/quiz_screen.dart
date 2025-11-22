@@ -130,8 +130,15 @@ class _QuizScreenState extends State<QuizScreen> {
         );
       }
 
+      // Calculate attempted questions (currentQuestionIndex is 0-based, so add 1)
+      final attemptedQuestions = currentQuestionIndex + 1;
+
       // Call finish quiz API
-      await quizFinishProvider.finishQuiz(quizId, correctAnswersCount);
+      await quizFinishProvider.finishQuiz(
+        quizId,
+        correctAnswersCount,
+        attemptedQuestions,
+      );
 
       // Close loading dialog
       if (mounted) {
