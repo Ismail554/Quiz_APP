@@ -4,9 +4,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/account_delete_provider.dart';
-import 'package:geography_geyser/views/auth/login/login.dart';
 
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
@@ -136,32 +134,15 @@ void showAccountDelete(BuildContext context, String password) {
               AppSpacing.w12,
               Expanded(
                 child: TextButton(
-                  // Trigger API call via Provider
                   onPressed: () async {
                     Navigator.of(dialogContext).pop(); // Close dialog
 
-                    try {
-                      // Call the delete function on the AccountDeleteProvider
-                      // using the context passed from the parent widget
-                      await Provider.of<AccountDeleteProvider>(
-                        context,
-                        listen: false,
-                      ).deleteAccount(password, context);
-
-                      // If deletion is successful, logout and navigate to login screen
-                      if (context.mounted) {
-                        await LoginProvider.logout();
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                          (route) => false,
-                        );
-                      }
-                    } catch (e) {
-                      // The provider is expected to handle showing errors.
-                    }
+                    // Call the delete function on the AccountDeleteProvider
+                    // using the context passed from the parent widget
+                    await Provider.of<AccountDeleteProvider>(
+                      context,
+                      listen: false,
+                    ).deleteAccount(password, context);
                   },
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.red,

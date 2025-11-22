@@ -1,46 +1,53 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geography_geyser/models/delete_account.dart';
+import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
+import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:http/http.dart' as http;
-
 
 class AccountDeleteProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
-  
+
   Future<bool> deleteAccount(String password, BuildContext context) async {
     _isLoading = true;
     notifyListeners();
 
     final url = Uri.parse(ApiService.deleteAccount);
 
-    
     // Create the request model
     final requestBody = DeleteAccountRequest(password: password);
 
     try {
       // token from SharedPreferences or SecureStorage
-      final token = await SecureStorageHelper.getToken(); 
+      final token = await SecureStorageHelper.getToken();
 
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', 
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode(requestBody.toJson()),
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         // Success
+        await LoginProvider.logout();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Account deleted successfully")),
           );
           // Navigate to Login or Splash screen
-          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            ),
+            (route) => false,
+          );
         }
         return true;
       } else {
@@ -48,16 +55,18 @@ class AccountDeleteProvider extends ChangeNotifier {
         final errorData = jsonDecode(response.body);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorData['message'] ?? "Failed to delete account")),
+            SnackBar(
+              content: Text(errorData['message'] ?? "Check your password"),
+            ),
           );
         }
         return false;
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
       }
       return false;
     } finally {
