@@ -13,6 +13,10 @@ class AppStrings {
   static const String newPassSubtitle =
       "Your account has been created successfully.";
   static const String goHome = "Go to Home";
+  static const String enterPass = "Enter Password";
+  static const String deletePassWar =
+      "🚨 To delete your account, please enter your password.";
+  static const String delete = "Delete";
   // Normal Sign Up
   static const String logInTitle = "Login";
   static const String passwordLabel = "Password";
@@ -134,6 +138,8 @@ class AppStrings {
       "You will be logged out of you account"; // Note: "you" instead of "your" in original image
   static const String cancelButton = "Cancel";
   static const String logOutButton = "Log Out";
+  static const String accountDeleteHint =
+      "Account will be deleted permanently.";
 
   // --- Image 3: Change Password Form ---
   static const String currentPasswordLabel = "Current Password";

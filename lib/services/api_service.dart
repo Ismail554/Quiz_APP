@@ -21,4 +21,7 @@ class ApiService {
   static String get quizStartUrl => "$_baseUrl/student/quiz-start/";
   static String get quizFinishUrl => "$_baseUrl/student/quiz-finish/";
   static String get deleteXpUrl => "$_baseUrl/student/delete-xp/";
+
+  // Auth section
+  static String get deleteAccount => "$_baseUrl/auth/delete-account/";
 }

@@ -11,6 +11,7 @@ class FontManager {
   // Font Weights
   static const FontWeight w400 = FontWeight.w400;
   static const FontWeight w600 = FontWeight.w600;
+  static const FontWeight w500 = FontWeight.w500;
   static const FontWeight w700 = FontWeight.w700;
   static const FontWeight w800 = FontWeight.w800;
 
@@ -200,5 +201,16 @@ class FontManager {
     color: color,
     height: 1.0,
     letterSpacing: 0.72.sp,
+  );
+  // Alert Text
+  static TextStyle alertText({
+    double fontSize = 14,
+    Color color = Colors.red,
+  }) => GoogleFonts.montserrat(
+    fontSize: fontSize.sp,
+    fontWeight: w500,
+    color: color,
+    height: 1.0,
+    letterSpacing: 0.0,
   );
 }
