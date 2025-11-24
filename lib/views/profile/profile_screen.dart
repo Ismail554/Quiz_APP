@@ -542,6 +542,7 @@ class ProfileScreen extends StatelessWidget {
         final subject = performance.subjects[index];
 
         return Column(
+        
           children: [
             if (index > 0) AppSpacing.h12,
             buildSubjectProgress(subject.moduleName, subject.progress),
@@ -567,7 +568,7 @@ class ProfileScreen extends StatelessWidget {
   /// Build individual subject progress bar
   Widget buildSubjectProgress(String subject, double progress) {
     // Calculate actual percentage for display
-    final progressPercentage = (progress * 100).toInt();
+    final progressPercentage = (progress).toInt();
 
     // Calculate widthFactor: use 2/100 if progress is 0, otherwise use actual progress
     final widthFactor = progress == 0 ? 2 / 100 : progress;
@@ -588,13 +589,14 @@ class ProfileScreen extends StatelessWidget {
         AppSpacing.h8,
         Container(
           height: 8.h,
+          width: double.maxFinite,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4.r),
             color: Colors.grey[200],
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
-            widthFactor: widthFactor,
+            widthFactor: widthFactor / 100,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4.r),
