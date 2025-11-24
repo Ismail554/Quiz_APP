@@ -1,22 +1,34 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+
+// Core imports
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+
+// Models
+import 'package:geography_geyser/models/home_model.dart';
+import 'package:geography_geyser/models/userstats_model.dart';
+import 'package:geography_geyser/models/user_performance_model.dart';
+
+// Providers
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
+import 'package:geography_geyser/provider/user_performance_provider.dart';
+
+// Services
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:geography_geyser/views/profile/account_delete.dart';
-import 'package:provider/provider.dart';
+
+// Views
 import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
+import 'package:geography_geyser/views/profile/account_delete.dart';
 import 'package:geography_geyser/views/profile/settings/general_settings.dart';
 import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
-import 'package:geography_geyser/models/home_model.dart';
-import 'package:geography_geyser/models/userstats_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool hideSettingsCard;
@@ -25,6 +37,7 @@ class ProfileScreen extends StatelessWidget {
 
   static bool _isInitialized = false;
 
+  /// Initialize data by loading from storage first, then fetching from API if needed
   void _initializeData(BuildContext context) {
     if (_isInitialized) return;
     _isInitialized = true;
@@ -32,32 +45,67 @@ class ProfileScreen extends StatelessWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) return;
 
-      // 🔹 Load user data from storage first, then from API only if needed
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.loadUserDataFromStorage();
-
-      // Only fetch from API if we don't have user data from storage
-      if (context.mounted &&
-          userProvider.userModel == null &&
-          !userProvider.isLoading) {
-        await userProvider.fetchUserData();
-      }
-
-      // 🔹 Load stats from storage first, then from API only if needed
+      await _loadUserData(context);
       if (!context.mounted) return;
-      final statsProvider = Provider.of<UserStatsProvider>(
-        context,
-        listen: false,
-      );
-      await statsProvider.loadUserStatsFromStorage();
-
-      // Only fetch from API if we don't have stats from storage
-      if (context.mounted &&
-          statsProvider.userStats == null &&
-          !statsProvider.isLoading) {
-        await statsProvider.fetchUserStats();
-      }
+      await _loadStatsData(context);
+      if (!context.mounted) return;
+      await _loadPerformanceData(context);
     });
+  }
+
+  /// Load user data from storage, then API if needed
+  Future<void> _loadUserData(BuildContext context) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await userProvider.loadUserDataFromStorage();
+
+    if (context.mounted &&
+        userProvider.userModel == null &&
+        !userProvider.isLoading) {
+      await userProvider.fetchUserData();
+    }
+  }
+
+  /// Load stats data from storage, then API if needed
+  Future<void> _loadStatsData(BuildContext context) async {
+    final statsProvider = Provider.of<UserStatsProvider>(
+      context,
+      listen: false,
+    );
+    await statsProvider.loadUserStatsFromStorage();
+
+    if (context.mounted &&
+        statsProvider.userStats == null &&
+        !statsProvider.isLoading) {
+      await statsProvider.fetchUserStats();
+    }
+  }
+
+  /// Load performance data from storage, then API if needed
+  Future<void> _loadPerformanceData(BuildContext context) async {
+    final performanceProvider = Provider.of<ProfileProvider>(
+      context,
+      listen: false,
+    );
+    await performanceProvider.loadProfileFromStorage();
+
+    if (context.mounted &&
+        performanceProvider.profileData == null &&
+        !performanceProvider.isLoading) {
+      await performanceProvider.fetchProfile();
+    }
+  }
+
+  /// Refresh all data from API
+  Future<void> _refreshAllData(
+    UserProvider userProvider,
+    UserStatsProvider statsProvider,
+    ProfileProvider performanceProvider,
+  ) async {
+    await Future.wait([
+      userProvider.fetchUserData(),
+      statsProvider.fetchUserStats(),
+      performanceProvider.fetchProfile(),
+    ]);
   }
 
   @override
@@ -66,64 +114,78 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       body: SafeArea(
-        child: Consumer2<UserProvider, UserStatsProvider>(
-          builder: (context, userProvider, statsProvider, child) {
+        child: Consumer3<UserProvider, UserStatsProvider, ProfileProvider>(
+          builder: (context, userProvider, statsProvider, performanceProvider, child) {
             final user = userProvider.userModel;
             final stats = statsProvider.userStats;
+            final performance = performanceProvider.profileData;
 
             // Only show loading if we have no data AND we're currently loading
-            final isLoading = userProvider.isLoading || statsProvider.isLoading;
+            final isLoading =
+                userProvider.isLoading ||
+                statsProvider.isLoading ||
+                performanceProvider.isLoading;
             final hasNoData = user == null || stats == null;
 
             if (isLoading && hasNoData) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back Button (only show when navigated to as a pushed screen)
-                  if (hideSettingsCard) ...[
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Row(
-                        children: [
-                          Icon(Icons.arrow_back, color: AppColors.black),
-                          AppSpacing.w8,
-                          Text(
-                            AppStrings.backButton,
-                            style: FontManager.bodyText(color: AppColors.black),
-                          ),
-                        ],
+            return RefreshIndicator(
+              onRefresh: () => _refreshAllData(
+                userProvider,
+                statsProvider,
+                performanceProvider,
+              ),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Back Button (only show when navigated to as a pushed screen)
+                    if (hideSettingsCard) ...[
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.arrow_back, color: AppColors.black),
+                            AppSpacing.w8,
+                            Text(
+                              AppStrings.backButton,
+                              style: FontManager.bodyText(
+                                color: AppColors.black,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      AppSpacing.h24,
+                    ],
+
+                    // Profile Header
+                    buildProfileHeader(user, stats, performance),
+
                     AppSpacing.h24,
-                  ],
 
-                  // Profile Header
-                  buildProfileHeader(user, stats),
+                    // Progress Section
+                    buildProgressSection(stats, performance),
 
-                  AppSpacing.h24,
-
-                  // Progress Section
-                  buildProgressSection(stats),
-
-                  AppSpacing.h24,
-
-                  // Subject Performance Section
-                  buildSubjectPerformanceSection(),
-
-                  AppSpacing.h40,
-                  // Settings Card (conditionally shown)
-                  if (!hideSettingsCard) ...[
-                    buildSettingsCard(context),
                     AppSpacing.h24,
+
+                    // Subject Performance Section
+                    buildSubjectPerformanceSection(performance),
+
+                    AppSpacing.h40,
+                    // Settings Card (conditionally shown)
+                    if (!hideSettingsCard) ...[
+                      buildSettingsCard(context),
+                      AppSpacing.h24,
+                    ],
                   ],
-                ],
+                ),
               ),
             );
           },
@@ -132,17 +194,24 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// PROFILE HEADER
-  Widget buildProfileHeader(HomeModel? user, UserStatsModel? stats) {
+  /// Build profile header with avatar, name, and XP
+  Widget buildProfileHeader(
+    HomeModel? user,
+    UserStatsModel? stats,
+    ProfileModel? performance,
+  ) {
+    // Prefer performance data, fallback to user/stats
+    final profilePic = performance?.profilePic ?? user?.profilePic;
+    final fullName =
+        performance?.fullName ?? user?.fullName ?? AppStrings.userName;
+    final totalXp = performance?.totalXp ?? stats?.totalXp;
+
     return Center(
       child: Column(
         children: [
-          _buildProfileAvatar(user?.profilePic),
+          _buildProfileAvatar(profilePic),
           AppSpacing.h16,
-          Text(
-            user?.fullName ?? AppStrings.userName,
-            style: FontManager.bigTitle(fontSize: 18),
-          ),
+          Text(fullName, style: FontManager.bigTitle(fontSize: 18)),
           AppSpacing.h8,
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -154,7 +223,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               AppSpacing.w8,
               Text(
-                "XP: ${stats?.totalXp ?? '--'}",
+                "XP: ${totalXp ?? '--'}",
                 style: FontManager.bodyText(color: Colors.orange),
               ),
             ],
@@ -167,16 +236,7 @@ class ProfileScreen extends StatelessWidget {
   /// Build profile avatar with network image fallback
   Widget _buildProfileAvatar(String? profilePicUrl) {
     if (profilePicUrl != null && profilePicUrl.isNotEmpty) {
-      // Handle relative URLs by prepending base URL
-      String imageUrl = profilePicUrl;
-      if (!profilePicUrl.startsWith('http://') &&
-          !profilePicUrl.startsWith('https://')) {
-        // Remove leading slash if present and combine with base URL
-        String cleanUrl = profilePicUrl.startsWith('/')
-            ? profilePicUrl.substring(1)
-            : profilePicUrl;
-        imageUrl = '${ApiService.baseUrl}/$cleanUrl';
-      }
+      final imageUrl = _buildImageUrl(profilePicUrl);
 
       return CircleAvatar(
         radius: 50.r,
@@ -215,6 +275,20 @@ class ProfileScreen extends StatelessWidget {
         backgroundImage: AssetImage('assets/images/man.png'),
       );
     }
+  }
+
+  /// Build full image URL from relative or absolute URL
+  String _buildImageUrl(String profilePicUrl) {
+    if (profilePicUrl.startsWith('http://') ||
+        profilePicUrl.startsWith('https://')) {
+      return profilePicUrl;
+    }
+
+    // Handle relative URLs by prepending base URL
+    final cleanUrl = profilePicUrl.startsWith('/')
+        ? profilePicUrl.substring(1)
+        : profilePicUrl;
+    return '${ApiService.baseUrl}/$cleanUrl';
   }
 
   /// SETTINGS CARD
@@ -301,6 +375,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// Build a settings row with icon, text, and navigation arrow
   Widget buildSettingRow({
     required IconData icon,
     required String text,
@@ -329,8 +404,11 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// PROGRESS SECTION
-  Widget buildProgressSection(UserStatsModel? stats) {
+  /// Build progress section with quiz stats
+  Widget buildProgressSection(
+    UserStatsModel? stats,
+    ProfileModel? performance,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -340,21 +418,17 @@ class ProfileScreen extends StatelessWidget {
           children: [
             buildProgressCard(
               label: AppStrings.quizAttemptedLabel,
-              value: stats != null
-                  ? '${stats.totalAttemptedQuizzes}'
-                  : AppStrings.quizAttemptedValue,
+              value: _getQuizAttemptedValue(stats, performance),
             ),
             AppSpacing.h12,
             buildProgressCard(
               label: AppStrings.averageScoreLabel,
-              value: stats != null
-                  ? '${stats.averageScore.toStringAsFixed(1)}%'
-                  : AppStrings.averageScoreValue,
+              value: _getAverageScoreValue(stats, performance),
             ),
             AppSpacing.h12,
             buildProgressCard(
               label: AppStrings.subjectCoveredLabel,
-              value: AppStrings.subjectCoveredValue,
+              value: _getSubjectCoveredValue(performance),
             ),
           ],
         ),
@@ -362,6 +436,37 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// Get quiz attempted value with fallback
+  String _getQuizAttemptedValue(
+    UserStatsModel? stats,
+    ProfileModel? performance,
+  ) {
+    if (performance != null) return '${performance.quizAttempted}';
+    if (stats != null) return '${stats.totalAttemptedQuizzes}';
+    return AppStrings.quizAttemptedValue;
+  }
+
+  /// Get average score value with fallback
+  String _getAverageScoreValue(
+    UserStatsModel? stats,
+    ProfileModel? performance,
+  ) {
+    if (performance != null) {
+      return '${performance.averageScore.toStringAsFixed(1)}%';
+    }
+    if (stats != null) {
+      return '${stats.averageScore.toStringAsFixed(1)}%';
+    }
+    return AppStrings.averageScoreValue;
+  }
+
+  /// Get subject covered value with fallback
+  String _getSubjectCoveredValue(ProfileModel? performance) {
+    if (performance != null) return '${performance.subjectCovered}';
+    return AppStrings.subjectCoveredValue;
+  }
+
+  /// Build a progress card with label and value
   Widget buildProgressCard({required String label, required String value}) {
     return Container(
       width: double.infinity,
@@ -392,8 +497,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// SUBJECT PERFORMANCE
-  Widget buildSubjectPerformanceSection() {
+  /// Build subject performance section with list of subjects
+  Widget buildSubjectPerformanceSection(ProfileModel? performance) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -401,51 +506,81 @@ class ProfileScreen extends StatelessWidget {
         AppSpacing.h16,
         Container(
           padding: EdgeInsets.all(16.r),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              buildSubjectProgress(AppStrings.tectonicsSubject, 48),
-              AppSpacing.h12,
-              buildSubjectProgress(AppStrings.waterCycleSubject, 74),
-              AppSpacing.h12,
-              buildSubjectProgress(AppStrings.carbonCycleSubject, 54),
-              AppSpacing.h12,
-              buildSubjectProgress(AppStrings.globalisationSubject, 88),
-              AppSpacing.h12,
-              buildSubjectProgress(AppStrings.migrationSubject, 65),
-              AppSpacing.h12,
-              buildSubjectProgress(AppStrings.coastsSubject, 76),
-              AppSpacing.h12,
-              buildSubjectProgress(AppStrings.glaciersSubject, 24),
-              AppSpacing.h12,
-              buildSubjectProgress(AppStrings.regeneratingPlacesSubject, 82),
-            ],
-          ),
+          decoration: _buildCardDecoration(),
+          child: _buildSubjectList(performance),
         ),
       ],
     );
   }
 
-  Widget buildSubjectProgress(String subject, int percentage) {
+  /// Build card decoration
+  BoxDecoration _buildCardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12.r),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    );
+  }
+
+  /// Build subject list or empty state
+  Widget _buildSubjectList(ProfileModel? performance) {
+    if (performance == null || performance.subjects.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: performance.subjects.length,
+      itemBuilder: (context, index) {
+        final subject = performance.subjects[index];
+
+        return Column(
+          children: [
+            if (index > 0) AppSpacing.h12,
+            buildSubjectProgress(subject.moduleName, subject.progress),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Build empty state widget
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.r),
+        child: Text(
+          'No subject data available',
+          style: FontManager.bodyText(color: Colors.grey),
+        ),
+      ),
+    );
+  }
+
+  /// Build individual subject progress bar
+  Widget buildSubjectProgress(String subject, double progress) {
+    // Calculate actual percentage for display
+    final progressPercentage = (progress * 100).toInt();
+
+    // Calculate widthFactor: use 2/100 if progress is 0, otherwise use actual progress
+    final widthFactor = progress == 0 ? 2 / 100 : progress;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(subject, style: FontManager.bodyText(color: Colors.black)),
+            Text(subject, style: FontManager.generalText(color: Colors.black)),
             Text(
-              '$percentage%',
+              '$progressPercentage%',
               style: FontManager.bodyText(color: Colors.black),
             ),
           ],
@@ -459,7 +594,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
-            widthFactor: percentage / 100,
+            widthFactor: widthFactor,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4.r),
@@ -550,79 +685,3 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
-
-// void showTimeoutDialog(BuildContext context) {
-//   showDialog(
-//     context: context,
-//     barrierDismissible: false,
-//     builder: (BuildContext context) {
-//       return AlertDialog(
-//         shape: RoundedRectangleBorder(
-//           borderRadius: BorderRadius.circular(16.r),
-//         ),
-//         contentPadding: EdgeInsets.all(24.w),
-//         content: Column(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             // Clock Icon
-//             Container(
-//               width: 60.w,
-//               height: 60.h,
-//               decoration: BoxDecoration(
-//                 color: Colors.red.shade50,
-//                 shape: BoxShape.circle,
-//               ),
-//               child: Icon(
-//                 Icons.access_time_rounded,
-//                 color: Colors.red,
-//                 size: 32.sp,
-//               ),
-//             ),
-//             AppSpacing.h20,
-
-//             // Title
-//             Text(
-//               AppStrings.timeUp,
-//               style: FontManager.bigTitle(),
-//               textAlign: TextAlign.center,
-//             ),
-
-//             AppSpacing.h14,
-
-//             // Description
-//             Text(
-//               AppStrings.timeUpwarning,
-//               style: FontManager.bodyText(color: AppColors.grey),
-//               textAlign: TextAlign.center,
-//             ),
-
-//             AppSpacing.h24,
-
-//             // Ok Button
-//             SizedBox(
-//               width: double.infinity,
-//               child: ElevatedButton(
-//                 onPressed: () => Navigator.push(
-//                   context,
-//                   MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-//                 ),
-//                 style: ElevatedButton.styleFrom(
-//                   backgroundColor: Color(0xFF4A90E2), // Blue color
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(8.r),
-//                   ),
-//                   padding: EdgeInsets.symmetric(vertical: 14.h),
-//                   elevation: 0,
-//                 ),
-//                 child: Text(
-//                   AppStrings.cancelButton, // Or use "Ok" directly
-//                   style: FontManager.bodyText(color: Colors.white),
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       );
-//     },
-//   );
-// }

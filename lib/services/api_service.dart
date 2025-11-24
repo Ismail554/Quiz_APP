@@ -24,4 +24,6 @@ class ApiService {
 
   // Auth section
   static String get deleteAccount => "$_baseUrl/auth/delete-account/";
+  // Profile section
+  static String get userPerformance => "$_baseUrl/student/user-performance/";
 }

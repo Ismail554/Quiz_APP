@@ -13,6 +13,7 @@ import 'package:geography_geyser/provider/settings_provider/account_delete_provi
 import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
+import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/splash/splash_screen.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/congratulations.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/verify_screen.dart';
@@ -37,6 +38,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PrivacySettingsProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => UserStatsProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => SelectTimeProvider()),
         ChangeNotifierProvider(create: (_) => QuizProvider()),
         ChangeNotifierProvider(create: (_) => QuizFinishProvider()),
