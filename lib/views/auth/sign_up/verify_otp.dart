@@ -61,10 +61,22 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     final localPart = parts[0];
     final domain = parts[1];
 
-    if (localPart.isEmpty) return email;
+    if (localPart.length <= 3) {
+      // If too small, don't mask fully — keep it safe
+      return email;
+    }
 
-    // Show first letter and mask the rest
-    final maskedLocal = localPart[0] + ('*' * (localPart.length - 1));
+    // First letter
+    final first = localPart[0];
+
+    // Last two letters
+    final lastTwo = localPart.substring(localPart.length - 2);
+
+    // Middle stars
+    final starsCount = localPart.length - 3; // remove first + lastTwo
+    final stars = '*' * starsCount;
+
+    final maskedLocal = '$first$stars$lastTwo';
 
     return '$maskedLocal@$domain';
   }
@@ -114,7 +126,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.all(12.0),
+                padding: EdgeInsets.only(left: 16.r, right: 16.r),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: InkWell(
@@ -127,213 +139,208 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
               ),
               Text(
                 AppStrings.verifyAccountTitle,
-                style: FontManager.bigTitle(fontSize: 22),
-                //  TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w700),
               ),
               Text(AppStrings.almostDone),
-              AppSpacing.h16,
+              AppSpacing.h12,
               Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(20.r),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
+                padding: EdgeInsets.all(16.0.r),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Center(
+                      child: Image.asset(
+                        "assets/images/security_vec.png",
+                        width: 200.w,
+                        height: 200.h,
+                        fit: BoxFit.contain,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Center(
-                        child: Image.asset(
-                          "assets/images/security_vec.png",
-                          // width: 180.w,
-                          height: 180.h,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
+                    ),
 
-                      AppSpacing.h12,
-                      Text(
-                        AppStrings.verificationCodePrompt,
-                        style: FontManager.bigTitle(),
-                      ),
-                      AppSpacing.h16,
-                      Text(
-                        AppStrings.verificationCodeSent,
-                        style: FontManager.subtitleText(),
-                      ),
-                      AppSpacing.h10,
-                      Text(
-                        widget.email != null && widget.email!.isNotEmpty
-                            ? _maskEmail(widget.email!)
-                            : AppStrings.otpInstructionEmailExample,
-                        style: FontManager.subSubtitleText(),
-                      ),
-                      AppSpacing.h32,
-                      Center(
-                        child: Pinput(
-                          keyboardType: TextInputType.phone,
-                          controller: _pinController,
-                          focusNode: _pinFocusNode,
-                          length: 6,
-                          defaultPinTheme: defaultPinTheme,
-                          focusedPinTheme: focusedPinTheme,
-                          submittedPinTheme: submittedPinTheme,
-                          pinAnimationType: PinAnimationType.fade,
-                          hapticFeedbackType: HapticFeedbackType.lightImpact,
-                          onCompleted: (pin) {
-                            debugPrint('Completed: $pin');
-                          },
-                          onChanged: (value) {
-                            debugPrint('Changed: $value');
-                          },
-                          cursor: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(bottom: 8.h),
-                                width: 22.w,
-                                height: 1.h,
-                                color: AppColors.buttonColor,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      AppSpacing.h24,
-                      RichText(
-                        text: TextSpan(
-                          text: AppStrings.didntReceiveCode,
-                          style: FontManager.bodyText(),
+                    AppSpacing.h4,
+                    Text(
+                      AppStrings.verificationCodePrompt,
+                      style: FontManager.bigTitle(),
+                    ),
+                    AppSpacing.h16,
+                    Text(
+                      AppStrings.verificationCodeSent,
+                      style: FontManager.subtitleText(),
+                    ),
+                    AppSpacing.h10,
+                    Text(
+                      widget.email != null && widget.email!.isNotEmpty
+                          ? _maskEmail(widget.email!)
+                          : AppStrings.otpInstructionEmailExample,
+                      style: FontManager.subSubtitleText(),
+                    ),
+                    AppSpacing.h32,
+                    Center(
+                      child: Pinput(
+                        controller: _pinController,
+                        focusNode: _pinFocusNode,
+                        length: 6,
+                        defaultPinTheme: defaultPinTheme,
+                        focusedPinTheme: focusedPinTheme,
+                        submittedPinTheme: submittedPinTheme,
+                        pinAnimationType: PinAnimationType.fade,
+                        hapticFeedbackType: HapticFeedbackType.lightImpact,
+                        onCompleted: (pin) {
+                          debugPrint('Completed: $pin');
+                        },
+                        onChanged: (value) {
+                          debugPrint('Changed: $value');
+                        },
+                        cursor: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            TextSpan(
-                              text: ' ${AppStrings.resendOTPCode}',
-                              style: FontManager.bodyText(
-                                color: AppColors.buttonColor,
-                              ),
+                            Container(
+                              margin: EdgeInsets.only(bottom: 8.h),
+                              width: 22.w,
+                              height: 1.h,
+                              color: AppColors.buttonColor,
                             ),
                           ],
                         ),
                       ),
-                      AppSpacing.h10,
-                      // Verify Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 46.h,
-                        child: ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-                                  final otp = _pinController.text.trim();
+                    ),
 
-                                  if (otp.length != 6) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Please enter 6-digit OTP",
-                                        ),
-                                      ),
-                                    );
-                                    return;
-                                  }
+                    AppSpacing.h24,
+                    RichText(
+                      text: TextSpan(
+                        text: AppStrings.didntReceiveCode,
+                        style: FontManager.bodyText(),
+                        children: [
+                          TextSpan(
+                            text: ' ${AppStrings.resendOTPCode}',
+                            style: FontManager.bodyText(
+                              color: _resendTimer > 0
+                                  ? Colors.grey
+                                  : AppColors.buttonColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AppSpacing.h10,
+                    // Verify Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46.h,
+                      child: ElevatedButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                final otp = _pinController.text.trim();
 
-                                  setState(() => _isLoading = true);
+                                if (otp.length != 6) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Please enter 6-digit OTP'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
 
-                                  try {
-                                    final response =
-                                        await VerifyProvider.verifyOtp(
-                                          otp,
-                                          context,
-                                        );
+                                setState(() => _isLoading = true);
 
-                                    if (response['success'] == true) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text("OTP Verified ✅"),
-                                          ),
-                                        );
+                                try {
+                                  final response =
+                                      await VerifyProvider.verifyOtp(
+                                        otp,
+                                        context,
+                                      );
 
-                                        // ✅ Navigate ONLY on success
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                RegCongratulations_Screen(),
-                                          ),
-                                        );
-                                      }
-                                    } else {
-                                      // ❌ OTP failed → navigator disabled automatically
-                                      throw {
-                                        'message':
-                                            response['message'] ??
-                                            'OTP verification failed',
-                                      };
-                                    }
-                                  } catch (e) {
-                                    String message = 'OTP verification failed';
-                                    if (e is Map && e['message'] != null) {
-                                      message = e['message'].toString();
-                                    }
-
+                                  if (response['success'] == true) {
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        SnackBar(content: Text(message)),
+                                        SnackBar(
+                                          content: Text('OTP Verified ✅'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+
+                                      // ✅ Navigate ONLY on success
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              RegCongratulations_Screen(),
+                                        ),
                                       );
                                     }
-                                  } finally {
-                                    if (mounted)
-                                      setState(() => _isLoading = false);
+                                  } else {
+                                    // ❌ OTP failed → navigator disabled automatically
+                                    throw {
+                                      'message':
+                                          response['message'] ??
+                                          'OTP verification failed',
+                                    };
                                   }
-                                },
+                                } catch (e) {
+                                  String message = 'OTP verification failed';
+                                  if (e is Map && e['message'] != null) {
+                                    message = e['message'].toString();
+                                  }
 
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.buttonColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            elevation: 0,
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(message),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted)
+                                    setState(() => _isLoading = false);
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.buttonColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : Text(
-                                  AppStrings.verifyAccountTitle,
-                                  style: FontManager.buttonTextRegular(),
-                                ),
+                          elevation: 0,
+                          disabledBackgroundColor: Colors.grey,
                         ),
+                        child: _isLoading
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                'Verify Account',
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
-
-                      AppSpacing.h20,
-                      // Resend Code Timer
-                      Text(
-                        'Resend code in ${_resendTimer}s',
-                        style: FontManager.buttonText(),
-                        //  TextStyle(
-                        //   fontSize: 14.sp,
-                        //   fontWeight: FontWeight.w500,
-                        //   color: Colors.black87,
-                        // ),
+                    ),
+                    AppSpacing.h20,
+                    // Resend Code Timer
+                    Text(
+                      'Resend code in ${_resendTimer}s',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
                       ),
+                    ),
 
-                      // Help Text
-                    ],
-                  ),
+                    // Help Text
+                  ],
                 ),
               ),
             ],

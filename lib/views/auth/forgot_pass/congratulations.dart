@@ -4,6 +4,7 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/elevated_button.dart';
+import 'package:geography_geyser/views/auth/login/login.dart';
 
 class CongratulationsScreen extends StatelessWidget {
   const CongratulationsScreen({super.key});
@@ -40,7 +41,13 @@ class CongratulationsScreen extends StatelessWidget {
                     AppSpacing.h18,
                     ElevatedButtonCustom(
                       onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
                       },
                       text: AppStrings.backToLogin,
                       backgroundColor: Colors.blue,
