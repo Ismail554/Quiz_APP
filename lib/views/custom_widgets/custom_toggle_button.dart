@@ -7,12 +7,14 @@ class CustomToggleButton extends StatefulWidget {
   final String option1;
   final String option2;
   final ValueChanged<String>? onChanged; // optional callback
+  final String? initialSelection; // initial selected option
 
   const CustomToggleButton({
     Key? key,
     required this.option1,
     required this.option2,
     this.onChanged,
+    this.initialSelection,
   }) : super(key: key);
 
   @override
@@ -21,6 +23,15 @@ class CustomToggleButton extends StatefulWidget {
 
 class _CustomToggleButtonState extends State<CustomToggleButton> {
   String? _selectedOption; // internal selected value
+
+  @override
+  void initState() {
+    super.initState();
+    // Set initial selection if provided
+    if (widget.initialSelection != null) {
+      _selectedOption = widget.initialSelection;
+    }
+  }
 
   void _selectOption(String option) {
     setState(() {

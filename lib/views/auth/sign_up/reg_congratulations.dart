@@ -4,6 +4,7 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/elevated_button.dart';
+import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
@@ -46,13 +47,14 @@ class _RegCongratulations_ScreenState extends State<RegCongratulations_Screen> {
                       style: FontManager.subtitleText(fontSize: 18),
                     ),
                     AppSpacing.h18,
-                    ElevatedButtonCustom(
+                      ElevatedButtonCustom(
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => OptionalModuleSettings(),
+                            builder: (context) => LoginScreen(),
                           ),
+                          (Route<dynamic> route) => false,
                         );
                       },
                       text: AppStrings.goHome,

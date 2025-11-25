@@ -4,10 +4,11 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/provider/settings_provider/optional_module_provider.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_toggle_button.dart';
-import 'package:geography_geyser/views/custom_widgets/module_selection_row.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:provider/provider.dart';
 
 class OptionalModuleSettings extends StatefulWidget {
   const OptionalModuleSettings({super.key});
@@ -17,10 +18,20 @@ class OptionalModuleSettings extends StatefulWidget {
 }
 
 class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
-  bool row1LeftSelected = true;
-  bool row2RightSelected = true;
-  bool row3LeftSelected = false;
-  bool row3RightSelected = false;
+  @override
+  void initState() {
+    super.initState();
+    // Fetch modules when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final provider = Provider.of<OptionalModuleProvider>(
+          context,
+          listen: false,
+        );
+        provider.fetchOptionalModules();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,64 +68,118 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                     ),
                     AppSpacing.h32,
 
-                    //     // Module Selection Rows
+                    // Module Selection from API
+                    Consumer<OptionalModuleProvider>(
+                      builder: (context, provider, child) {
+                        if (provider.isLoading) {
+                          return Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
 
-                    //     ModuleSelectionRow(
-                    //       leftOption: AppStrings.moduleCoasts,
-                    //       rightOption: AppStrings.moduleCoasts,
-                    //       isLeftSelected: row1LeftSelected,
-                    //       isRightSelected: !row1LeftSelected,
-                    //       onSelectionChanged: (isLeft) {
-                    //         setState(() {
-                    //           row1LeftSelected = isLeft;
-                    //         });
-                    //       },
-                    //     ),
-                    //     AppSpacing.h16,
+                        if (provider.errorMessage != null) {
+                          return Container(
+                            padding: EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8.0),
+                              border: Border.all(color: Colors.red.shade300),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    provider.errorMessage!,
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.close, size: 18),
+                                  color: Colors.red,
+                                  onPressed: () {
+                                    provider.clearError();
+                                    provider.fetchOptionalModules();
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
-                    //     ModuleSelectionRow(
-                    //       leftOption: AppStrings.moduleGlaciers,
-                    //       rightOption: AppStrings.moduleHHRI,
-                    //       isLeftSelected: !row2RightSelected,
-                    //       isRightSelected: row2RightSelected,
-                    //       onSelectionChanged: (isLeft) {
-                    //         setState(() {
-                    //           row2RightSelected = !isLeft;
-                    //         });
-                    //       },
-                    //     ),
-                    //     AppSpacing.h16,
+                        if (provider.modulePairs.isEmpty) {
+                          return Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40.0),
+                              child: Text(
+                                'No optional modules available',
+                                style: FontManager.bodyText(),
+                              ),
+                            ),
+                          );
+                        }
 
-                    //     ModuleSelectionRow(
-                    //       leftOption: AppStrings.moduleMigrations,
-                    //       rightOption: AppStrings.moduleCoasts,
-                    //       isLeftSelected: row3LeftSelected,
-                    //       isRightSelected: row3RightSelected,
-                    //       onSelectionChanged: (isLeft) {
-                    //         setState(() {
-                    //           row3LeftSelected = isLeft;
-                    //           row3RightSelected = !isLeft;
-                    //         });
-                    //       },
-                    //     ),
-                    //     AppSpacing.h20,
+                        return Column(
+                          children: [
+                            ...provider.modulePairs.map((pair) {
+                              if (pair.modules.length < 2) {
+                                return SizedBox.shrink();
+                              }
 
-                    // new toggle button UI
-                    CustomToggleButton(
-                      option1: AppStrings.carbonCycleSubject,
-                      option2: AppStrings.glaciersSubject,
+                              final module1 = pair.modules[0];
+                              final module2 = pair.modules[1];
+
+                              // Determine initial selection based on selected_module
+                              String? initialSelection;
+                              final selectedModuleId = pair.selectedModule
+                                  ?.trim();
+                              if (selectedModuleId != null &&
+                                  selectedModuleId.isNotEmpty) {
+                                // Check which module matches the selected_module ID
+                                if (selectedModuleId == module1.id.trim()) {
+                                  initialSelection = module1.moduleName;
+                                } else if (selectedModuleId ==
+                                    module2.id.trim()) {
+                                  initialSelection = module2.moduleName;
+                                }
+                              }
+
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 12.h),
+                                child: CustomToggleButton(
+                                  option1: module1.moduleName,
+                                  option2: module2.moduleName,
+                                  initialSelection: initialSelection,
+                                  onChanged: (selectedModuleName) {
+                                    // Find the module ID for the selected name
+                                    String? selectedModuleId;
+                                    if (selectedModuleName ==
+                                        module1.moduleName) {
+                                      selectedModuleId = module1.id;
+                                    } else if (selectedModuleName ==
+                                        module2.moduleName) {
+                                      selectedModuleId = module2.id;
+                                    }
+
+                                    // Update selection in provider
+                                    provider.updateSelectedModule(
+                                      pair.pairNumber,
+                                      selectedModuleId,
+                                    );
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ],
+                        );
+                      },
                     ),
-                    AppSpacing.h12,
-                    CustomToggleButton(
-                      option1: AppStrings.coastsSubject,
-                      option2: AppStrings.migrationSubject,
-                    ),
-                    AppSpacing.h12,
-                    CustomToggleButton(
-                      option1: AppStrings.coastsSubject,
-                      option2: AppStrings.glaciersSubject,
-                    ),
-                    AppSpacing.h12,
                   ],
                 ),
               ),

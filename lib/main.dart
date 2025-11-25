@@ -12,6 +12,7 @@ import 'package:geography_geyser/provider/module_provider/subject_provider.dart'
 import 'package:geography_geyser/provider/settings_provider/account_delete_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
+import 'package:geography_geyser/provider/settings_provider/optional_module_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/provider/forgot_password/forgot_pass_provider.dart';
@@ -48,6 +49,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AccountDeleteProvider()),
         ChangeNotifierProvider(create: (_) => ForgotPasswordProvider()),
         ChangeNotifierProvider(create: (_) => NewPassSetProvider()),
+        ChangeNotifierProvider(create: (_) => OptionalModuleProvider()),
       ],
       child: const MyApp(),
     ),
