@@ -19,6 +19,7 @@ import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
+import 'package:geography_geyser/provider/settings_provider/optional_module_provider.dart';
 
 // Services
 import 'package:geography_geyser/services/api_service.dart';
@@ -36,6 +37,11 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key, this.hideSettingsCard = false});
 
   static bool _isInitialized = false;
+
+  /// Reset initialization flag (useful after logout)
+  static void resetInitialization() {
+    _isInitialized = false;
+  }
 
   /// Initialize data by loading from storage first, then fetching from API if needed
   void _initializeData(BuildContext context) {
@@ -656,7 +662,39 @@ class ProfileScreen extends StatelessWidget {
                       // Close dialog
                       Navigator.of(context).pop();
 
-                      // Clear secure storage
+                      // Clear all provider data before logout
+                      final userProvider = Provider.of<UserProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final statsProvider = Provider.of<UserStatsProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final performanceProvider = Provider.of<ProfileProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final optionalModuleProvider =
+                          Provider.of<OptionalModuleProvider>(
+                            context,
+                            listen: false,
+                          );
+
+                      // Clear all provider data
+                      await Future.wait([
+                        userProvider.clearUserData(),
+                        statsProvider.clearUserStats(),
+                        performanceProvider.clearProfileData(),
+                      ]);
+
+                      // Clear optional module provider (synchronous)
+                      optionalModuleProvider.clearModulePairs();
+
+                      // Reset initialization flag so new user data loads properly
+                      ProfileScreen.resetInitialization();
+
+                      // Clear secure storage and other auth data
                       await LoginProvider.logout();
 
                       if (!context.mounted) return;

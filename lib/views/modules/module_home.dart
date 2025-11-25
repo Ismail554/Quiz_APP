@@ -93,13 +93,47 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
             }
 
             // Final UI: Use ListView.builder for better performance
+            // Add synoptic as first item when data is loaded
+            final hasData = subjects.isNotEmpty && !isLoading;
+            final totalItems = hasData ? subjects.length + 1 : subjects.length;
+
             return ListView.builder(
               padding: const EdgeInsets.all(16.0),
-              itemCount: subjects.length,
+              itemCount: totalItems,
               // ✅ Add cacheExtent for better scrolling performance
               cacheExtent: 500,
               itemBuilder: (context, index) {
-                final subject = subjects[index];
+                // Show synoptic as first item when data is loaded
+                if (hasData && index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14.0),
+                    child: CustomModule(
+                      key: const ValueKey('synoptic'),
+                      text: 'Synoptic'.toUpperCase(),
+                      isSelected: selectedIndex == index,
+                      textStyle: FontManager.headerSubtitleText(
+                        fontSize: 20,
+                        color:
+                            AppColors.buttonColor, // Custom color for synoptic
+                      ),
+                      onPressed: () {
+                        selectedIndex = index;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                SelectTime_screen(moduleId: 'synoptic'),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }
+
+                // Adjust index for subjects list (subtract 1 if synoptic is shown)
+                final subjectIndex = hasData ? index - 1 : index;
+                final subject = subjects[subjectIndex];
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 14.0),
                   child: CustomModule(

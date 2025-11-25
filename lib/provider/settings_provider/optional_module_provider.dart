@@ -206,4 +206,11 @@ class OptionalModuleProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+
+  /// Clear module pairs data (e.g., on logout)
+  void clearModulePairs() {
+    _modulePairs = [];
+    _errorMessage = null;
+    notifyListeners();
+  }
 }

@@ -177,27 +177,23 @@ class LoginProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------- LOGOUT ----------------
   static Future<void> logout() async {
-    // Sign out from Google
     await GoogleSignIn().signOut();
-    // Sign out from Firebase
     await FirebaseAuth.instance.signOut();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
 
-    const storage = FlutterSecureStorage();
+    final storage = const FlutterSecureStorage();
     await storage.deleteAll();
 
     print("🚪 All login data cleared (both Secure + Shared).");
   }
 
-  // ---------------- PRINT ALL STORED DATA ----------------
   static Future<void> printAllStorageData() async {
     print("========== Checking Stored Data ==========");
 
-    // Secure Storage
-    final secureStorage = FlutterSecureStorage();
+    final secureStorage = const FlutterSecureStorage();
     final secureData = await secureStorage.readAll();
     print("🔐 Secure Storage:");
     if (secureData.isEmpty) {
@@ -208,7 +204,6 @@ class LoginProvider extends ChangeNotifier {
       });
     }
 
-    // Shared Preferences
     final prefs = await SharedPreferences.getInstance();
     final prefKeys = prefs.getKeys();
     print("📦 Shared Preferences:");
