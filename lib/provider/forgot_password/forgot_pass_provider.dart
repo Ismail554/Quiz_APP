@@ -118,6 +118,7 @@ class ForgotPasswordProvider extends ChangeNotifier {
       } else {
         _errorMessage =
             responseData['error'] ??
+            responseData['msg'] ??
             responseData['message'] ??
             'Failed to verify OTP';
         _isLoading = false;
@@ -126,7 +127,15 @@ class ForgotPasswordProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Verify OTP Error: $e');
-      _errorMessage = e.toString();
+
+      // Handle different error types
+      if (e is Map) {
+        _errorMessage =
+            e['msg'] ?? e['error'] ?? e['message'] ?? 'Failed to verify OTP';
+      } else {
+        _errorMessage = e.toString();
+      }
+
       _isLoading = false;
       notifyListeners();
       rethrow;

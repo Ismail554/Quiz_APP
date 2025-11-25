@@ -300,42 +300,59 @@ class _VerifyScreenState extends State<VerifyScreen> {
                                     : () async {
                                         if (_pinController.text.length == 6) {
                                           try {
-                                            await provider
+                                            final response = await provider
                                                 .verifyForgotPasswordOtp(
                                                   _pinController.text,
                                                 );
 
                                             if (context.mounted) {
+                                              // Show success message from API or default
+                                              final successMessage =
+                                                  response['msg'] ??
+                                                  'OTP verified successfully!';
+
                                               ScaffoldMessenger.of(
                                                 context,
                                               ).showSnackBar(
                                                 SnackBar(
-                                                  content: Text(
-                                                    'OTP verified successfully!',
-                                                  ),
+                                                  content: Text(successMessage),
                                                   backgroundColor: Colors.green,
                                                 ),
                                               );
 
-                                              Navigator.pushReplacement(
+                                              Navigator.pushAndRemoveUntil(
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
                                                       NewPass_screen(),
                                                 ),
+                                                (route) =>
+                                                    false, // Remove all previous routes
                                               );
                                             }
                                           } catch (e) {
                                             // Error handled in provider
-                                            if (context.mounted &&
-                                                provider.errorMessage != null) {
+                                            if (context.mounted) {
+                                              String errorMsg =
+                                                  'OTP verification failed';
+
+                                              if (provider.errorMessage !=
+                                                  null) {
+                                                errorMsg =
+                                                    provider.errorMessage!;
+                                              } else if (e is Map) {
+                                                errorMsg =
+                                                    e['msg'] ??
+                                                    e['error'] ??
+                                                    e['message'] ??
+                                                    errorMsg;
+                                              }
+
                                               ScaffoldMessenger.of(
                                                 context,
                                               ).showSnackBar(
                                                 SnackBar(
-                                                  content: Text(
-                                                    provider.errorMessage!,
-                                                  ),
+                                                  content: Text(errorMsg),
                                                   backgroundColor: Colors.red,
                                                 ),
                                               );
