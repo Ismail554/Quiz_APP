@@ -35,4 +35,16 @@ class SecureStorageHelper {
 
   static Future<String?> getResetPasswordEmail() async =>
       await _storage.read(key: 'reset_password_email');
+
+  static Future<void> setPassResetToken(String token) async =>
+      await _storage.write(key: 'pass_reset_token', value: token);
+
+  static Future<String?> getPassResetToken() async =>
+      await _storage.read(key: 'pass_reset_token');
+
+  static Future<void> setPasswordResetVerified(String verified) async =>
+      await _storage.write(key: 'password_reset_verified', value: verified);
+
+  static Future<String?> getPasswordResetVerified() async =>
+      await _storage.read(key: 'password_reset_verified');
 }

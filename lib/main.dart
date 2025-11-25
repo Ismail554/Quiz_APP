@@ -14,6 +14,7 @@ import 'package:geography_geyser/provider/settings_provider/general_settings_pro
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
+import 'package:geography_geyser/provider/forgot_password/forgot_pass_provider.dart';
 import 'package:geography_geyser/splash/splash_screen.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/congratulations.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/verify_screen.dart';
@@ -44,6 +45,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => QuizFinishProvider()),
         ChangeNotifierProvider(create: (_) => DeleteXpProvider()),
         ChangeNotifierProvider(create: (_) => AccountDeleteProvider()),
+        ChangeNotifierProvider(create: (_) => ForgotPasswordProvider()),
       ],
       child: const MyApp(),
     ),
