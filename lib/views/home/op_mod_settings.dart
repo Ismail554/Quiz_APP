@@ -167,11 +167,18 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                                       selectedModuleId = module2.id;
                                     }
 
-                                    // Update selection in provider
-                                    provider.updateSelectedModule(
-                                      pair.pairNumber,
-                                      selectedModuleId,
+                                    debugPrint(
+                                      'Module selected: $selectedModuleName (ID: $selectedModuleId) for pair ${pair.pairNumber}',
                                     );
+
+                                    // Update selection in provider
+                                    if (selectedModuleId != null &&
+                                        selectedModuleId.isNotEmpty) {
+                                      provider.updateSelectedModule(
+                                        pair.pairNumber,
+                                        selectedModuleId,
+                                      );
+                                    }
                                   },
                                 ),
                               );
@@ -185,19 +192,54 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
               ),
             ),
 
-            // Go to Home Button
+            // Save and Go to Home Button
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-              child: CustomLoginButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const HomePageScreen(),
-                    ),
+              child: Consumer<OptionalModuleProvider>(
+                builder: (context, provider, child) {
+                  return CustomLoginButton(
+                    onPressed: provider.isLoading
+                        ? null
+                        : () async {
+                            // Update selections via PATCH request
+                            final success = await provider
+                                .updateModuleSelections();
+
+                            if (context.mounted) {
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Module selections saved successfully!',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+
+                                // Navigate to home after successful save
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const HomePageScreen(),
+                                  ),
+                                );
+                              } else {
+                                // Error message is already shown in provider
+                                if (provider.errorMessage != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(provider.errorMessage!),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                    text: provider.isLoading ? 'Saving...' : AppStrings.goHome,
                   );
                 },
-                text: AppStrings.goHome,
               ),
             ),
             AppSpacing.h16,

@@ -66,3 +66,24 @@ class Module {
     return {'id': id, 'module_name': moduleName};
   }
 }
+
+class ModuleSelection {
+  final int pairNumber;
+  final String selectedModule;
+
+  ModuleSelection({required this.pairNumber, required this.selectedModule});
+
+  Map<String, dynamic> toJson() {
+    return {'pair_number': pairNumber, 'selected_module': selectedModule};
+  }
+}
+
+class UpdateModuleSelectionsRequest {
+  final List<ModuleSelection> selections;
+
+  UpdateModuleSelectionsRequest({required this.selections});
+
+  Map<String, dynamic> toJson() {
+    return {'selections': selections.map((s) => s.toJson()).toList()};
+  }
+}

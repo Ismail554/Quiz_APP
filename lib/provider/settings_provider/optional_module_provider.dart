@@ -86,6 +86,121 @@ class OptionalModuleProvider extends ChangeNotifier {
     return pair.selectedModule;
   }
 
+  /// Update optional module selections via PATCH request
+  Future<bool> updateModuleSelections() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Build selections list - only include pairs with selected modules
+      final selections = _modulePairs
+          .where(
+            (pair) =>
+                pair.selectedModule != null && pair.selectedModule!.isNotEmpty,
+          )
+          .map(
+            (pair) => ModuleSelection(
+              pairNumber: pair.pairNumber,
+              selectedModule: pair.selectedModule!,
+            ),
+          )
+          .toList();
+
+      debugPrint('Total module pairs: ${_modulePairs.length}');
+      debugPrint('Pairs with selections: ${selections.length}');
+      for (var pair in _modulePairs) {
+        debugPrint(
+          'Pair ${pair.pairNumber}: selectedModule = ${pair.selectedModule}',
+        );
+      }
+
+      if (selections.isEmpty) {
+        _errorMessage = 'Please select at least one module';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final token = await SecureStorageHelper.getToken();
+
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      };
+
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      } else {
+        _errorMessage = 'Authentication token not found. Please login again.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final requestBody = UpdateModuleSelectionsRequest(selections: selections);
+
+      debugPrint(
+        'Update Optional Module API URL: ${ApiService.updateOptionalModuleUrl}',
+      );
+      debugPrint(
+        'Update Optional Module Request Body: ${jsonEncode(requestBody.toJson())}',
+      );
+
+      final response = await http.patch(
+        Uri.parse(ApiService.updateOptionalModuleUrl),
+        headers: headers,
+        body: jsonEncode(requestBody.toJson()),
+      );
+
+      debugPrint('Update Optional Module API Status: ${response.statusCode}');
+      debugPrint('Update Optional Module API Response: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        // Success - refresh data from API to get updated state
+        await fetchOptionalModules();
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        // Try to parse error response
+        try {
+          final errorData = json.decode(response.body);
+          _errorMessage =
+              errorData['message'] ??
+              errorData['error'] ??
+              errorData['detail'] ??
+              'Failed to update module selections';
+        } catch (_) {
+          // If response body is not JSON, use status code message
+          final statusMsg =
+              'Failed to update module selections. Status: ${response.statusCode}';
+          _errorMessage = response.body.isNotEmpty
+              ? '$statusMsg\nResponse: ${response.body}'
+              : statusMsg;
+        }
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error updating module selections: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      // Handle different error types
+      if (e is FormatException) {
+        _errorMessage = 'Invalid response format from server';
+      } else {
+        _errorMessage = 'Error: ${e.toString()}';
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Clear error message
   void clearError() {
     _errorMessage = null;

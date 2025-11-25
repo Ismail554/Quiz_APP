@@ -542,7 +542,6 @@ class ProfileScreen extends StatelessWidget {
         final subject = performance.subjects[index];
 
         return Column(
-        
           children: [
             if (index > 0) AppSpacing.h12,
             buildSubjectProgress(subject.moduleName, subject.progress),
@@ -654,17 +653,19 @@ class ProfileScreen extends StatelessWidget {
                 Expanded(
                   child: TextButton(
                     onPressed: () async {
+                      // Close dialog
                       Navigator.of(context).pop();
-                      // Clear secure storage and all login data
+
+                      // Clear secure storage
                       await LoginProvider.logout();
-                      if (context.mounted) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
-                      }
+
+                      if (!context.mounted) return;
+
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: AppColors.buttonColor,
