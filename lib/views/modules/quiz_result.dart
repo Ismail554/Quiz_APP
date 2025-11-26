@@ -6,13 +6,65 @@ import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/custom_module.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
+import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/modules/module_home.dart';
 import 'package:geography_geyser/views/modules/select_time.dart';
 import 'package:provider/provider.dart';
 
-class QuizResult_Screen extends StatelessWidget {
+class QuizResult_Screen extends StatefulWidget {
   const QuizResult_Screen({super.key});
+
+  @override
+  State<QuizResult_Screen> createState() => _QuizResult_ScreenState();
+}
+
+class _QuizResult_ScreenState extends State<QuizResult_Screen> {
+  bool _hasInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeQuizData();
+  }
+
+  Future<void> _initializeQuizData() async {
+    if (_hasInitialized) return;
+    _hasInitialized = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      final quizFinishProvider = Provider.of<QuizFinishProvider>(
+        context,
+        listen: false,
+      );
+      final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+
+      // If quiz finish data is not available and not currently loading, try to fetch it
+      // This is a fallback in case finishQuiz wasn't called before navigation
+      if (quizFinishProvider.quizFinishData == null &&
+          !quizFinishProvider.isLoading) {
+        // Get quiz data from QuizProvider
+        final quizId = quizProvider.quizData?.quizId;
+        final questions = quizProvider.quizData?.questions ?? [];
+
+        if (quizId != null && quizId.isNotEmpty && questions.isNotEmpty) {
+          // Calculate attempted from questions length
+          // Note: This is a fallback - correct answers will be 0 since we don't have that data
+          // In normal flow, finishQuiz should be called before navigation
+          final attempted = questions.length;
+          final correctAnswers = 0; // Default fallback value
+
+          await quizFinishProvider.finishQuiz(
+            quizId,
+            correctAnswers,
+            attempted,
+          );
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -175,6 +175,10 @@ class _QuizScreenState extends State<QuizScreen> {
       context,
       listen: false,
     );
+    final quizFinishProvider = Provider.of<QuizFinishProvider>(
+      context,
+      listen: false,
+    );
 
     // Get quiz_id from quiz data
     final quizId = quizProvider.quizData?.quizId;
@@ -191,6 +195,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
       // Call delete XP API
       await deleteXpProvider.deleteXp(quizId);
+
+      // Calculate attempted questions (currentQuestionIndex is 0-based, so add 1)
+      final attemptedQuestions = currentQuestionIndex + 1;
+
+      // Call finish quiz API to get quiz result data
+      await quizFinishProvider.finishQuiz(
+        quizId,
+        correctAnswersCount,
+        attemptedQuestions,
+      );
 
       // Close loading dialog
       if (mounted) {
@@ -262,170 +276,181 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgColor,
-      body: SafeArea(
-        child: Consumer<QuizProvider>(
-          builder: (context, provider, child) {
-            // Loading state
-            if (provider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+    // Wrap the Scaffold in a PopScope to intercept back navigation
+    return PopScope(
+      canPop: false, // 1. Prevents the screen from closing automatically
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) {
+          return;
+        }
+        // 2. Trigger your existing "Quit Quiz" dialog
+        showCancelQuizDialog(context);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bgColor,
+        body: SafeArea(
+          child: Consumer<QuizProvider>(
+            builder: (context, provider, child) {
+              // Loading state
+              if (provider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            // Error state
-            if (provider.errorMessage != null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64.sp,
-                      color: AppColors.red,
-                    ),
-                    AppSpacing.h16,
-                    Text(
-                      provider.errorMessage!,
-                      style: FontManager.bodyText(),
-                      textAlign: TextAlign.center,
-                    ),
-                    AppSpacing.h24,
-                    ElevatedButton(
-                      onPressed: () {
-                        if (widget.moduleId != null) {
-                          // Use synoptic API if moduleId is 'synoptic'
-                          if (widget.moduleId == 'synoptic') {
-                            provider.fetchSynopticQuiz();
-                          } else {
-                            provider.fetchQuiz(widget.moduleId!);
+              // Error state
+              if (provider.errorMessage != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64.sp,
+                        color: AppColors.red,
+                      ),
+                      AppSpacing.h16,
+                      Text(
+                        provider.errorMessage!,
+                        style: FontManager.bodyText(),
+                        textAlign: TextAlign.center,
+                      ),
+                      AppSpacing.h24,
+                      ElevatedButton(
+                        onPressed: () {
+                          if (widget.moduleId != null) {
+                            // Use synoptic API if moduleId is 'synoptic'
+                            if (widget.moduleId == 'synoptic') {
+                              provider.fetchSynopticQuiz();
+                            } else {
+                              provider.fetchQuiz(widget.moduleId!);
+                            }
                           }
-                        }
-                      },
-                      child: Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
-            }
+                        },
+                        child: Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-            // No quiz data
-            if (provider.quizData == null ||
-                provider.quizData!.questions.isEmpty) {
-              return const Center(child: Text('No quiz data available'));
-            }
+              // No quiz data
+              if (provider.quizData == null ||
+                  provider.quizData!.questions.isEmpty) {
+                return const Center(child: Text('No quiz data available'));
+              }
 
-            final questions = provider.quizData!.questions;
-            final actualTotalQuestions = questions.length;
+              final questions = provider.quizData!.questions;
+              final actualTotalQuestions = questions.length;
 
-            // Check if current question index is valid
-            if (currentQuestionIndex >= actualTotalQuestions) {
-              // Quiz completed
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _finishQuizAndNavigate();
-              });
-              return const Center(child: CircularProgressIndicator());
-            }
+              // Check if current question index is valid
+              if (currentQuestionIndex >= actualTotalQuestions) {
+                // Quiz completed
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _finishQuizAndNavigate();
+                });
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            final currentQuestion = questions[currentQuestionIndex];
+              final currentQuestion = questions[currentQuestionIndex];
 
-            return Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Top section (close button + quiz info)
-                        IconButton(
-                          icon: Icon(Icons.close, color: AppColors.black),
-                          onPressed: () {
-                            showCancelQuizDialog(context);
-                          },
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 6.h,
+              return Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top section (close button + quiz info)
+                          IconButton(
+                            icon: Icon(Icons.close, color: AppColors.black),
+                            onPressed: () {
+                              showCancelQuizDialog(context);
+                            },
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.purple,
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Text(
-                            AppStrings.quizTitleMigrations,
-                            style: FontManager.buttonTextRegular().copyWith(
-                              color: AppColors.white,
-                              fontSize: 14.sp,
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 6.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.purple,
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Text(
+                              AppStrings.quizTitleMigrations,
+                              style: FontManager.buttonTextRegular().copyWith(
+                                color: AppColors.white,
+                                fontSize: 14.sp,
+                              ),
                             ),
                           ),
-                        ),
-                        AppSpacing.h12,
+                          AppSpacing.h12,
 
-                        // Question info row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Question no: ${currentQuestionIndex + 1}',
-                              style: FontManager.bodyText(),
-                            ),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  color: AppColors.red,
-                                  size: 18.sp,
-                                ),
-                                AppSpacing.w4,
-                                Text(
-                                  formattedTime,
-                                  style: FontManager.bodyText().copyWith(
+                          // Question info row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Question no: ${currentQuestionIndex + 1}',
+                                style: FontManager.bodyText(),
+                              ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
                                     color: AppColors.red,
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.w600,
+                                    size: 18.sp,
                                   ),
-                                ),
-                                AppSpacing.w16,
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        AppSpacing.h20,
-
-                        // Question text
-                        Text(
-                          currentQuestion.questionText,
-                          style: FontManager.boldHeading(
-                            fontSize: 20,
-                            color: AppColors.black,
+                                  AppSpacing.w4,
+                                  Text(
+                                    formattedTime,
+                                    style: FontManager.bodyText().copyWith(
+                                      color: AppColors.red,
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  AppSpacing.w16,
+                                ],
+                              ),
+                            ],
                           ),
-                        ),
-                        AppSpacing.h24,
 
-                        // Options
-                        ...List.generate(currentQuestion.optionsList.length, (
-                          index,
-                        ) {
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 12.h),
-                            child: customQchoice(
-                              currentQuestion.optionsList[index],
-                              AppColors.white,
-                              index,
-                              currentQuestion,
+                          AppSpacing.h20,
+
+                          // Question text
+                          Text(
+                            currentQuestion.questionText,
+                            style: FontManager.boldHeading(
+                              fontSize: 20,
+                              color: AppColors.black,
                             ),
-                          );
-                        }),
-                        AppSpacing.h20,
-                      ],
+                          ),
+                          AppSpacing.h24,
+
+                          // Options
+                          ...List.generate(currentQuestion.optionsList.length, (
+                            index,
+                          ) {
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: 12.h),
+                              child: customQchoice(
+                                currentQuestion.optionsList[index],
+                                AppColors.white,
+                                index,
+                                currentQuestion,
+                              ),
+                            );
+                          }),
+                          AppSpacing.h20,
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
