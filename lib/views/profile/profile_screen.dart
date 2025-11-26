@@ -358,7 +358,7 @@ class ProfileScreen extends StatelessWidget {
           // Account Deletion
           Divider(height: 1, color: Colors.grey[300]),
           buildSettingRow(
-            icon: Icons.bakery_dining_rounded,
+            icon: Icons.delete_sweep_sharp,
             text: AppStrings.accountdelection,
             onTap: () {
               Navigator.push(

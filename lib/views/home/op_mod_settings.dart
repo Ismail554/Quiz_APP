@@ -11,7 +11,9 @@ import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:provider/provider.dart';
 
 class OptionalModuleSettings extends StatefulWidget {
-  const OptionalModuleSettings({super.key});
+  final bool isFirstLogin;
+
+  const OptionalModuleSettings({super.key, this.isFirstLogin = false});
 
   @override
   State<OptionalModuleSettings> createState() => _OptionalModuleSettingsState();
@@ -40,12 +42,15 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
       appBar: AppBar(
         backgroundColor: AppColors.bgColor,
         elevation: 0,
+        automaticallyImplyLeading: widget.isFirstLogin ? false : true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          AppStrings.moduleSettingTitle,
+          widget.isFirstLogin
+              ? AppStrings.altModSettOption
+              : AppStrings.moduleSettingTitle,
           style: FontManager.titleText(),
         ),
         centerTitle: true,
@@ -61,6 +66,15 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppSpacing.h20,
+
+                    // Show first login message only when coming from login
+                    if (widget.isFirstLogin) ...[
+                      Text(
+                        AppStrings.firstLoginModule,
+                        style: FontManager.bodyText(),
+                      ),
+                      AppSpacing.h16,
+                    ],
 
                     Text(
                       AppStrings.selectOptionalModuleInstruction,

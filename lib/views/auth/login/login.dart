@@ -205,7 +205,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       MaterialPageRoute(
                                         builder: (_) => isOptionalModuleSelected
                                             ? HomePageScreen()
-                                            : OptionalModuleSettings(),
+                                            : OptionalModuleSettings(
+                                                isFirstLogin: true,
+                                              ),
                                       ),
                                     );
                                   } catch (e) {

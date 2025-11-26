@@ -83,6 +83,8 @@ class AppStrings {
   static const String userXp = "XP:39,900";
   static const String editProfileOption = "Edit Profile";
   static const String moduleSettingOption = "Module Setting";
+  static const String altModSettOption = "Optional Module";
+  static const String firstLoginModule = "For the first time, you need to select your optional module.";
   static const String accountdelection = "Account Management";
   static const String logOutOption = "Log out";
   static const String progressTitle = "Progress";

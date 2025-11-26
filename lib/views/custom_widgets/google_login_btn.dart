@@ -46,7 +46,7 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                     MaterialPageRoute(
                       builder: (_) => isOptionalModuleSelected
                           ? HomePageScreen()
-                          : OptionalModuleSettings(),
+                          : OptionalModuleSettings(isFirstLogin: true),
                     ),
                   );
                 } catch (e) {

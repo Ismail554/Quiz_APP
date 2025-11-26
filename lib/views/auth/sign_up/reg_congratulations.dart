@@ -20,7 +20,7 @@ class _RegCongratulations_ScreenState extends State<RegCongratulations_Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-         backgroundColor: AppColors.bgColor,
+      backgroundColor: AppColors.bgColor,
       body: Padding(
         padding: EdgeInsets.all(8.0),
         child: SafeArea(
@@ -47,7 +47,7 @@ class _RegCongratulations_ScreenState extends State<RegCongratulations_Screen> {
                       style: FontManager.subtitleText(fontSize: 18),
                     ),
                     AppSpacing.h18,
-                      ElevatedButtonCustom(
+                    ElevatedButtonCustom(
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
                           context,
@@ -57,7 +57,7 @@ class _RegCongratulations_ScreenState extends State<RegCongratulations_Screen> {
                           (Route<dynamic> route) => false,
                         );
                       },
-                      text: AppStrings.goHome,
+                      text: "Go to Login",
                       backgroundColor: AppColors.blue,
                     ),
                   ],
