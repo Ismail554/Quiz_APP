@@ -103,8 +103,8 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
               // ✅ Add cacheExtent for better scrolling performance
               cacheExtent: 500,
               itemBuilder: (context, index) {
-                // Show synoptic as first item when data is loaded
-                if (hasData && index == 0) {
+                // Show synoptic as last item when data is loaded
+                if (hasData && index == totalItems - 1) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 14.0),
                     child: CustomModule(
@@ -130,9 +130,8 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                   );
                 }
 
-                // Adjust index for subjects list (subtract 1 if synoptic is shown)
-                final subjectIndex = hasData ? index - 1 : index;
-                final subject = subjects[subjectIndex];
+                // Subjects are shown before synoptic (no index adjustment needed)
+                final subject = subjects[index];
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 14.0),

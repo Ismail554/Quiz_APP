@@ -4,6 +4,7 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
 class GoogleLoginBtn extends StatefulWidget {
   const GoogleLoginBtn({super.key});
@@ -29,13 +30,23 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                 });
 
                 try {
-                  await LoginProvider.signInWithGoogle(context);
+                  final response = await LoginProvider.signInWithGoogle(
+                    context,
+                  );
 
                   if (!context.mounted) return;
+
+                  // Check is_optional_module_selected from login response
+                  final isOptionalModuleSelected =
+                      response['is_optional_module_selected'] == true ||
+                      response['is_optional_module_selected'] == 'true';
+
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => HomePageScreen(),
+                      builder: (_) => isOptionalModuleSelected
+                          ? HomePageScreen()
+                          : OptionalModuleSettings(),
                     ),
                   );
                 } catch (e) {
@@ -44,9 +55,9 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                   if (e is Map && e['message'] != null) {
                     message = e['message'].toString();
                   }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(message)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(message)));
                 } finally {
                   if (mounted) {
                     setState(() {

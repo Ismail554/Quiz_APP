@@ -1,12 +1,18 @@
 class QuizModel {
   final String quizId;
+  final bool isSynoptic;
   final List<QuestionModel> questions;
 
-  QuizModel({required this.quizId, required this.questions});
+  QuizModel({
+    required this.quizId,
+    required this.isSynoptic,
+    required this.questions,
+  });
 
   factory QuizModel.fromJson(Map<String, dynamic> json) {
     return QuizModel(
       quizId: json['quiz_id'] ?? '',
+      isSynoptic: json['is_synoptic'] ?? false,
       questions:
           (json['questions'] as List<dynamic>?)
               ?.map((e) => QuestionModel.fromJson(e))

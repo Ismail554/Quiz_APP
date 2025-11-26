@@ -33,6 +33,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (refreshToken != null && refreshToken.isNotEmpty) {
       // User is logged in, navigate to HomePage
+      // Note: is_optional_module_selected is only checked during login
       if (mounted) {
         Navigator.pushReplacement(
           context,

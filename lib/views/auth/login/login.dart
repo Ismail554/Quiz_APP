@@ -7,13 +7,12 @@ import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/forget_pass_screen.dart';
-
-
 import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/google_login_btn.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -186,17 +185,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                   });
 
                                   try {
-                                    await LoginProvider.login(
+                                    final response = await LoginProvider.login(
                                       email,
                                       password,
                                       context,
                                     );
 
                                     if (!context.mounted) return;
+
+                                    // Check is_optional_module_selected from login response
+                                    final isOptionalModuleSelected =
+                                        response['is_optional_module_selected'] ==
+                                            true ||
+                                        response['is_optional_module_selected'] ==
+                                            'true';
+
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => HomePageScreen(),
+                                        builder: (_) => isOptionalModuleSelected
+                                            ? HomePageScreen()
+                                            : OptionalModuleSettings(),
                                       ),
                                     );
                                   } catch (e) {

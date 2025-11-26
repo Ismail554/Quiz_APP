@@ -23,7 +23,9 @@ class ApiService {
   static String get deleteXpUrl => "$_baseUrl/student/delete-xp/";
   static String get optionalModuleUrl => "$_baseUrl/student/optional-module/";
   static String get updateOptionalModuleUrl =>
-      "$_baseUrl/student/optional-module/"; // it's a patch request
+      "$_baseUrl/student/optional-module/";
+  static String get synopticQuizStartUrl =>
+      "$_baseUrl/student/synoptic-quiz-start/"; // for synoptic quiz start
 
   // Auth section
   static String get deleteAccount => "$_baseUrl/auth/delete-account/";

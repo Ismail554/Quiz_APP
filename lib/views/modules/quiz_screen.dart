@@ -50,10 +50,14 @@ class _QuizScreenState extends State<QuizScreen> {
     // Fetch quiz data from API
     if (widget.moduleId != null && widget.moduleId!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Provider.of<QuizProvider>(
-          context,
-          listen: false,
-        ).fetchQuiz(widget.moduleId!).then((_) {
+        final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+
+        // Use synoptic API if moduleId is 'synoptic'
+        final future = widget.moduleId == 'synoptic'
+            ? quizProvider.fetchSynopticQuiz()
+            : quizProvider.fetchQuiz(widget.moduleId!);
+
+        future.then((_) {
           // Start timer only after quiz is loaded
           if (mounted) {
             startTimer();
@@ -289,7 +293,12 @@ class _QuizScreenState extends State<QuizScreen> {
                     ElevatedButton(
                       onPressed: () {
                         if (widget.moduleId != null) {
-                          provider.fetchQuiz(widget.moduleId!);
+                          // Use synoptic API if moduleId is 'synoptic'
+                          if (widget.moduleId == 'synoptic') {
+                            provider.fetchSynopticQuiz();
+                          } else {
+                            provider.fetchQuiz(widget.moduleId!);
+                          }
                         }
                       },
                       child: Text('Retry'),
