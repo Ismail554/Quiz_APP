@@ -15,7 +15,7 @@ class AppStrings {
   static const String goHome = "Go to Home";
   static const String enterPass = "Enter Password";
   static const String deletePassWar =
-      "🚨 To delete your account, please enter your password.";
+      "⚠️ To delete your account, please enter your password.";
   static const String delete = "Delete";
   // Normal Sign Up
   static const String logInTitle = "Login";
