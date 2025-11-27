@@ -40,10 +40,13 @@ class _QuizScreenState extends State<QuizScreen> {
   bool showAnswerFeedback = false;
   bool isCorrectAnswer = false;
   int correctAnswersCount = 0; // Track total correct answers
+  bool _isSoundEnabled = true; // Sound state
 
   @override
   void initState() {
     super.initState();
+    // Initialize sound state from SoundHelper
+    _isSoundEnabled = SoundHelper.isSoundEnabled;
     // Initialize total questions and time based on selected options
     _initializeQuizSettings();
 
@@ -367,22 +370,47 @@ class _QuizScreenState extends State<QuizScreen> {
                               showCancelQuizDialog(context);
                             },
                           ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 6.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.purple,
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: Text(
-                              AppStrings.quizTitleMigrations,
-                              style: FontManager.buttonTextRegular().copyWith(
-                                color: AppColors.white,
-                                fontSize: 14.sp,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 6.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Text(
+                                  AppStrings.quizTitleMigrations,
+                                  style: FontManager.buttonTextRegular()
+                                      .copyWith(
+                                        color: AppColors.white,
+                                        fontSize: 14.sp,
+                                      ),
+                                ),
                               ),
-                            ),
+                              //Sound on/off button
+                              IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isSoundEnabled = !_isSoundEnabled;
+                                    SoundHelper.setSoundEnabled(
+                                      _isSoundEnabled,
+                                    );
+                                  });
+                                },
+                                icon: Icon(
+                                  _isSoundEnabled
+                                      ? Icons.volume_up_outlined
+                                      : Icons.volume_off_outlined,
+                                  color: _isSoundEnabled
+                                      ? AppColors.black
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ],
                           ),
                           AppSpacing.h12,
 

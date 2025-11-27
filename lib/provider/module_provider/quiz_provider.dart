@@ -20,7 +20,7 @@ class QuizProvider extends ChangeNotifier {
       final headers = <String, String>{
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Required for ngrok
+        // 'ngrok-skip-browser-warning': 'true', // Required for ngrok
       };
 
       // Add auth token if available
@@ -50,7 +50,8 @@ class QuizProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
-      errorMessage = "Error fetching quiz: $e";
+      // errorMessage = "Error fetching quiz: $e";
+      errorMessage = "There is an error. Try agian";
       if (kDebugMode) {
         print("Error fetching quiz: $e");
       }

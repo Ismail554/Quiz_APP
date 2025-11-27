@@ -170,7 +170,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
                           icon: Icons.emoji_events,
                           iconColor: AppColors.yellow,
                           label: AppStrings.scoreLabel,
-                          value: '$score%',
+                          value: '$score',
                           valueColor: AppColors.yellow,
                         ),
                         buildResultRow(
