@@ -1,6 +1,6 @@
 class ApiService {
-  static String get _baseUrl => "https://honeybee-one-octopus.ngrok-free.app";
-  static String get baseUrl => "https://honeybee-one-octopus.ngrok-free.app";
+  static String get _baseUrl => "https://www.geographygeyser.com";
+  static String get baseUrl => "https://www.geographygeyser.com";
 
   static String get loginUrl => "$_baseUrl/auth/login/";
   static String get signupUrl => "$_baseUrl/auth/register/";
