@@ -112,8 +112,13 @@ class LoginProvider extends ChangeNotifier {
       // Get the ID token for your backend
       final String? idToken = await user.getIdToken();
 
-      // Optionally, send the token to your backend API
-      // You can integrate this with your existing API service
+      // Debug: Print tokens for backend developer reference
+      print('🔑 Google OAuth Access Token: ${googleAuth.accessToken}');
+      print('🔑 Google OAuth ID Token: ${googleAuth.idToken}');
+      print('🔑 Firebase ID Token: $idToken');
+
+      // Send Google OAuth tokens to your backend API
+      // The backend can verify these tokens with Google's servers
       try {
         final response = await http.post(
           Uri.parse(
@@ -121,7 +126,12 @@ class LoginProvider extends ChangeNotifier {
           ), // Adjust this to your Google login endpoint
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
-            'id_token': idToken,
+            // Google OAuth tokens (what your backend needs to verify)
+            'google_access_token': googleAuth.accessToken,
+            'google_id_token': googleAuth.idToken,
+            // Firebase ID token (if your backend also needs it)
+            'firebase_id_token': idToken,
+            // User information
             'email': user.email,
             'name': user.displayName,
             'photo_url': user.photoURL,
