@@ -1,42 +1,41 @@
 {
   "project_info": {
-    "project_number": "377329867932",
-    "project_id": "geography-682b7",
-    "storage_bucket": "geography-682b7.firebasestorage.app"
+    "project_number": "581080373754",
+    "project_id": "geography-geyser-app-cc7f8",
+    "storage_bucket": "geography-geyser-app-cc7f8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:377329867932:android:c5ea4f29468750f8a86159",
+        "mobilesdk_app_id": "1:581080373754:android:a4474079082e1a6e166c43",
         "android_client_info": {
           "package_name": "com.example.geography_geyser"
         }
       },
       "oauth_client": [
         {
-          "client_id": "377329867932-mes5rn144638hnn7cjhofaiuki1lt6pn.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.geography_geyser",
-            "certificate_hash": "b6a57d1f50e209bde458107221234e7f688dfe35"
-          }
-        },
-        {
-          "client_id": "377329867932-b8bmk1d883nh74memeevuub0f9amnovk.apps.googleusercontent.com",
+          "client_id": "581080373754-o7a3v7d346j434tgaiirtdt0s79sd7sc.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyALIgwlbl6ta9sjU5K0TtIoEYJNLDOYZHA"
+          "current_key": "AIzaSyDX8ka9gfplfmzdSXFD_ixh3ZjXL2ODY0M"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "377329867932-b8bmk1d883nh74memeevuub0f9amnovk.apps.googleusercontent.com",
+              "client_id": "581080373754-o7a3v7d346j434tgaiirtdt0s79sd7sc.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "581080373754-5a635qmm4sdih9v6eeac0l9fp1kd0hmg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.geographyGeyser"
+              }
             }
           ]
         }
