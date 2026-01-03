@@ -79,8 +79,16 @@ class LoginProvider extends ChangeNotifier {
   ) async {
     isLoading.value = true;
     try {
+      // Initialize GoogleSignIn with web client ID from google-services.json
+      // This is required for Android to work properly
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+        // Use the web client ID from google-services.json (client_type: 3)
+        serverClientId: '581080373754-o7a3v7d346j434tgaiirtdt0s79sd7sc.apps.googleusercontent.com',
+      );
+
       // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
         // User canceled the sign-in

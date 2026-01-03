@@ -13,7 +13,7 @@ android {
         }
     }
 
-    namespace = "com.example.geography_geyser"
+    namespace = "com.app.geography_geyser"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.geography_geyser"
+        applicationId = "com.app.geography_geyser"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode

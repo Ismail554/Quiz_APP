@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:581080373754:android:a4474079082e1a6e166c43",
+        "mobilesdk_app_id": "1:581080373754:android:e9c063cf67d22a6d166c43",
         "android_client_info": {
-          "package_name": "com.example.geography_geyser"
+          "package_name": "com.app.geography_geyser"
         }
       },
       "oauth_client": [
