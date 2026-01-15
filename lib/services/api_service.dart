@@ -1,10 +1,11 @@
 class ApiService {
-  static String get _baseUrl => "https://www.geographygeyser.com";
-  static String get baseUrl => "https://www.geographygeyser.com";
+  static String get _baseUrl => "https://api.geographygeyser.com";
+  static String get baseUrl => "https://api.geographygeyser.com";
 
   static String get loginUrl => "$_baseUrl/auth/login/";
   static String get signupUrl => "$_baseUrl/auth/register/";
   static String get verifyOtpUrl => "$_baseUrl/auth/verify-otp/";
+  static String get googleLoginUrl => "$_baseUrl/auth/email/";
 
   //General settings
   static String get updateProfile => "$_baseUrl/auth/profile-update/";

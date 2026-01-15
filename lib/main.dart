@@ -18,13 +18,6 @@ import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/provider/forgot_password/forgot_pass_provider.dart';
 import 'package:geography_geyser/provider/forgot_password/new_pass_set_provider.dart';
 import 'package:geography_geyser/splash/splash_screen.dart';
-import 'package:geography_geyser/views/auth/forgot_pass/congratulations.dart';
-import 'package:geography_geyser/views/auth/forgot_pass/verify_screen.dart';
-import 'package:geography_geyser/views/auth/login/login.dart';
-import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
-import 'package:geography_geyser/views/modules/quiz_complete.dart';
-import 'package:geography_geyser/views/profile/profile_screen.dart';
-import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
 import 'package:provider/provider.dart';
 
 void main() async {

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginProvider extends ChangeNotifier {
@@ -78,17 +78,51 @@ class LoginProvider extends ChangeNotifier {
     BuildContext context,
   ) async {
     isLoading.value = true;
+    String? userEmail;
+    
     try {
-      // Initialize GoogleSignIn with web client ID from google-services.json
-      // This is required for Android to work properly
+      // Initialize GoogleSignIn - standalone mode (no Firebase Auth)
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
-        // Use the web client ID from google-services.json (client_type: 3)
-        serverClientId: '581080373754-o7a3v7d346j434tgaiirtdt0s79sd7sc.apps.googleusercontent.com',
+        forceCodeForRefreshToken: false, // Don't force server-side auth
       );
 
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      GoogleSignInAccount? googleUser;
+
+      // First, try to get previously signed in account silently
+      try {
+        googleUser = await googleSignIn.signInSilently();
+      } catch (e) {
+        print('Silent sign-in failed: $e');
+      }
+
+      // If no previous account, show sign-in dialog
+      if (googleUser == null) {
+        try {
+          googleUser = await googleSignIn.signIn();
+        } on PlatformException catch (signInError) {
+          // If signIn fails with PlatformException, try to get the account that was selected
+          print('Sign-in failed with PlatformException: ${signInError.code} - ${signInError.message}');
+          
+          // Try to get the account silently - sometimes the account is still selected
+          try {
+            googleUser = await googleSignIn.signInSilently();
+            if (googleUser != null) {
+              print('✅ Got account via silent sign-in after error');
+            }
+          } catch (e) {
+            print('Silent sign-in also failed: $e');
+          }
+          
+          // If we still don't have an account, throw the original error
+          if (googleUser == null) {
+            isLoading.value = false;
+            throw {
+              'message': 'Google sign-in failed: ${signInError.message ?? signInError.code}. Please check your Google Cloud Console OAuth configuration.'
+            };
+          }
+        }
+      }
 
       if (googleUser == null) {
         // User canceled the sign-in
@@ -96,109 +130,121 @@ class LoginProvider extends ChangeNotifier {
         throw {'message': 'Google sign-in was canceled'};
       }
 
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      // Extract email immediately - this is all we need
+      userEmail = googleUser.email;
+      print('📧 Google User Email: $userEmail');
 
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      if (userEmail == null || userEmail.isEmpty) {
+        isLoading.value = false;
+        throw {'message': 'Failed to get email from Google account'};
+      }
+
+      // Sign out from Google after getting email (we only needed the email)
+      try {
+        await googleSignIn.signOut();
+      } catch (e) {
+        // Ignore sign-out errors - not critical
+        print('Note: Google sign-out: $e');
+      }
+
+      // Call API with email from Google Sign-In
+      final response = await http.post(
+        Uri.parse(ApiService.googleLoginUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': userEmail}),
       );
 
-      // Sign in to Firebase with the Google credential
-      final UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithCredential(credential);
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
 
-      final User? user = userCredential.user;
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
 
-      if (user == null) {
-        isLoading.value = false;
-        throw {'message': 'Failed to sign in with Google'};
-      }
-
-      // Get the ID token for your backend
-      final String? idToken = await user.getIdToken();
-
-      // Debug: Print tokens for backend developer reference
-      print('🔑 Google OAuth Access Token: ${googleAuth.accessToken}');
-      print('🔑 Google OAuth ID Token: ${googleAuth.idToken}');
-      print('🔑 Firebase ID Token: $idToken');
-
-      // Send Google OAuth tokens to your backend API
-      // The backend can verify these tokens with Google's servers
-      try {
-        final response = await http.post(
-          Uri.parse(
-            ApiService.loginUrl,
-          ), // Adjust this to your Google login endpoint
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            // Google OAuth tokens (what your backend needs to verify)
-            'google_access_token': googleAuth.accessToken,
-            'google_id_token': googleAuth.idToken,
-            // Firebase ID token (if your backend also needs it)
-            'firebase_id_token': idToken,
-            // User information
-            'email': user.email,
-            'name': user.displayName,
-            'photo_url': user.photoURL,
-          }),
-        );
-
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          await _storeLoginData(responseData);
-          print('Google Login Successful!');
-          isLoading.value = false;
-          return responseData;
-        } else {
-          // If backend integration fails, still store Firebase auth data
-          await _storeFirebaseAuthData(user, idToken);
-          isLoading.value = false;
-          return {
-            'access_token': idToken,
-            'email': user.email,
-            'name': user.displayName,
-          };
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Add email to response data if not present
+        if (!responseData.containsKey('email')) {
+          responseData['email'] = userEmail;
         }
-      } catch (e) {
-        // If backend call fails, use Firebase auth directly
-        print('Backend integration failed, using Firebase auth: $e');
-        await _storeFirebaseAuthData(user, idToken);
+
+        // Show dialog for new users
+        if (responseData['is_new_user'] == true) {
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Update Profile'),
+                content: const Text(
+                  'Update your profile and setup new password in settings.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+
+        // Store API tokens (access_token, refresh_token)
+        await _storeLoginData(responseData);
+        print('✅ Google Login Successful (via API)');
+
         isLoading.value = false;
-        return {
-          'access_token': idToken,
-          'email': user.email,
-          'name': user.displayName,
-        };
+        return responseData;
+      } else {
+        // API login failed - throw error
+        print('❌ API Login failed with status: ${response.statusCode}');
+        isLoading.value = false;
+        throw responseData;
       }
+    } on PlatformException catch (e) {
+      // Handle platform-specific errors (like Firebase Auth errors)
+      print("Platform Error during Google Sign-In: ${e.code} - ${e.message}");
+      isLoading.value = false;
+      
+      // If we somehow got the email before the error, try to use it
+      if (userEmail != null && userEmail.isNotEmpty) {
+        print('⚠️ Got email before error, attempting API call with: $userEmail');
+        try {
+          final response = await http.post(
+            Uri.parse(ApiService.googleLoginUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': userEmail}),
+          );
+
+          if (response.statusCode == 200 || response.statusCode == 201) {
+            final Map<String, dynamic> responseData = jsonDecode(response.body);
+            if (!responseData.containsKey('email')) {
+              responseData['email'] = userEmail;
+            }
+            await _storeLoginData(responseData);
+            print('✅ API call succeeded despite platform error');
+            return responseData;
+          }
+        } catch (apiError) {
+          print('❌ API call also failed: $apiError');
+        }
+      }
+      
+      throw {
+        'message': 'Google sign-in failed: ${e.message ?? e.code}'
+      };
     } catch (e) {
       print("Google Sign-In Error: $e");
       isLoading.value = false;
-      rethrow;
-    }
-  }
-
-  // ---------------- STORE FIREBASE AUTH DATA ----------------
-  static Future<void> _storeFirebaseAuthData(User user, String? idToken) async {
-    if (idToken != null) {
-      await SecureStorageHelper.setToken(idToken);
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_email', user.email ?? '');
-    await prefs.setString('user_name', user.displayName ?? '');
-    if (user.photoURL != null) {
-      await prefs.setString('user_photo_url', user.photoURL!);
+      if (e is Map) {
+        rethrow;
+      }
+      throw {'message': e.toString()};
     }
   }
 
   static Future<void> logout() async {
+    // Sign out from Google Sign-In
     await GoogleSignIn().signOut();
-    await FirebaseAuth.instance.signOut();
 
+    // Clear all stored data
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
 
