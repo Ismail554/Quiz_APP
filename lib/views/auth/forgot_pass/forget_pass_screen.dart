@@ -174,7 +174,9 @@ class _PassResetScreenState extends State<PassResetScreen> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      VerifyScreen(),
+                                                      VerifyScreen(
+                                                        email: email,
+                                                      ),
                                                 ),
                                               );
                                             }

@@ -143,32 +143,21 @@ class ForgotPasswordProvider extends ChangeNotifier {
   }
 
   /// Resend OTP for forgot password
-  /// Requires passResetToken
-  Future<Map<String, dynamic>> resendForgotPasswordOtp() async {
+  /// Requires email
+  Future<Map<String, dynamic>> resendForgotPasswordOtp(String email) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // Use in-memory token first, fallback to storage
-      final passResetToken =
-          _passResetToken ?? await SecureStorageHelper.getPassResetToken();
-
-      if (passResetToken == null || passResetToken.isEmpty) {
-        throw {
-          'error':
-              'Pass reset token not found. Please request password reset again.',
-        };
-      }
-
       final response = await http.post(
-        Uri.parse(ApiService.resendOtpUrl),
+        Uri.parse(ApiService.forgotPassUrl),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
-        body: jsonEncode({'passResetToken': passResetToken}),
+        body: jsonEncode({'email': email}),
       );
 
       debugPrint('Resend OTP API Status: ${response.statusCode}');
@@ -177,6 +166,12 @@ class ForgotPasswordProvider extends ChangeNotifier {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Update stored token if present
+        if (responseData.containsKey('passResetToken')) {
+          _passResetToken = responseData['passResetToken'];
+          await SecureStorageHelper.setPassResetToken(_passResetToken!);
+        }
+
         _isLoading = false;
         notifyListeners();
         return responseData;

@@ -34,12 +34,12 @@ class ApiService {
   static String get userPerformance => "$_baseUrl/student/user-performance/";
 
   // Forgot Password
-  static String get forgotPassUrl =>
-      "$_baseUrl/auth/forget-password/"; //pass the "email" to get the "passResetToken"
+  static String get forgotPassUrl => "$_baseUrl/auth/forget-password/";
+  // static String get resendOtp => "$_baseUrl/auth/forget-password-resend/"; // pass the "passResetToken"
   static String get verifyForgotPassOtpUrl =>
       "$_baseUrl/auth/forget-password-otp-verify/"; // pass the "passResetToken" and otp and get "passwordResetVerified"
   static String get newPasswordSet =>
       "$_baseUrl/auth/forget-password-set/"; // pass the "passwordResetVerified" and "new_password" to reset password
-  static String get resendOtpUrl =>
-      "$_baseUrl/auth/forget-password-resend/"; // pass the "passResetToken" to resend otp
+  // static String get resendOtpUrl =>
+  //     "$_baseUrl/auth/forget-password-resend/"; // pass the "passResetToken" to resend otp
 }

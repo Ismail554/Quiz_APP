@@ -273,22 +273,22 @@ class _VerifyScreenState extends State<VerifyScreen> {
                                   ),
                                 ),
                               ),
-                            RichText(
-                              text: TextSpan(
-                                text: AppStrings.didntReceiveCode,
-                                style: FontManager.bodyText(),
-                                children: [
-                                  TextSpan(
-                                    text: ' ${AppStrings.resendOTPCode}',
-                                    style: FontManager.bodyText(
-                                      color: _resendTimer > 0
-                                          ? Colors.grey
-                                          : AppColors.buttonColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            // RichText(
+                            //   text: TextSpan(
+                            //     text: AppStrings.didntReceiveCode,
+                            //     style: FontManager.bodyText(),
+                            //     children: [
+                            //       TextSpan(
+                            //         text: ' ${AppStrings.resendOTPCode}',
+                            //         style: FontManager.bodyText(
+                            //           color: _resendTimer > 0
+                            //               ? Colors.grey
+                            //               : AppColors.buttonColor,
+                            //         ),
+                            //       ),
+                            //     ],
+                            //   ),
+                            // ),
                             AppSpacing.h10,
                             // Verify Button
                             SizedBox(
@@ -417,8 +417,27 @@ class _VerifyScreenState extends State<VerifyScreen> {
                                         ? null
                                         : () async {
                                             try {
+                                              final emailToUse =
+                                                  widget.email ?? _storedEmail;
+                                              if (emailToUse == null ||
+                                                  emailToUse.isEmpty) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Email not found. Please try again from start.',
+                                                    ),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
                                               await provider
-                                                  .resendForgotPasswordOtp();
+                                                  .resendForgotPasswordOtp(
+                                                    emailToUse,
+                                                  );
                                               if (context.mounted) {
                                                 ScaffoldMessenger.of(
                                                   context,
