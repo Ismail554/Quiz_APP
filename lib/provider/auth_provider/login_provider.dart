@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
@@ -78,165 +78,94 @@ class LoginProvider extends ChangeNotifier {
     BuildContext context,
   ) async {
     isLoading.value = true;
-    String? userEmail;
-    
+
     try {
-      // Initialize GoogleSignIn - standalone mode (no Firebase Auth)
+      // ১. Google Sign-In client তৈরি
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
-        forceCodeForRefreshToken: false, // Don't force server-side auth
       );
 
-      GoogleSignInAccount? googleUser;
+      // ২. User কে sign-in করতে বলা (popup দেখাবে)
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      // First, try to get previously signed in account silently
-      try {
-        googleUser = await googleSignIn.signInSilently();
-      } catch (e) {
-        print('Silent sign-in failed: $e');
-      }
-
-      // If no previous account, show sign-in dialog
+      // User যদি cancel করে
       if (googleUser == null) {
-        try {
-          googleUser = await googleSignIn.signIn();
-        } on PlatformException catch (signInError) {
-          // If signIn fails with PlatformException, try to get the account that was selected
-          print('Sign-in failed with PlatformException: ${signInError.code} - ${signInError.message}');
-          
-          // Try to get the account silently - sometimes the account is still selected
-          try {
-            googleUser = await googleSignIn.signInSilently();
-            if (googleUser != null) {
-              print('✅ Got account via silent sign-in after error');
-            }
-          } catch (e) {
-            print('Silent sign-in also failed: $e');
-          }
-          
-          // If we still don't have an account, throw the original error
-          if (googleUser == null) {
-            isLoading.value = false;
-            throw {
-              'message': 'Google sign-in failed: ${signInError.message ?? signInError.code}. Please check your Google Cloud Console OAuth configuration.'
-            };
-          }
-        }
-      }
-
-      if (googleUser == null) {
-        // User canceled the sign-in
-        isLoading.value = false;
         throw {'message': 'Google sign-in was canceled'};
       }
 
-      // Extract email immediately - this is all we need
-      userEmail = googleUser.email;
-      print('📧 Google User Email: $userEmail');
-
-      if (userEmail == null || userEmail.isEmpty) {
-        isLoading.value = false;
-        throw {'message': 'Failed to get email from Google account'};
+      // ৩. শুধু email নিবো
+      final String? email = googleUser.email;
+      if (email == null || email.isEmpty) {
+        throw {'message': 'Failed to get email from Google'};
       }
 
-      // Sign out from Google after getting email (we only needed the email)
-      try {
-        await googleSignIn.signOut();
-      } catch (e) {
-        // Ignore sign-out errors - not critical
-        print('Note: Google sign-out: $e');
-      }
+      print('📧 Got email: $email');
 
-      // Call API with email from Google Sign-In
+      // ৪. তোমার API-তে পাঠাচ্ছি
       final response = await http.post(
         Uri.parse(ApiService.googleLoginUrl),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': userEmail}),
+        body: jsonEncode({'email': email}),
       );
 
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      print('API Status: ${response.statusCode}');
+      print('API Body: ${response.body}');
 
       final Map<String, dynamic> responseData = jsonDecode(response.body);
 
+      // ৫. Success case
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Add email to response data if not present
-        if (!responseData.containsKey('email')) {
-          responseData['email'] = userEmail;
-        }
+        // email response-এ না থাকলে add করে দিচ্ছি (optional)
+        responseData['email'] = email;
 
-        // Show dialog for new users
-        if (responseData['is_new_user'] == true) {
-          if (context.mounted) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Update Profile'),
-                content: const Text(
-                  'Update your profile and setup new password in settings.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-            );
-          }
-        }
-
-        // Store API tokens (access_token, refresh_token)
+        // token গুলো save
         await _storeLoginData(responseData);
-        print('✅ Google Login Successful (via API)');
 
-        isLoading.value = false;
+        // নতুন user হলে dialog (যেটা আগে ছিল)
+        if (responseData['is_new_user'] == true && context.mounted) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Update Profile'),
+              content: const Text(
+                'Please update your profile and set a password in settings.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        print('🎉 Google Login Successful!');
         return responseData;
       } else {
-        // API login failed - throw error
-        print('❌ API Login failed with status: ${response.statusCode}');
-        isLoading.value = false;
+        // API error
         throw responseData;
       }
-    } on PlatformException catch (e) {
-      // Handle platform-specific errors (like Firebase Auth errors)
-      print("Platform Error during Google Sign-In: ${e.code} - ${e.message}");
-      isLoading.value = false;
-      
-      // If we somehow got the email before the error, try to use it
-      if (userEmail != null && userEmail.isNotEmpty) {
-        print('⚠️ Got email before error, attempting API call with: $userEmail');
-        try {
-          final response = await http.post(
-            Uri.parse(ApiService.googleLoginUrl),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': userEmail}),
-          );
-
-          if (response.statusCode == 200 || response.statusCode == 201) {
-            final Map<String, dynamic> responseData = jsonDecode(response.body);
-            if (!responseData.containsKey('email')) {
-              responseData['email'] = userEmail;
-            }
-            await _storeLoginData(responseData);
-            print('✅ API call succeeded despite platform error');
-            return responseData;
-          }
-        } catch (apiError) {
-          print('❌ API call also failed: $apiError');
-        }
-      }
-      
-      throw {
-        'message': 'Google sign-in failed: ${e.message ?? e.code}'
-      };
     } catch (e) {
-      print("Google Sign-In Error: $e");
-      isLoading.value = false;
-      if (e is Map) {
-        rethrow;
+      print('Google Login Error: $e');
+
+      String message = 'Google login failed';
+
+      if (e is Map && e['message'] != null) {
+        message = e['message'].toString();
+      } else if (e.toString().contains('network')) {
+        message = 'Please check your internet connection';
       }
-      throw {'message': e.toString()};
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+
+      rethrow; // যাতে button-এর try-catch ধরতে পারে
+    } finally {
+      isLoading.value = false;
     }
   }
 
