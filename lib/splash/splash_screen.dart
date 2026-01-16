@@ -9,8 +9,6 @@ import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 
-import 'package:flutter_native_splash/flutter_native_splash.dart';
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -22,7 +20,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    FlutterNativeSplash.remove();
 
     // Check authentication status after splash delay
     Timer(const Duration(seconds: AppConstants.splashDelay), () {

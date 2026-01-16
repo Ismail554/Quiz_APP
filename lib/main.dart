@@ -17,13 +17,11 @@ import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/provider/forgot_password/forgot_pass_provider.dart';
 import 'package:geography_geyser/provider/forgot_password/new_pass_set_provider.dart';
-import 'package:geography_geyser/splash/splash_screen.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
+import 'package:geography_geyser/splash/splash_screen.dart';
 
 void main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(
     MultiProvider(
@@ -67,7 +65,6 @@ class MyApp extends StatelessWidget {
         home: child,
       ),
       child: SplashScreen(),
-      //   child: ProfileScreen(),
     );
   }
 }
