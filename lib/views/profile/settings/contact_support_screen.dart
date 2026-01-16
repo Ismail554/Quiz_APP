@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutAppScreen extends StatelessWidget {
@@ -119,7 +120,11 @@ class AboutAppScreen extends StatelessWidget {
                 decoration: _cardDecoration(),
                 child: Text(
                   "Geography Geyser helps you learn subjects in a fun and easy way. Whether you’re a student, teacher, or just curious about the world, this app makes exploring our planet simple and enjoyable.",
-                  style: FontManager.bodyText(color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontFamily: GoogleFonts.roboto().fontFamily,
+                    fontSize: 14.sp,
+                    color: Colors.grey.shade800,
+                  ),
                   textAlign: TextAlign.justify,
                 ),
               ),
@@ -171,18 +176,49 @@ class AboutAppScreen extends StatelessWidget {
                   },
                   child: Padding(
                     padding: EdgeInsets.all(16.r),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Text(
-                          'Email Support',
-                          style: FontManager.headerSubtitleText(
-                            color: Colors.black87,
-                          ),
+                        // Title with better visual hierarchy
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Email Support',
+                              style: FontManager.headerSubtitleText(
+                                color: Colors.black87,
+                              ),
+                            ),
+                            Icon(
+                              Icons.mail_outline,
+                              size: 18.r,
+                              color: Colors.orange,
+                            ),
+                          ],
                         ),
-                        Text(
-                          'simonA@standsureeducation.co.uk', // Shortened or full? Full might overflow, let's truncate if needed or use 'Contact Us'
-                          style: FontManager.bodyText(color: Colors.orange),
+
+                        SizedBox(height: 8.r),
+
+                        // Email with better alignment and handling
+                        Container(
+                          width: double.maxFinite,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.r,
+                            vertical: 8.r,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Text(
+                            'simonA@standsureeducation.co.uk',
+                            style: FontManager.bodyText(color: Colors.orange),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ],
                     ),

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/app_logger.dart';
+import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/custom_module.dart';
+import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/provider/module_provider/subject_provider.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/modules/select_time.dart';
@@ -64,10 +67,13 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   provider.fetchSubjects().catchError((error) {
+                    AppLogger.error('Failed to load modules', error);
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Failed to load modules: $error'),
+                          content: Text(
+                            AppLogger.getSafeErrorMessage(error.toString()),
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -230,26 +236,19 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
               size: 64,
               color: Colors.grey[400]!,
             ),
-            const SizedBox(height: 16),
+            AppSpacing.h16,
             Text(
-              errorMessage,
+              "No modules available for now",
               textAlign: TextAlign.center,
               style: FontManager.headerSubtitleText(
                 fontSize: 16,
                 color: Colors.grey[600]!,
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
+            AppSpacing.h24,
+            CustomLoginButton(
+              text: 'Retry',
               onPressed: () => provider.refreshSubjects(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
             ),
           ],
         ),
@@ -266,7 +265,7 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]!),
-            const SizedBox(height: 16),
+            AppSpacing.h16,
             Text(
               'No modules available',
               textAlign: TextAlign.center,
@@ -275,23 +274,16 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                 color: Colors.grey[600]!,
               ),
             ),
-            const SizedBox(height: 8),
+            AppSpacing.h8,
             Text(
               'Please check back later',
               textAlign: TextAlign.center,
               style: FontManager.bodyText(color: Colors.grey[500]!),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
+            AppSpacing.h24,
+            CustomLoginButton(
+              text: 'Refresh',
               onPressed: () => provider.refreshSubjects(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refresh'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
             ),
           ],
         ),

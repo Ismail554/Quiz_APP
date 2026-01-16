@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/settings_provider/optional_module_provider.dart';
@@ -108,7 +109,9 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    provider.errorMessage!,
+                                    AppLogger.getSafeErrorMessage(
+                                      provider.errorMessage!,
+                                    ),
                                     style: TextStyle(
                                       color: Colors.red.shade700,
                                     ),
@@ -181,7 +184,7 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                                       selectedModuleId = module2.id;
                                     }
 
-                                    debugPrint(
+                                    AppLogger.debug(
                                       'Module selected: $selectedModuleName (ID: $selectedModuleId) for pair ${pair.pairNumber}',
                                     );
 
@@ -243,7 +246,11 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                                 if (provider.errorMessage != null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(provider.errorMessage!),
+                                      content: Text(
+                                        AppLogger.getSafeErrorMessage(
+                                          provider.errorMessage!,
+                                        ),
+                                      ),
                                       backgroundColor: Colors.red,
                                     ),
                                   );

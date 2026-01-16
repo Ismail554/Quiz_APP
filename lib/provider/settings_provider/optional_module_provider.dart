@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/models/optional_module_model.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
@@ -38,8 +39,8 @@ class OptionalModuleProvider extends ChangeNotifier {
         headers: headers,
       );
 
-      debugPrint('Optional Module API Status: ${response.statusCode}');
-      debugPrint('Optional Module API Response: ${response.body}');
+      AppLogger.debug('Optional Module API Status: ${response.statusCode}');
+      AppLogger.debug('Optional Module API Response: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -50,10 +51,12 @@ class OptionalModuleProvider extends ChangeNotifier {
         }
       } else {
         _errorMessage = 'Failed to load optional modules';
-        debugPrint('Failed to load optional modules: ${response.statusCode}');
+        AppLogger.error(
+          'Failed to load optional modules: ${response.statusCode}',
+        );
       }
     } catch (e) {
-      debugPrint('Error fetching optional modules: $e');
+      AppLogger.error('Error fetching optional modules', e);
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;
@@ -107,10 +110,10 @@ class OptionalModuleProvider extends ChangeNotifier {
           )
           .toList();
 
-      debugPrint('Total module pairs: ${_modulePairs.length}');
-      debugPrint('Pairs with selections: ${selections.length}');
+      AppLogger.debug('Total module pairs: ${_modulePairs.length}');
+      AppLogger.debug('Pairs with selections: ${selections.length}');
       for (var pair in _modulePairs) {
-        debugPrint(
+        AppLogger.debug(
           'Pair ${pair.pairNumber}: selectedModule = ${pair.selectedModule}',
         );
       }
@@ -141,10 +144,10 @@ class OptionalModuleProvider extends ChangeNotifier {
 
       final requestBody = UpdateModuleSelectionsRequest(selections: selections);
 
-      debugPrint(
+      AppLogger.debug(
         'Update Optional Module API URL: ${ApiService.updateOptionalModuleUrl}',
       );
-      debugPrint(
+      AppLogger.debug(
         'Update Optional Module Request Body: ${jsonEncode(requestBody.toJson())}',
       );
 
@@ -154,8 +157,10 @@ class OptionalModuleProvider extends ChangeNotifier {
         body: jsonEncode(requestBody.toJson()),
       );
 
-      debugPrint('Update Optional Module API Status: ${response.statusCode}');
-      debugPrint('Update Optional Module API Response: ${response.body}');
+      AppLogger.debug(
+        'Update Optional Module API Status: ${response.statusCode}',
+      );
+      AppLogger.debug('Update Optional Module API Response: ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         // Success - refresh data from API to get updated state
@@ -185,8 +190,7 @@ class OptionalModuleProvider extends ChangeNotifier {
         return false;
       }
     } catch (e, stackTrace) {
-      debugPrint('Error updating module selections: $e');
-      debugPrint('Stack trace: $stackTrace');
+      AppLogger.error('Error updating module selections', e, stackTrace);
 
       // Handle different error types
       if (e is FormatException) {

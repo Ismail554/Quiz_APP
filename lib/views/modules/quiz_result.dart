@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
@@ -91,7 +92,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
                     ),
                     AppSpacing.h16,
                     Text(
-                      provider.errorMessage!,
+                      AppLogger.getSafeErrorMessage(provider.errorMessage!),
                       style: FontManager.bodyText(),
                       textAlign: TextAlign.center,
                     ),
