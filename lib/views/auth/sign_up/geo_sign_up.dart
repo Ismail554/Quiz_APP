@@ -5,6 +5,7 @@ import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/provider/auth_provider/signup_provider/signup_provider.dart';
 import 'package:geography_geyser/utils/validators.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
@@ -12,6 +13,7 @@ import 'package:geography_geyser/views/custom_widgets/google_login_btn.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/auth/sign_up/verify_otp.dart';
+import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 
 class GeoSignUpScreen extends StatefulWidget {
   const GeoSignUpScreen({super.key});
@@ -259,10 +261,10 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
 
                                 // Step 3: Handle success
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Signup successful!"),
-                                    ),
+                                  CustomSnackBar.show(
+                                    context,
+                                    message: "Signup successful!",
+                                    isError: false,
                                   );
 
                                   // Step 4: Navigate next (like OTP verify or home)
@@ -291,15 +293,15 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                                   message = e.toString();
                                 }
 
-                                print('Signup Error in UI: $e');
+                                AppLogger.error('Signup Error', e);
 
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(message),
-                                      backgroundColor: Colors.red,
-                                      duration: const Duration(seconds: 4),
+                                  CustomSnackBar.show(
+                                    context,
+                                    message: AppLogger.getSafeErrorMessage(
+                                      message,
                                     ),
+                                    isError: true,
                                   );
                                 }
                               } finally {

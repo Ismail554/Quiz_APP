@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
+import 'package:geography_geyser/utils/validators.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/forget_pass_screen.dart';
 
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
@@ -48,6 +50,11 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
         _passwordMatchError = null;
       });
     }
+  }
+
+  // Validate password length
+  String? _validatePassword(String? value) {
+    return Validators.validatePassword(value);
   }
 
   @override
@@ -121,7 +128,11 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                             ),
                             onChanged: (value) {
                               _validatePasswordMatch();
+                              setState(() {}); // Trigger rebuild to show errors
                             },
+                            errorText: _validatePassword(
+                              _newPassController.text,
+                            ),
                           ),
                           AppSpacing.h12,
                           BuildTextField(
@@ -209,6 +220,20 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                               return;
                             }
 
+                            // Validate password length for new password
+                            final passwordError = _validatePassword(
+                              _newPassController.text,
+                            );
+                            if (passwordError != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(passwordError),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
                             // Validate password match
                             if (_newPassController.text !=
                                 _confirmPassController.text) {
@@ -256,7 +281,11 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                               // Show error message
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(provider.message),
+                                  content: Text(
+                                    AppLogger.getSafeErrorMessage(
+                                      provider.message,
+                                    ),
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );

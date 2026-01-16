@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
@@ -11,6 +12,7 @@ import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/google_login_btn.dart';
+import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
@@ -170,12 +172,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   final password = passwordController.text;
 
                                   if (email.isEmpty || password.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
+                                    CustomSnackBar.show(
+                                      context,
+                                      message:
                                           'Please enter email and password',
-                                        ),
-                                      ),
+                                      isError: true,
                                     );
                                     return;
                                   }
@@ -192,6 +193,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     );
 
                                     if (!context.mounted) return;
+
+                                    CustomSnackBar.show(
+                                      context,
+                                      message: 'Welcome to the app',
+                                      isError: false,
+                                    );
 
                                     // Check is_optional_module_selected from login response
                                     final isOptionalModuleSelected =
@@ -211,15 +218,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     );
                                   } catch (e) {
-                                    String message = 'Login failed';
+                                    String message =
+                                        'Invalid email or password.';
                                     if (e is Map && e['message'] != null) {
                                       message = e['message'].toString();
                                     }
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(
+                                      CustomSnackBar.show(
                                         context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text(message)),
+                                        message: AppLogger.getSafeErrorMessage(
+                                          message,
+                                        ),
+                                        isError: true,
                                       );
                                     }
                                   } finally {
