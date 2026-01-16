@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:geography_geyser/views/profile/settings/contact_support_screen.dart';
+import 'package:geography_geyser/views/profile/settings/app_info.dart';
 import 'package:provider/provider.dart';
 
 // Core imports
@@ -636,6 +636,7 @@ class ProfileScreen extends StatelessWidget {
       barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
           ),
@@ -653,31 +654,32 @@ class ProfileScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: TextButton(
+                  child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppColors.bgColor,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppColors.blue),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
+                        borderRadius: BorderRadius.circular(10.r),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                     ),
                     child: Text(
                       AppStrings.cancelButton,
                       style: FontManager.buttonText().copyWith(
-                        color: AppColors.black,
+                        color: AppColors.blue,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
+
                 AppSpacing.w12,
+
                 Expanded(
-                  child: TextButton(
+                  child: ElevatedButton(
                     onPressed: () async {
-                      // Close dialog
                       Navigator.of(context).pop();
 
-                      // Clear all provider data before logout
                       final userProvider = Provider.of<UserProvider>(
                         context,
                         listen: false,
@@ -686,7 +688,7 @@ class ProfileScreen extends StatelessWidget {
                         context,
                         listen: false,
                       );
-                      final performanceProvider = Provider.of<ProfileProvider>(
+                      final profileProvider = Provider.of<ProfileProvider>(
                         context,
                         listen: false,
                       );
@@ -696,20 +698,16 @@ class ProfileScreen extends StatelessWidget {
                             listen: false,
                           );
 
-                      // Clear all provider data
                       await Future.wait([
                         userProvider.clearUserData(),
                         statsProvider.clearUserStats(),
-                        performanceProvider.clearProfileData(),
+                        profileProvider.clearProfileData(),
                       ]);
 
-                      // Clear optional module provider (synchronous)
                       optionalModuleProvider.clearModulePairs();
 
-                      // Reset initialization flag so new user data loads properly
                       ProfileScreen.resetInitialization();
 
-                      // Clear secure storage and other auth data
                       await LoginProvider.logout();
 
                       if (!context.mounted) return;
@@ -717,19 +715,23 @@ class ProfileScreen extends StatelessWidget {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (route) => false,
+                        (_) => false,
                       );
                     },
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
+                        borderRadius: BorderRadius.circular(10.r),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                     ),
                     child: Text(
                       AppStrings.logOutButton,
-                      style: FontManager.buttonText(),
+                      style: FontManager.buttonText().copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),

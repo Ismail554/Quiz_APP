@@ -17,6 +17,7 @@ class BuildTextField extends StatelessWidget {
   final bool isReadOnly;
   final TextInputAction? textInputAction;
   final Function(String)? onChanged;
+  final String? Function(String?)? validator;
 
   const BuildTextField({
     super.key,
@@ -33,6 +34,7 @@ class BuildTextField extends StatelessWidget {
     this.onChanged,
     this.isReadOnly = false,
     this.textInputAction,
+    this.validator,
   });
 
   @override
@@ -53,13 +55,14 @@ class BuildTextField extends StatelessWidget {
         AppSpacing.h8,
 
         // Input field
-        TextField(
+        TextFormField(
           textInputAction: textInputAction,
           readOnly: isReadOnly,
           controller: controller,
           keyboardType: keyboardType,
           obscureText: isPassword ? obscureText : false,
           onChanged: onChanged,
+          validator: validator,
           decoration: InputDecoration(
             filled: true,
             fillColor: bgcolor,

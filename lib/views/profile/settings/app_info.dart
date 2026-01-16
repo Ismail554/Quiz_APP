@@ -30,6 +30,7 @@ class AboutAppScreen extends StatelessWidget {
           padding: EdgeInsets.all(16.r),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               // Header Section
               Center(
@@ -132,7 +133,7 @@ class AboutAppScreen extends StatelessWidget {
 
               // Technical Information
               _buildSectionHeader('Technical Information'),
-              AppSpacing.h10,
+              AppSpacing.h14,
               Container(
                 padding: EdgeInsets.all(16.r),
                 decoration: _cardDecoration(),
@@ -146,7 +147,7 @@ class AboutAppScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              AppSpacing.h24,
+              AppSpacing.h28,
 
               // Contact & Support
               _buildSectionHeader('Contact & Support'),
@@ -193,13 +194,13 @@ class AboutAppScreen extends StatelessWidget {
                             ),
                             Icon(
                               Icons.mail_outline,
-                              size: 18.r,
+                              size: 20.r,
                               color: Colors.orange,
                             ),
                           ],
                         ),
 
-                        SizedBox(height: 8.r),
+                        SizedBox(height: 16.r),
 
                         // Email with better alignment and handling
                         Container(
@@ -214,8 +215,13 @@ class AboutAppScreen extends StatelessWidget {
                           ),
                           child: Text(
                             'simonA@standsureeducation.co.uk',
-                            style: FontManager.bodyText(color: Colors.orange),
+                            style: FontManager.bodyText(
+                              fontSize: 16.sp,
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w900,
+                            ),
                             textAlign: TextAlign.center,
+
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
@@ -225,7 +231,7 @@ class AboutAppScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              AppSpacing.h40,
+              AppSpacing.h48,
             ],
           ),
         ),
@@ -296,7 +302,13 @@ class AboutAppScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: FontManager.bodyText(color: Colors.grey.shade600)),
+        Text(
+          label,
+          style: FontManager.bodyText(
+            fontSize: 16.sp,
+            color: Colors.grey.shade600,
+          ),
+        ),
         Text(value, style: FontManager.headerSubtitleText(fontSize: 14.sp)),
       ],
     );

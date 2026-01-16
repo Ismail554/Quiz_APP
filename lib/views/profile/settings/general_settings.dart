@@ -329,6 +329,7 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
                     BuildTextField(
                       controller: _emailController,
                       isReadOnly: true,
+                      
                       label: AppStrings.emailLabel,
                       hint: AppStrings.emailFieldValue,
                     ),

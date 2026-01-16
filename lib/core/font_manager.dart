@@ -53,6 +53,7 @@ class FontManager {
   );
   // Subtitle Text
   static TextStyle subtitleText({
+    double spacing = 0.1,
     double fontSize = 16,
     Color color = Colors.grey,
     double height = 1,
@@ -61,7 +62,7 @@ class FontManager {
     fontWeight: FontWeight.w400,
     color: color,
     height: height,
-    letterSpacing: 0.0,
+    letterSpacing: spacing,
   );
 
   // //Bold Title Text
@@ -130,10 +131,14 @@ class FontManager {
     letterSpacing: 0.0,
   );
   // Body / Caption Text (default)
-  static TextStyle bodyText({Color color = mainTextColor}) => TextStyle(
+  static TextStyle bodyText({
+    Color color = mainTextColor,
+    FontWeight fontWeight = w400,
+    double fontSize = 14,
+  }) => TextStyle(
     fontFamily: inter,
-    fontSize: 14.sp,
-    fontWeight: w400,
+    fontSize: fontSize.sp,
+    fontWeight: fontWeight,
     color: color,
     height: 1.0,
     letterSpacing: 0.0,
@@ -204,13 +209,14 @@ class FontManager {
   );
   // Alert Text
   static TextStyle alertText({
+    double height = 1.5,
     double fontSize = 14,
     Color color = Colors.red,
   }) => GoogleFonts.montserrat(
     fontSize: fontSize.sp,
     fontWeight: w500,
     color: color,
-    height: 1.0,
+    height: height,
     letterSpacing: 0.0,
   );
 }

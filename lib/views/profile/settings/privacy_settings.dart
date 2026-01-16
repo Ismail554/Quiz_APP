@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
-import 'package:geography_geyser/core/app_logger.dart';
+
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
-import 'package:geography_geyser/utils/validators.dart';
+
 import 'package:geography_geyser/views/auth/forgot_pass/forget_pass_screen.dart';
 
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
+import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:provider/provider.dart';
 
@@ -29,7 +30,6 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
   bool _obscureOldPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
-  String? _passwordMatchError;
 
   @override
   void dispose() {
@@ -37,24 +37,6 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
     _newPassController.dispose();
     _confirmPassController.dispose();
     super.dispose();
-  }
-
-  void _validatePasswordMatch() {
-    if (_confirmPassController.text.isNotEmpty &&
-        _newPassController.text != _confirmPassController.text) {
-      setState(() {
-        _passwordMatchError = 'Passwords do not match';
-      });
-    } else {
-      setState(() {
-        _passwordMatchError = null;
-      });
-    }
-  }
-
-  // Validate password length
-  String? _validatePassword(String? value) {
-    return Validators.validatePassword(value);
   }
 
   @override
@@ -126,13 +108,16 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                                 });
                               },
                             ),
-                            onChanged: (value) {
-                              _validatePasswordMatch();
-                              setState(() {}); // Trigger rebuild to show errors
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Password is required';
+                              }
+                              if (value.length < 8) {
+                                // User requested exact message
+                                return 'Password must be 8 character long';
+                              }
+                              return null;
                             },
-                            errorText: _validatePassword(
-                              _newPassController.text,
-                            ),
                           ),
                           AppSpacing.h12,
                           BuildTextField(
@@ -140,9 +125,10 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                             label: AppStrings.confirmNewPassword,
                             hint: AppStrings.confirmNewPasswordLabel,
                             isPassword: true,
+
                             obscureText: _obscureConfirmPassword,
                             textInputAction: TextInputAction.done,
-                            errorText: _passwordMatchError,
+
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscureConfirmPassword
@@ -157,8 +143,15 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                                 });
                               },
                             ),
-                            onChanged: (value) {
-                              _validatePasswordMatch();
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please confirm your password';
+                              }
+                              // User requested match validation
+                              if (value != _newPassController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
                             },
                           ),
                           AppSpacing.h12,
@@ -202,93 +195,41 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                     onPressed: provider.isLoading
                         ? null
                         : () async {
-                            // Clear previous errors
-                            setState(() {
-                              _passwordMatchError = null;
-                            });
-
-                            // Validate all fields are filled
-                            if (_oldPassController.text.isEmpty ||
-                                _newPassController.text.isEmpty ||
-                                _confirmPassController.text.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please fill all fields'),
-                                  backgroundColor: Colors.red,
-                                ),
+                            // Validate form
+                            if (_formKey.currentState!.validate()) {
+                              // Proceed with update
+                              await provider.updatePassword(
+                                _oldPassController.text,
+                                _newPassController.text,
                               );
-                              return;
-                            }
 
-                            // Validate password length for new password
-                            final passwordError = _validatePassword(
-                              _newPassController.text,
-                            );
-                            if (passwordError != null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(passwordError),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                              return;
-                            }
+                              if (!mounted) return;
 
-                            // Validate password match
-                            if (_newPassController.text !=
-                                _confirmPassController.text) {
-                              setState(() {
-                                _passwordMatchError =
-                                    'New password and confirm password do not match';
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'New password and confirm password do not match',
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                              return;
-                            }
-
-                            // Call API
-                            await provider.updatePassword(
-                              _oldPassController.text,
-                              _newPassController.text,
-                            );
-
-                            // Show result based on API response
-                            if (provider.isSuccess) {
-                              // Clear fields on success
-                              _oldPassController.clear();
-                              _newPassController.clear();
-                              _confirmPassController.clear();
-                              setState(() {
-                                _passwordMatchError = null;
-                                _obscureOldPassword = true;
-                                _obscureNewPassword = true;
-                                _obscureConfirmPassword = true;
-                              });
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(provider.message),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            } else {
-                              // Show error message
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    AppLogger.getSafeErrorMessage(
-                                      provider.message,
-                                    ),
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                              if (provider.isSuccess) {
+                                CustomSnackBar.show(
+                                  context,
+                                  message: 'Password updated successfully',
+                                  isError: false,
+                                );
+                                // Clear fields
+                                _oldPassController.clear();
+                                _newPassController.clear();
+                                _confirmPassController.clear();
+                                setState(() {
+                                  _obscureOldPassword = true;
+                                  _obscureNewPassword = true;
+                                  _obscureConfirmPassword = true;
+                                  FocusScope.of(context).unfocus();
+                                });
+                              } else {
+                                CustomSnackBar.show(
+                                  context,
+                                  message: provider.message.isNotEmpty
+                                      ? provider.message
+                                      : 'Failed to update password',
+                                  isError: true,
+                                );
+                              }
                             }
                           },
                   ),

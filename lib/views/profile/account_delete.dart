@@ -46,7 +46,7 @@ class _AccountDeleteState extends State<AccountDelete> {
               children: [
                 Text(
                   AppStrings.accountdeleteDescription,
-                  style: FontManager.subtitleText(),
+                  style: FontManager.subtitleText(spacing: 0.2, height: 1.5),
                 ),
                 AppSpacing.h20,
                 BuildTextField(
