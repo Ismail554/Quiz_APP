@@ -162,14 +162,16 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
         throw Exception("Token not found! Please login again.");
       }
 
-      final url = Uri.parse("${ApiService.baseUrl}/auth/profile-update/");
+      final url = Uri.parse(ApiService.updateProfile);
       var request = http.MultipartRequest('PATCH', url);
 
       //Add Bearer token
       request.headers['Authorization'] = 'Bearer $token';
 
       // Add text field
-      request.fields['full_name'] = _nameController.text.trim();
+      if (_nameController.text.isNotEmpty) {
+        request.fields['full_name'] = _nameController.text.trim();
+      }
 
       // Add image file if selected
       if (_imageFile != null) {
@@ -184,29 +186,68 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
       debugPrint("Status Code: ${response.statusCode}");
       debugPrint("Response Body: ${response.body}");
 
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Profile updated!')),
-        );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final data = jsonDecode(response.body);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'] ?? 'Profile updated!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } catch (e) {
+          // If 200 but not valid JSON (unexpected), just show success with default message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
 
         // Refresh user data after successful update
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.fetchUserData();
-
-        // Update fields with new data
         if (mounted) {
+          final userProvider = Provider.of<UserProvider>(
+            context,
+            listen: false,
+          );
+          await userProvider.fetchUserData();
+
+          // Update fields with new data
           _populateFields(userProvider.userModel);
         }
       } else {
-        throw Exception(data['message'] ?? 'Update failed!');
+        // Try to parse error message, fallback to status text
+        String errorMsg = 'Update failed (${response.statusCode})';
+        try {
+          final data = jsonDecode(response.body);
+          if (data['message'] != null)
+            errorMsg = data['message'];
+          else if (data['error'] != null)
+            errorMsg = data['error'];
+        } catch (_) {
+          // Body is not JSON (likely HTML)
+          if (response.body.contains('<!DOCTYPE html>')) {
+            errorMsg =
+                'Server Error (${response.statusCode}). Please contact support.';
+          } else if (response.body.isNotEmpty) {
+            // Take first 100 chars if plain text
+            errorMsg = response.body.length > 100
+                ? response.body.substring(0, 100)
+                : response.body;
+          }
+        }
+        throw Exception(errorMsg);
       }
     } catch (e) {
       debugPrint("Profile update error: $e");
+      String msg = e.toString();
+      if (msg.startsWith('Exception: ')) {
+        msg = msg.substring(11); // Remove "Exception: " prefix
+      }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

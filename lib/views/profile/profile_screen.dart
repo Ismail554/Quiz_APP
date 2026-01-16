@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geography_geyser/views/profile/settings/contact_support_screen.dart';
 import 'package:provider/provider.dart';
 
 // Core imports
@@ -341,6 +342,7 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
+
           Divider(height: 1, color: Colors.grey[300]),
           // Module Settings Row
           buildSettingRow(
@@ -364,6 +366,19 @@ class ProfileScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => AccountDelete()),
+              );
+            },
+          ),
+
+          Divider(height: 1, color: Colors.grey[300]),
+          //About App
+          buildSettingRow(
+            icon: Icons.info_outline,
+            text: "About App",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AboutAppScreen()),
               );
             },
           ),
