@@ -9,6 +9,7 @@ import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/forget_pass_screen.dart';
 import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
+import 'package:geography_geyser/views/custom_widgets/apple_login_btn.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/google_login_btn.dart';
@@ -272,8 +273,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         AppSpacing.h20,
 
                         // Google login
-                        GoogleLoginBtn(),
-                        AppSpacing.h16,
+                        Row(
+                          spacing: 18.w,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [GoogleLoginBtn(), AppleLoginBtn()],
+                        ),
+                        AppSpacing.h12,
 
                         // Create Account
                         Center(

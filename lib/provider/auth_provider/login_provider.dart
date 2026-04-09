@@ -7,6 +7,7 @@ import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/services/https_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class LoginProvider extends ChangeNotifier {
   static final ValueNotifier<bool> isLoading = ValueNotifier(false);
@@ -57,11 +58,11 @@ class LoginProvider extends ChangeNotifier {
 
   // ---------------- STORE DATA ----------------
   static Future<void> _storeLoginData(Map<String, dynamic> data) async {
-    if (data.containsKey('access_token')) {
-      await SecureStorageHelper.setToken(data['access_token']);
+    if (data['access_token'] != null) {
+      await SecureStorageHelper.setToken(data['access_token'].toString());
     }
-    if (data.containsKey('refresh_token')) {
-      await SecureStorageHelper.setRefreshToken(data['refresh_token']);
+    if (data['refresh_token'] != null) {
+      await SecureStorageHelper.setRefreshToken(data['refresh_token'].toString());
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -114,6 +115,67 @@ class LoginProvider extends ChangeNotifier {
       );
     } catch (e) {
       debugPrint('Google Login Error: $e');
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ---------------- APPLE SIGN IN ----------------
+  static Future<Map<String, dynamic>> signInWithApple() async {
+    isLoading.value = true;
+
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final String? email = credential.email;
+      final String idToken = credential.identityToken ?? "";
+
+      debugPrint('📧 Got Apple credential. Email: $email');
+
+      Map<String, dynamic> body = {
+        "id_token": idToken,
+        "user": {
+          "name": {
+            "givenName": (credential.givenName ?? "").trim(),
+            "familyName": (credential.familyName ?? "").trim(),
+          },
+        },
+      };
+
+      // if (email != null && email.isNotEmpty) {
+      //   body["email"] = email;
+      // }
+
+      final response = await HttpManager.apiRequest(
+        url: ApiService.appleLoginUrl,
+        method: Method.post,
+        body: body,
+        name: 'AppleLogin',
+        statusCode: 200,
+      );
+
+      return response.fold(
+        (error) {
+          throw error;
+        },
+        (data) async {
+          final Map<String, dynamic> responseData = jsonDecode(data);
+          if (email != null && email.isNotEmpty) {
+            responseData['email'] = email;
+          }
+          await _storeLoginData(responseData);
+          debugPrint('🎉 Apple Login Successful!');
+          return responseData;
+        },
+      );
+    } catch (e) {
+      debugPrint('Apple Login Error: $e');
       rethrow;
     } finally {
       isLoading.value = false;

@@ -56,7 +56,11 @@ class HttpManager {
         return right(utf8.decode(response.bodyBytes));
       } else {
         log(response.body, name: "${response.statusCode}");
-        return left(jsonDecode(response.body)['error']);
+        final responseData = jsonDecode(response.body);
+        final error = responseData['error'] ??
+            responseData['message'] ??
+            "An unknown error occurred";
+        return left(error.toString());
       }
     } catch (e) {
       if (e.toString().contains('SocketException') ||

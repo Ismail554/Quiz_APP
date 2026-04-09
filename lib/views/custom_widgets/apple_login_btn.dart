@@ -7,14 +7,14 @@ import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
-class GoogleLoginBtn extends StatefulWidget {
-  const GoogleLoginBtn({super.key});
+class AppleLoginBtn extends StatefulWidget {
+  const AppleLoginBtn({super.key});
 
   @override
-  State<GoogleLoginBtn> createState() => _GoogleLoginBtnState();
+  State<AppleLoginBtn> createState() => _AppleLoginBtnState();
 }
 
-class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
+class _AppleLoginBtnState extends State<AppleLoginBtn> {
   bool _isLoading = false;
 
   @override
@@ -32,7 +32,7 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                   });
 
                   try {
-                    final response = await LoginProvider.signInWithGoogle();
+                    final response = await LoginProvider.signInWithApple();
 
                     if (!context.mounted) return;
 
@@ -51,7 +51,7 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                     );
                   } catch (e) {
                     if (!context.mounted) return;
-                    String message = 'Google sign-in failed';
+                    String message = 'Apple sign-in failed';
                     if (e is Map && e['message'] != null) {
                       message = e['message'].toString();
                     }
@@ -86,15 +86,10 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/images/google_logo.png',
-                      width: 20.w,
-                      height: 20.h,
-                    ),
+                    Icon(Icons.apple_rounded, size: 24.w, color: Colors.black),
                     AppSpacing.w8,
                     Text(
-                      // 'Google',
-                      AppStrings.googleLogin,
+                      AppStrings.continueWithApple,
                       style: TextStyle(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w600,

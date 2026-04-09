@@ -6,6 +6,7 @@ class ApiService {
   static String get signupUrl => "$_baseUrl/auth/register/";
   static String get verifyOtpUrl => "$_baseUrl/auth/verify-otp/";
   static String get googleLoginUrl => "$_baseUrl/auth/email/";
+  static String get appleLoginUrl => "$_baseUrl/auth/apple/"; // body:
 
   //General settings
   static String get updateProfile => "$_baseUrl/auth/profile-update/";
