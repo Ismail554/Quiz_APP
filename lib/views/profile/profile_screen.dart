@@ -598,7 +598,14 @@ class ProfileScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(subject, style: FontManager.generalText(color: Colors.black)),
+            Expanded(
+              child: Text(
+                subject,
+                style: FontManager.generalText(color: Colors.black),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             Text(
               '$progressPercentage%',
               style: FontManager.bodyText(color: Colors.black),

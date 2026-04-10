@@ -280,210 +280,229 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap the Scaffold in a PopScope to intercept back navigation
-    return PopScope(
-      canPop: false, // 1. Prevents the screen from closing automatically
-      onPopInvokedWithResult: (bool didPop, dynamic result) async {
-        if (didPop) {
-          return;
-        }
-        // 2. Trigger your existing "Quit Quiz" dialog
-        showCancelQuizDialog(context);
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.bgColor,
-        body: SafeArea(
-          child: Consumer<QuizProvider>(
-            builder: (context, provider, child) {
-              // Loading state
-              if (provider.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+    return Consumer<QuizProvider>(
+      builder: (context, provider, child) {
+        // Only enable automatic back navigation when there is truly no quiz data available
+        final bool canPopAutomatically =
+            !provider.isLoading &&
+            provider.errorMessage == null &&
+            (provider.quizData == null || provider.quizData!.questions.isEmpty);
 
-              // Error state
-              if (provider.errorMessage != null) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64.sp,
-                        color: AppColors.red,
-                      ),
-                      AppSpacing.h16,
-                      Text(
-                        AppLogger.getSafeErrorMessage(provider.errorMessage!),
-                        style: FontManager.bodyText(),
-                        textAlign: TextAlign.center,
-                      ),
-                      AppSpacing.h24,
-                      ElevatedButton(
-                        onPressed: () {
-                          if (widget.moduleId != null) {
-                            // Use synoptic API if moduleId is 'synoptic'
-                            if (widget.moduleId == 'synoptic') {
-                              provider.fetchSynopticQuiz();
-                            } else {
-                              provider.fetchQuiz(widget.moduleId!);
-                            }
-                          }
-                        },
-                        child: Text('Retry'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // No quiz data
-              if (provider.quizData == null ||
-                  provider.quizData!.questions.isEmpty) {
-                return const Center(child: Text('No quiz data available'));
-              }
-
-              final questions = provider.quizData!.questions;
-              final actualTotalQuestions = questions.length;
-
-              // Check if current question index is valid
-              if (currentQuestionIndex >= actualTotalQuestions) {
-                // Quiz completed
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _finishQuizAndNavigate();
-                });
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final currentQuestion = questions[currentQuestionIndex];
-
-              return Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(16.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top section (close button + quiz info)
-                          IconButton(
-                            icon: Icon(Icons.close, color: AppColors.black),
-                            onPressed: () {
-                              showCancelQuizDialog(context);
-                            },
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12.w,
-                                  vertical: 6.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.purple,
-                                  borderRadius: BorderRadius.circular(8.r),
-                                ),
-                                child: Text(
-                                  AppStrings.quizTitleMigrations,
-                                  style: FontManager.buttonTextRegular()
-                                      .copyWith(
-                                        color: AppColors.white,
-                                        fontSize: 14.sp,
-                                      ),
-                                ),
-                              ),
-                              //Sound on/off button
-                              IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isSoundEnabled = !_isSoundEnabled;
-                                    SoundHelper.setSoundEnabled(
-                                      _isSoundEnabled,
-                                    );
-                                  });
-                                },
-                                icon: Icon(
-                                  _isSoundEnabled
-                                      ? Icons.volume_up_outlined
-                                      : Icons.volume_off_outlined,
-                                  color: _isSoundEnabled
-                                      ? AppColors.black
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          AppSpacing.h12,
-
-                          // Question info row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Question no: ${currentQuestionIndex + 1}',
-                                style: FontManager.bodyText(),
-                              ),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    color: AppColors.red,
-                                    size: 18.sp,
-                                  ),
-                                  AppSpacing.w4,
-                                  Text(
-                                    formattedTime,
-                                    style: FontManager.bodyText().copyWith(
-                                      color: AppColors.red,
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  AppSpacing.w16,
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          AppSpacing.h20,
-
-                          // Question text
-                          Text(
-                            currentQuestion.questionText,
-                            style: FontManager.boldHeading(
-                              fontSize: 20,
-                              color: AppColors.black,
-                            ),
-                          ),
-                          AppSpacing.h24,
-
-                          // Options
-                          ...List.generate(currentQuestion.optionsList.length, (
-                            index,
-                          ) {
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: 12.h),
-                              child: customQchoice(
-                                currentQuestion.optionsList[index],
-                                AppColors.white,
-                                index,
-                                currentQuestion,
-                              ),
-                            );
-                          }),
-                          AppSpacing.h20,
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+        return PopScope(
+          canPop: canPopAutomatically,
+          onPopInvokedWithResult: (bool didPop, dynamic result) async {
+            if (didPop) {
+              return;
+            }
+            // Trigger confirmation dialog only if quiz is actually running
+            showCancelQuizDialog(context);
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.bgColor,
+            body: SafeArea(
+              child: _buildBody(context, provider),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+
+  Widget _buildBody(BuildContext context, QuizProvider provider) {
+    // Loading state - Keep as simple Center indicator as before
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Error state - Keep as Center column with Retry button as before
+    if (provider.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64.sp,
+                color: AppColors.red,
+              ),
+              AppSpacing.h16,
+              Text(
+                AppLogger.getSafeErrorMessage(provider.errorMessage!),
+                style: FontManager.bodyText(),
+                textAlign: TextAlign.center,
+              ),
+              AppSpacing.h24,
+              ElevatedButton(
+                onPressed: () {
+                  if (widget.moduleId != null) {
+                    if (widget.moduleId == 'synoptic') {
+                      provider.fetchSynopticQuiz();
+                    } else {
+                      provider.fetchQuiz(widget.moduleId!);
+                    }
+                  }
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // No quiz data - Keep the "Go Back" capability here
+    if (provider.quizData == null || provider.quizData!.questions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.quiz_outlined,
+              size: 64.sp,
+              color: Colors.grey,
+            ),
+            AppSpacing.h16,
+            const Text('No quiz data available'),
+            AppSpacing.h24,
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final questions = provider.quizData!.questions;
+    final actualTotalQuestions = questions.length;
+
+    // Check if current question index is valid
+    if (currentQuestionIndex >= actualTotalQuestions) {
+      // Quiz completed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _finishQuizAndNavigate();
+      });
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final currentQuestion = questions[currentQuestionIndex];
+
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top section (close button + quiz info)
+                IconButton(
+                  icon: Icon(Icons.close, color: AppColors.black),
+                  onPressed: () {
+                    showCancelQuizDialog(context);
+                  },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.purple,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        AppStrings.quizTitleMigrations,
+                        style: FontManager.buttonTextRegular().copyWith(
+                          color: AppColors.white,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                    //Sound on/off button
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _isSoundEnabled = !_isSoundEnabled;
+                          SoundHelper.setSoundEnabled(_isSoundEnabled);
+                        });
+                      },
+                      icon: Icon(
+                        _isSoundEnabled
+                            ? Icons.volume_up_outlined
+                            : Icons.volume_off_outlined,
+                        color: _isSoundEnabled ? AppColors.black : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                AppSpacing.h12,
+
+                // Question info row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Question no: ${currentQuestionIndex + 1}',
+                      style: FontManager.bodyText(),
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, color: AppColors.red, size: 18.sp),
+                        AppSpacing.w4,
+                        Text(
+                          formattedTime,
+                          style: FontManager.bodyText().copyWith(
+                            color: AppColors.red,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        AppSpacing.w16,
+                      ],
+                    ),
+                  ],
+                ),
+
+                AppSpacing.h20,
+
+                // Question text
+                Text(
+                  currentQuestion.questionText,
+                  style: FontManager.boldHeading(
+                    fontSize: 20,
+                    color: AppColors.black,
+                  ),
+                ),
+                AppSpacing.h24,
+
+                // Options
+                ...List.generate(currentQuestion.optionsList.length, (index) {
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 12.h),
+                    child: customQchoice(
+                      currentQuestion.optionsList[index],
+                      AppColors.white,
+                      index,
+                      currentQuestion,
+                    ),
+                  );
+                }),
+                AppSpacing.h20,
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+
 
   void showCancelQuizDialog(BuildContext context) {
     showDialog(
