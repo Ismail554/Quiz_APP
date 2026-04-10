@@ -11,6 +11,8 @@ import 'package:geography_geyser/models/quiz_model.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
 import 'package:geography_geyser/provider/module_provider/delete_xp_provider.dart';
+import 'package:geography_geyser/provider/userstats_provider.dart';
+import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/views/modules/quiz_result.dart';
 import 'package:geography_geyser/views/modules/time_out_dialog.dart';
 import 'package:provider/provider.dart';
@@ -124,6 +126,8 @@ class _QuizScreenState extends State<QuizScreen> {
       context,
       listen: false,
     );
+    final statsProvider = Provider.of<UserStatsProvider>(context, listen: false);
+    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
 
     // Get quiz_id from quiz data
     final quizId = quizProvider.quizData?.quizId;
@@ -147,6 +151,10 @@ class _QuizScreenState extends State<QuizScreen> {
         correctAnswersCount,
         attemptedQuestions,
       );
+
+      // Refresh user stats and profile data to update UI on Home/Profile screens
+      statsProvider.fetchUserStats();
+      profileProvider.fetchProfile();
 
       // Close loading dialog
       if (mounted) {
@@ -183,6 +191,8 @@ class _QuizScreenState extends State<QuizScreen> {
       context,
       listen: false,
     );
+    final statsProvider = Provider.of<UserStatsProvider>(context, listen: false);
+    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
 
     // Get quiz_id from quiz data
     final quizId = quizProvider.quizData?.quizId;
@@ -209,6 +219,10 @@ class _QuizScreenState extends State<QuizScreen> {
         correctAnswersCount,
         attemptedQuestions,
       );
+
+      // Refresh user stats and profile data to update UI on Home/Profile screens
+      statsProvider.fetchUserStats();
+      profileProvider.fetchProfile();
 
       // Close loading dialog
       if (mounted) {

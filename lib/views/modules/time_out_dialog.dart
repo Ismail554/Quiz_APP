@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
@@ -80,6 +82,8 @@ class TimeoutDialog extends StatelessWidget {
     BuildContext context, {
     required VoidCallback onOkPressed,
   }) {
+    // Trigger custom vibration pattern when timeout dialog appears
+    Vibration.vibrate(pattern: [0, 500, 200, 800]);
     return showDialog(
       context: context,
       barrierDismissible: false,

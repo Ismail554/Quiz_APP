@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 
 class SoundHelper {
   static final AudioPlayer _player = AudioPlayer();
@@ -21,6 +22,8 @@ class SoundHelper {
 
   static Future<void> playWrong() async {
     if (!_isSoundEnabled) return;
+    // Trigger vibration feedback for wrong answers
+    HapticFeedback.mediumImpact();
     await _player.play(AssetSource('sounds/wrong.mp3'));
   }
 }
