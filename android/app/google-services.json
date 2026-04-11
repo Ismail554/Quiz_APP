@@ -1,41 +1,42 @@
 {
   "project_info": {
-    "project_number": "581080373754",
-    "project_id": "geography-geyser-app-cc7f8",
-    "storage_bucket": "geography-geyser-app-cc7f8.firebasestorage.app"
+    "project_number": "868957439431",
+    "project_id": "geography-geyser",
+    "storage_bucket": "geography-geyser.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:581080373754:android:e9c063cf67d22a6d166c43",
+        "mobilesdk_app_id": "1:868957439431:android:cbfd06d9b335ae227585e2",
         "android_client_info": {
-          "package_name": "com.app.geography_geyser"
+          "package_name": "com.geographygeyser.simon"
         }
       },
       "oauth_client": [
         {
-          "client_id": "581080373754-o7a3v7d346j434tgaiirtdt0s79sd7sc.apps.googleusercontent.com",
+          "client_id": "868957439431-i3e90jg2oeee4hnvd4il9a82ne8dd369.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.geographygeyser.simon",
+            "certificate_hash": "4f8049ac11ab2560563424a816ae6aff10a72916"
+          }
+        },
+        {
+          "client_id": "868957439431-sf3477q19dik6ltr2jc96fclthibfo2t.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDX8ka9gfplfmzdSXFD_ixh3ZjXL2ODY0M"
+          "current_key": "AIzaSyDPe-8IPY6_JQcFh4a9g3-4R9MZwkl8J7o"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "581080373754-o7a3v7d346j434tgaiirtdt0s79sd7sc.apps.googleusercontent.com",
+              "client_id": "868957439431-sf3477q19dik6ltr2jc96fclthibfo2t.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "581080373754-5a635qmm4sdih9v6eeac0l9fp1kd0hmg.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.geographyGeyser"
-              }
             }
           ]
         }

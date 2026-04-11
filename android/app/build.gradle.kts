@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
 
-    namespace = "com.app.geography_geyser"
+    namespace = "com.geographygeyser.simon"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -54,7 +54,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.app.geography_geyser"
+        applicationId = "com.geographygeyser.simon"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 2
