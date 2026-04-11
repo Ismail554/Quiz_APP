@@ -51,11 +51,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDX8ka9gfplfmzdSXFD_ixh3ZjXL2ODY0M',
-    appId: '1:581080373754:android:a4474079082e1a6e166c43',
-    messagingSenderId: '581080373754',
-    projectId: 'geography-geyser-app-cc7f8',
-    storageBucket: 'geography-geyser-app-cc7f8.firebasestorage.app',
+    apiKey: 'AIzaSyDPe-8IPY6_JQcFh4a9g3-4R9MZwkl8J7o',
+    appId: '1:868957439431:android:cbfd06d9b335ae227585e2',
+    messagingSenderId: '868957439431',
+    projectId: 'geography-geyser',
+    storageBucket: 'geography-geyser.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
