@@ -78,24 +78,23 @@ class _CustomToggleButtonState extends State<CustomToggleButton> {
         onTap: () => _selectOption(option),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected
-                ?
-                  // Color(0xFF4D9EFF)
-                  AppColors.buttonColor
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(28),
+            color: isSelected ? AppColors.buttonColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(24.r),
           ),
           alignment: Alignment.center,
-          child: Text(
-            option,
-            textAlign: TextAlign.center,
-            style: FontManager.regularText(),
-            // TextStyle(
-            //   color: isSelected ? Colors.white : Colors.black87,
-            //   fontSize: 14,
-            //   fontWeight: FontWeight.w600,
-            //   letterSpacing: 0.5,
-            // ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            child: Text(
+              option,
+              textAlign: TextAlign.center,
+              style: FontManager.headlineText(fontSize: 14.sp),
+              // TextStyle(
+              //   color: isSelected ? Colors.white : Colors.black87,
+              //   fontSize: 14,
+              //   fontWeight: FontWeight.w600,
+              //   letterSpacing: 0.5,
+              // ),
+            ),
           ),
         ),
       ),

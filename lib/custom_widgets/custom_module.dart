@@ -37,7 +37,8 @@ class CustomModule extends StatelessWidget {
   Widget build(BuildContext context) {
     // ✅ Pre-compute values to avoid recalculating in build
     final effectiveBorderRadius = borderRadius ?? 8.r;
-    final effectivePadding = padding ?? EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w);
+    final effectivePadding =
+        padding ?? EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w);
     final effectiveBackgroundColor = isSelected
         ? const Color(0xFFE8F4FF)
         : (backgroundColor ?? AppColors.white);
@@ -45,13 +46,16 @@ class CustomModule extends StatelessWidget {
         ? Colors.blueAccent
         : (borderColor ?? Colors.grey.shade300);
     final effectiveBorderWidth = isSelected ? 1.5 : 1.0;
-    final effectiveShadowColor = (shadowColor ?? Colors.black).withValues(alpha: 0.1);
-    final effectiveTextStyle = textStyle ??
-        FontManager.headerSubtitleText(
-          fontSize: fontSize ?? 20,
+    final effectiveShadowColor = (shadowColor ?? Colors.black).withValues(
+      alpha: 0.1,
+    );
+    final effectiveTextStyle =
+        textStyle ??
+        FontManager.headlineText(
+          fontSize: fontSize ?? 16.sp,
           color: Colors.black,
         );
-    final upperText = text.toUpperCase();
+    final upperText = text;
 
     return InkWell(
       onTap: onPressed,
@@ -84,6 +88,8 @@ class CustomModule extends StatelessWidget {
                 upperText,
                 textAlign: TextAlign.center,
                 style: effectiveTextStyle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (trailing != null) ...[SizedBox(width: 8.w), trailing!],

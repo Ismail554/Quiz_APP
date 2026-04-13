@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/font_manager.dart';
 
 class CustomLoginButton extends StatelessWidget {
   final String text;
@@ -54,9 +55,8 @@ class CustomLoginButton extends StatelessWidget {
               )
             : Text(
                 text,
-                style: TextStyle(
+                style: FontManager.headlineText(
                   fontSize: fontSize ?? 16.sp,
-                  fontWeight: fontWeight ?? FontWeight.w600,
                   color: textColor ?? Colors.white,
                 ),
               ),

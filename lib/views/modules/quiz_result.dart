@@ -198,7 +198,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
                       child: Text(
                         AppStrings.attendAnotherQuizInstruction,
                         style: FontManager.boldHeading(
-                          fontSize: 18,
+                          fontSize: 18.sp,
                           color: AppColors.grey4B,
                         ),
                       ),
@@ -217,7 +217,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
                             border: Border.all(
                               color: AppColors.blueTransparent,
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: CustomModule(
                             text: quiz.moduleName,
@@ -312,7 +312,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
         children: [
           Text(
             AppStrings.quizCompleteTitle,
-            style: FontManager.bigTitle(fontSize: 28, color: AppColors.blue),
+            style: FontManager.bigTitle(fontSize: 28.sp, color: AppColors.blue),
             textAlign: TextAlign.center,
           ),
           AppSpacing.h24,

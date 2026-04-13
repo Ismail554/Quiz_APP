@@ -49,8 +49,9 @@ class TimeoutDialog extends StatelessWidget {
           // Description
           Text(
             AppStrings.timeUpwarning,
-            style: FontManager.subtitleText(),
+            style: FontManager.regularText(),
             textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
           ),
 
           AppSpacing.h24,
