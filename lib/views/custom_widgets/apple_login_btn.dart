@@ -86,7 +86,7 @@ class _AppleLoginBtnState extends State<AppleLoginBtn> {
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.apple_rounded, size: 24.w, color: Colors.black),
+                    Icon(Icons.apple_rounded, size: 24.sp, color: Colors.black),
                     AppSpacing.w8,
                     Text(
                       AppStrings.continueWithApple,

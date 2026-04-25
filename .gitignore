@@ -52,4 +52,6 @@ GoogleService-Info.plist
 *.keystore
 *.properties
 !/android/key.properties
+# Environment variables
 .env
+.env*

@@ -217,7 +217,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _buildProfileAvatar(profilePic),
           AppSpacing.h16,
-          Text(fullName, style: FontManager.bigTitle(fontSize: 18)),
+          Text(fullName, style: FontManager.bigTitle(fontSize: 18.sp)),
           AppSpacing.h8,
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -250,14 +250,14 @@ class ProfileScreen extends StatelessWidget {
         child: ClipOval(
           child: Image.network(
             imageUrl,
-            width: 100,
-            height: 100,
+            width: 100.w,
+            height: 100.h,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Image.asset(
                 'assets/images/man.png',
-                width: 100,
-                height: 100,
+                width: 100.w,
+                height: 100.h,
                 fit: BoxFit.cover,
               );
             },
