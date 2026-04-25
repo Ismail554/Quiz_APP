@@ -29,10 +29,10 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.581080373754-tvili4mkiqts4rjeacgoti52h2i39fld</string>
+				<string>$(GOOGLE_CLIENT_ID_REVERSED)</string>
 			</array>
 			<key>GIDClientID</key>
-			<string>581080373754-tvili4mkiqts4rjeacgoti52h2i39fld.apps.googleusercontent.com</string>
+			<string>$(GOOGLE_CLIENT_ID)</string>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>

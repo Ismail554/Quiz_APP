@@ -20,9 +20,11 @@ import 'package:geography_geyser/provider/forgot_password/new_pass_set_provider.
 import 'package:provider/provider.dart';
 import 'package:geography_geyser/splash/splash_screen.dart';
 import 'package:geography_geyser/firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(

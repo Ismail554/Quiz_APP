@@ -1,6 +1,8 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiService {
-  static String get _baseUrl => "https://api.geographygeyser.com";
-  static String get baseUrl => "https://api.geographygeyser.com";
+  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? "https://api.geographygeyser.com";
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? "https://api.geographygeyser.com";
 
   static String get loginUrl => "$_baseUrl/auth/login/";
   static String get signupUrl => "$_baseUrl/auth/register/";

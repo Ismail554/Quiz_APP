@@ -393,7 +393,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
           children: [
             Container(
               width: 40.w,
-              height: 40.w,
+              height: 40.h,
               decoration: BoxDecoration(
                 color: iconColor,
                 shape: BoxShape.circle,
@@ -405,13 +405,13 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
               child: Text(
                 label,
                 style: FontManager.generalText(
-                  fontSize: 20,
+                  fontSize: 20.sp,
                 ).copyWith(color: iconColor, fontWeight: FontWeight.w600),
               ),
             ),
             Text(
               value,
-              style: FontManager.boldHeading(fontSize: 18, color: valueColor),
+              style: FontManager.boldHeading(fontSize: 18.sp, color: valueColor),
             ),
           ],
         ),
@@ -434,7 +434,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
         children: [
           Container(
             width: 40.w,
-            height: 40.w,
+            height: 40.h,
             decoration: BoxDecoration(
               color: AppColors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
@@ -447,7 +447,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
               labelText,
               // AppStrings.xpGainedLabel,
               style: FontManager.generalText(
-                fontSize: 16,
+                fontSize: 16.sp,
               ).copyWith(color: AppColors.white, fontWeight: FontWeight.w600),
             ),
           ),
@@ -455,7 +455,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
             valueText,
             // AppStrings.xpGainedValue,
             style: FontManager.boldHeading(
-              fontSize: 18,
+              fontSize: 18.sp,
               color: AppColors.white,
             ),
           ),
