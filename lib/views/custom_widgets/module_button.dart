@@ -25,13 +25,13 @@ class ModuleButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: isSelected ? AppColors.buttonColor : AppColors.borderColor,
-            width: 1.5,
+            width: 1.5.w,
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: Offset(0, 2),
+              blurRadius: 8.r,
+              offset: Offset(0, 2.w),
             ),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
@@ -14,7 +15,7 @@ class CongratulationsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.bgColor,
       body: Padding(
-        padding: EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(8.0.r),
         child: SafeArea(
           child: Column(
             children: [
@@ -24,8 +25,8 @@ class CongratulationsScreen extends StatelessWidget {
                   children: [
                     Image.asset(
                       "assets/icons/success.png",
-                      height: 152,
-                      width: 152,
+                      height: 152.h,
+                      width: 152.w,
                     ),
                     AppSpacing.h16,
                     Text(
@@ -36,7 +37,7 @@ class CongratulationsScreen extends StatelessWidget {
                     Text(
                       AppStrings.passSubtitle,
                       textAlign: TextAlign.center,
-                      style: FontManager.subtitleText(fontSize: 18),
+                      style: FontManager.subtitleText(fontSize: 18.sp),
                     ),
                     AppSpacing.h18,
                     ElevatedButtonCustom(

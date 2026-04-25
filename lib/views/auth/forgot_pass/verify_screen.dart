@@ -108,18 +108,18 @@ class _VerifyScreenState extends State<VerifyScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.buttonColor, width: 1.5),
+        border: Border.all(color: AppColors.buttonColor, width: 1.5.w),
       ),
     );
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(color: AppColors.buttonColor, width: 2),
+        border: Border.all(color: AppColors.buttonColor, width: 2.w),
         boxShadow: [
           BoxShadow(
             color: AppColors.buttonColor.withValues(alpha: 0.2),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: Offset(0, 2.w),
           ),
         ],
       ),
@@ -128,7 +128,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     final submittedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
         color: Color(0xFFF3F4F6),
-        border: Border.all(color: AppColors.buttonColor, width: 1.5),
+        border: Border.all(color: AppColors.buttonColor, width: 1.5.w),
       ),
     );
 
@@ -236,12 +236,12 @@ class _VerifyScreenState extends State<VerifyScreen> {
                           children: [
                             if (provider.errorMessage != null)
                               Padding(
-                                padding: EdgeInsets.only(bottom: 12.0),
+                                padding: EdgeInsets.only(bottom: 12.0.h),
                                 child: Container(
-                                  padding: EdgeInsets.all(12.0),
+                                  padding: EdgeInsets.all(12.0.r),
                                   decoration: BoxDecoration(
                                     color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8.0),
+                                    borderRadius: BorderRadius.circular(8.0.r),
                                     border: Border.all(
                                       color: Colors.red.shade300,
                                     ),
@@ -251,20 +251,20 @@ class _VerifyScreenState extends State<VerifyScreen> {
                                       Icon(
                                         Icons.error_outline,
                                         color: Colors.red,
-                                        size: 20,
+                                        size: 20.sp,
                                       ),
-                                      SizedBox(width: 8),
+                                      SizedBox(width: 8.w),
                                       Expanded(
                                         child: Text(
                                           provider.errorMessage!,
                                           style: TextStyle(
                                             color: Colors.red.shade700,
-                                            fontSize: 14,
+                                            fontSize: 14.sp,
                                           ),
                                         ),
                                       ),
                                       IconButton(
-                                        icon: Icon(Icons.close, size: 18),
+                                        icon: Icon(Icons.close, size: 18.sp),
                                         color: Colors.red,
                                         onPressed: () {
                                           provider.clearError();
@@ -370,10 +370,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
                                 ),
                                 child: provider.isLoading
                                     ? SizedBox(
-                                        width: 20,
-                                        height: 20,
+                                        width: 20.w,
+                                        height: 20.h,
                                         child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                          strokeWidth: 2.w,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
                                                 Colors.white,

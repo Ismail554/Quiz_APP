@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
@@ -46,7 +47,7 @@ class _PassResetScreenState extends State<PassResetScreen> {
         child: SafeArea(
           child: Center(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0.r),
               child: Column(
                 children: [
                   AppSpacing.h56,
@@ -57,7 +58,7 @@ class _PassResetScreenState extends State<PassResetScreen> {
                   ),
                   AppSpacing.h16,
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    padding: EdgeInsets.symmetric(horizontal: 12.0.w),
                     child: Text(
                       AppStrings.forgotPasswordInstruction,
                       style: FontManager.subtitleText(color: AppColors.black),
@@ -69,7 +70,7 @@ class _PassResetScreenState extends State<PassResetScreen> {
                   // Text(AppStrings.emailLabel, style: FontManager.bodyText()),
                   // AppSpacing.h4,
                   Padding(
-                    padding: EdgeInsets.all(8.0),
+                    padding: EdgeInsets.all(8.0.r),
                     child: Column(
                       children: [
                         BuildTextField(
@@ -86,9 +87,9 @@ class _PassResetScreenState extends State<PassResetScreen> {
                               children: [
                                 if (forgotPasswordProvider.errorMessage != null)
                                   Padding(
-                                    padding: EdgeInsets.only(bottom: 12.0),
+                                    padding: EdgeInsets.only(bottom: 12.0.h),
                                     child: Container(
-                                      padding: EdgeInsets.all(12.0),
+                                      padding: EdgeInsets.all(12.0.r),
                                       decoration: BoxDecoration(
                                         color: Colors.red.shade50,
                                         borderRadius: BorderRadius.circular(
@@ -103,21 +104,21 @@ class _PassResetScreenState extends State<PassResetScreen> {
                                           Icon(
                                             Icons.error_outline,
                                             color: Colors.red,
-                                            size: 20,
+                                            size: 20.sp,
                                           ),
-                                          SizedBox(width: 8),
+                                          SizedBox(width: 8.w),
                                           Expanded(
                                             child: Text(
                                               forgotPasswordProvider
                                                   .errorMessage!,
                                               style: TextStyle(
                                                 color: Colors.red.shade700,
-                                                fontSize: 14,
+                                                fontSize: 14.sp,
                                               ),
                                             ),
                                           ),
                                           IconButton(
-                                            icon: Icon(Icons.close, size: 18),
+                                            icon: Icon(Icons.close, size: 18.sp),
                                             color: Colors.red,
                                             onPressed: () {
                                               forgotPasswordProvider

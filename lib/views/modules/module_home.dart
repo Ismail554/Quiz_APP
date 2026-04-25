@@ -112,13 +112,13 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                 // Show synoptic as last item when data is loaded
                 if (hasData && index == totalItems - 1) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 14.0),
+                    padding: EdgeInsets.only(bottom: 14.0.h),
                     child: CustomModule(
                       key: const ValueKey('synoptic'),
                       text: 'Synoptic'.toUpperCase(),
                       isSelected: selectedIndex == index,
                       textStyle: FontManager.headerSubtitleText(
-                        fontSize: 20,
+                        fontSize: 20.sp,
                         color:
                             AppColors.buttonColor, // Custom color for synoptic
                       ),
@@ -140,7 +140,7 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                 final subject = subjects[index];
 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 14.0),
+                  padding: EdgeInsets.only(bottom: 14.0.h),
                   child: CustomModule(
                     key: ValueKey(subject.id),
                     text: subject.moduleName,
@@ -169,11 +169,11 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
   /// Initial shimmer loading
   Widget _buildShimmerLoading() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0.r),
       itemCount: 10,
       itemBuilder: (context, index) {
         return Padding(
-          padding: const EdgeInsets.only(bottom: 14.0),
+          padding: EdgeInsets.only(bottom: 14.0.h),
           child: _buildShimmerItem(),
         );
       },
@@ -227,13 +227,13 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0.r),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               isNoInternet ? Icons.wifi_off : Icons.error_outline,
-              size: 64,
+              size: 64.sp,
               color: Colors.grey[400]!,
             ),
             AppSpacing.h16,
@@ -241,7 +241,7 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
               "No modules available for now",
               textAlign: TextAlign.center,
               style: FontManager.headerSubtitleText(
-                fontSize: 16,
+                fontSize: 16.sp,
                 color: Colors.grey[600]!,
               ),
             ),
@@ -260,17 +260,17 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
   Widget _buildEmptyState(SubjectProvider provider) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0.r),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]!),
+            Icon(Icons.inbox_outlined, size: 64.sp, color: Colors.grey[400]!),
             AppSpacing.h16,
             Text(
               'No modules available',
               textAlign: TextAlign.center,
               style: FontManager.headerSubtitleText(
-                fontSize: 18,
+                fontSize: 18.sp,
                 color: Colors.grey[600]!,
               ),
             ),

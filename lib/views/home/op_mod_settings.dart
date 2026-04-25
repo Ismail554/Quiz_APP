@@ -98,7 +98,7 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
 
                         if (provider.errorMessage != null) {
                           return Container(
-                            padding: EdgeInsets.all(16.0),
+                            padding: EdgeInsets.all(16.0.r),
                             decoration: BoxDecoration(
                               color: Colors.red.shade50,
                               borderRadius: BorderRadius.circular(8.0),
@@ -107,7 +107,7 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                             child: Row(
                               children: [
                                 Icon(Icons.error_outline, color: Colors.red),
-                                SizedBox(width: 8),
+                                SizedBox(width: 8.w),
                                 Expanded(
                                   child: Text(
                                     AppLogger.getSafeErrorMessage(
@@ -119,7 +119,7 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: Icon(Icons.close, size: 18),
+                                  icon: Icon(Icons.close, size: 18.sp),
                                   color: Colors.red,
                                   onPressed: () {
                                     provider.clearError();
@@ -134,7 +134,7 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                         if (provider.modulePairs.isEmpty) {
                           return Center(
                             child: Padding(
-                              padding: EdgeInsets.all(40.0),
+                              padding: EdgeInsets.all(40.0.r),
                               child: Text(
                                 'No optional modules available',
                                 style: FontManager.bodyText(),

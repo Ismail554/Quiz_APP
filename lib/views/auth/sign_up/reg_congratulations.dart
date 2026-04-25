@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
@@ -30,8 +31,8 @@ class _RegCongratulations_ScreenState extends State<RegCongratulations_Screen> {
                   children: [
                     Image.asset(
                       "assets/icons/success.png",
-                      height: 152,
-                      width: 152,
+                      height: 152.h,
+                      width: 152.w,
                     ),
                     AppSpacing.h16,
                     Text(
@@ -42,7 +43,7 @@ class _RegCongratulations_ScreenState extends State<RegCongratulations_Screen> {
                     Text(
                       AppStrings.newPassSubtitle,
                       textAlign: TextAlign.center,
-                      style: FontManager.subtitleText(fontSize: 18),
+                      style: FontManager.subtitleText(fontSize: 18.sp),
                     ),
                     AppSpacing.h18,
                     ElevatedButtonCustom(

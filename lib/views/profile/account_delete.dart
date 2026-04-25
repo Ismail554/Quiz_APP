@@ -42,12 +42,12 @@ class _AccountDeleteState extends State<AccountDelete> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.0.r),
             child: Column(
               children: [
                 Text(
                   AppStrings.accountdeleteDescription,
-                  style: FontManager.subtitleText(spacing: 0.2, height: 1.5),
+                  style: FontManager.subtitleText(spacing: 0.2, height: 1.5.h),
                 ),
                 AppSpacing.h20,
                 BuildTextField(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
@@ -65,7 +66,7 @@ class _NewPass_screenState extends State<NewPass_screen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.0.r),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -136,12 +137,12 @@ class _NewPass_screenState extends State<NewPass_screen> {
                       children: [
                         if (provider.errorMessage != null)
                           Padding(
-                            padding: EdgeInsets.only(bottom: 12.0),
+                            padding: EdgeInsets.only(bottom: 12.0.h),
                             child: Container(
-                              padding: EdgeInsets.all(12.0),
+                              padding: EdgeInsets.all(12.0.r),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(8.0),
+                                borderRadius: BorderRadius.circular(8.0.r),
                                 border: Border.all(color: Colors.red.shade300),
                               ),
                               child: Row(
@@ -149,20 +150,20 @@ class _NewPass_screenState extends State<NewPass_screen> {
                                   Icon(
                                     Icons.error_outline,
                                     color: Colors.red,
-                                    size: 20,
+                                    size: 20.sp,
                                   ),
-                                  SizedBox(width: 8),
+                                  SizedBox(width: 8.w),
                                   Expanded(
                                     child: Text(
                                       provider.errorMessage!,
                                       style: TextStyle(
                                         color: Colors.red.shade700,
-                                        fontSize: 14,
+                                        fontSize: 14.sp,
                                       ),
                                     ),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.close, size: 18),
+                                    icon: Icon(Icons.close, size: 18.sp),
                                     color: Colors.red,
                                     onPressed: () {
                                       provider.clearError();

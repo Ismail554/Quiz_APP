@@ -17,7 +17,7 @@ class TimeoutDialog extends StatelessWidget {
     return AlertDialog(
       backgroundColor: AppColors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-      contentPadding: EdgeInsets.all(24.w),
+      contentPadding: EdgeInsets.all(24.r),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -41,7 +41,7 @@ class TimeoutDialog extends StatelessWidget {
           // Title
           Text(
             AppStrings.timeUp,
-            style: FontManager.bigTitle(fontSize: 24),
+            style: FontManager.bigTitle(fontSize: 24.sp),
             textAlign: TextAlign.center,
           ),
           AppSpacing.h12,
@@ -58,11 +58,11 @@ class TimeoutDialog extends StatelessWidget {
 
           // Ok Button
           SizedBox(
-            width: double.infinity,
+            width: double.maxFinite,
             child: ElevatedButton(
               onPressed: onOkPressed,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF4A90E2),
+                backgroundColor: AppColors.buttonColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.r),
                 ),

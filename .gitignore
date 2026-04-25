@@ -52,4 +52,4 @@ GoogleService-Info.plist
 *.keystore
 *.properties
 !/android/key.properties
-*.env
+.env

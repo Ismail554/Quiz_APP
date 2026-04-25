@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/provider/module_provider/selecttime_provider.dart';
 import 'package:geography_geyser/views/modules/quiz_screen.dart';
 import 'package:provider/provider.dart';
@@ -117,7 +118,7 @@ class _SelectTime_screenState extends State<SelectTime_screen> {
                               ) {
                                 final item = provider.timeList[index];
                                 return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  padding: EdgeInsets.only(bottom: 8.0.h),
                                   child: CustomModTimer(
                                     minutes: item.duration,
                                     isSelected: selectedIndex == index,

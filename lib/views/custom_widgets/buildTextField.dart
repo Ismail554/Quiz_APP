@@ -98,16 +98,16 @@ class BuildTextField extends StatelessWidget {
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(
                 color: errorText != null ? Colors.red : const Color(0xFF42A5F5),
-                width: 2,
+                width: 2.w,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              borderSide: BorderSide(color: Colors.red, width: 1.5.w),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.r),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
+              borderSide: BorderSide(color: Colors.red, width: 2.w),
             ),
           ),
         ),

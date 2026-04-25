@@ -69,7 +69,7 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                   }
                 },
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: Colors.grey[400]!, width: 1.5),
+            side: BorderSide(color: Colors.grey[400]!, width: 1.5.w),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.r),
             ),

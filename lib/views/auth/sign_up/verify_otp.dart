@@ -96,18 +96,18 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.buttonColor, width: 1.5),
+        border: Border.all(color: AppColors.buttonColor, width: 1.5.w),
       ),
     );
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(color: AppColors.buttonColor, width: 2),
+        border: Border.all(color: AppColors.buttonColor, width: 2.w),
         boxShadow: [
           BoxShadow(
             color: AppColors.buttonColor.withValues(alpha: 0.2),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: Offset(0, 2.w),
           ),
         ],
       ),
@@ -116,7 +116,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     final submittedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
         color: Color(0xFFF3F4F6),
-        border: Border.all(color: AppColors.buttonColor, width: 1.5),
+        border: Border.all(color: AppColors.buttonColor, width: 1.5.w),
       ),
     );
 
@@ -305,10 +305,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         ),
                         child: _isLoading
                             ? SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 20.w,
+                                height: 20.h,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                  strokeWidth: 2.w,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     Colors.white,
                                   ),

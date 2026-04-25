@@ -70,7 +70,7 @@ class ModuleSelectionRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(8.r),
           border: Border.all(
             color: isSelected ? AppColors.buttonColor : AppColors.borderColor,
-            width: 1.5,
+            width: 1.5.w,
           ),
         ),
         child: Row(
@@ -84,7 +84,7 @@ class ModuleSelectionRow extends StatelessWidget {
                 color: isSelected ? AppColors.buttonColor : Colors.transparent,
                 border: Border.all(
                   color: isSelected ? AppColors.buttonColor : Colors.grey,
-                  width: 2,
+                  width: 2.w,
                 ),
               ),
               child: isSelected
