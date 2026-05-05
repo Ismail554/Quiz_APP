@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:geography_geyser/app.dart';
 import 'package:geography_geyser/provider/auth_provider/signup_provider/signup_provider.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
@@ -20,7 +21,6 @@ import 'package:geography_geyser/provider/forgot_password/new_pass_set_provider.
 import 'package:provider/provider.dart';
 import 'package:geography_geyser/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:shimmer/main.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 

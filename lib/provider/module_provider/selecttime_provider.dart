@@ -29,6 +29,8 @@ class SelectTimeProvider extends ChangeNotifier {
           final decodedData = json.decode(data);
           final parsed = SelectTimeResponse.fromJson(decodedData);
           timeList = parsed.results;
+          // Sort the timeList by duration in ascending order
+          timeList.sort((a, b) => a.duration.compareTo(b.duration));
         },
       );
     } catch (e) {
