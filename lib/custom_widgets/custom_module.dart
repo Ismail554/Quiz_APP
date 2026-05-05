@@ -61,7 +61,7 @@ class CustomModule extends StatelessWidget {
       onTap: onPressed,
       borderRadius: BorderRadius.circular(effectiveBorderRadius),
       child: Container(
-        width: double.infinity,
+        width: double.maxFinite,
         padding: effectivePadding,
         decoration: BoxDecoration(
           color: effectiveBackgroundColor,

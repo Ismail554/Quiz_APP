@@ -14,11 +14,13 @@ import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 class SelectTime_screen extends StatefulWidget {
   final int? selectedQuantityIndex;
   final String? moduleId;
+  final String? moduleName;
 
   const SelectTime_screen({
     super.key,
     this.selectedQuantityIndex,
     this.moduleId,
+    this.moduleName,
   });
 
   @override
@@ -172,6 +174,7 @@ class _SelectTime_screenState extends State<SelectTime_screen> {
                           MaterialPageRoute(
                             builder: (context) => QuizScreen(
                               moduleId: widget.moduleId,
+                              moduleName: widget.moduleName,
                               timeInMinutes: selectedTime,
                             ),
                           ),

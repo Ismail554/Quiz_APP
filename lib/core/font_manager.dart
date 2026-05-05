@@ -188,12 +188,14 @@ class FontManager {
   static TextStyle headlineText({
     double fontSize = 16,
     Color color = Colors.black,
+    double spacing = 0.0,
+    double height = 1.0,
   }) => GoogleFonts.montserrat(
     fontSize: fontSize,
     fontWeight: w600,
     color: color,
-    height: 1.0,
-    letterSpacing: 0.0,
+    height: height,
+    letterSpacing: spacing,
   );
   // Header Subtitle
   static TextStyle boldHeading({

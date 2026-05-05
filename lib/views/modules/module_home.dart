@@ -128,7 +128,10 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                SelectTime_screen(moduleId: 'synoptic'),
+                                SelectTime_screen(
+                                  moduleId: 'synoptic',
+                                  moduleName: 'Synoptic',
+                                ),
                           ),
                         );
                       },
@@ -152,7 +155,10 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              SelectTime_screen(moduleId: subject.id),
+                              SelectTime_screen(
+                                moduleId: subject.id,
+                                moduleName: subject.moduleName,
+                              ),
                         ),
                       );
                     },

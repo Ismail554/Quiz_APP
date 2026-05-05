@@ -404,14 +404,18 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
             Expanded(
               child: Text(
                 label,
-                style: FontManager.generalText(
-                  fontSize: 20.sp,
-                ).copyWith(color: iconColor, fontWeight: FontWeight.w600),
+                style: FontManager.headlineText(
+                  fontSize: 18.sp,
+                  color: iconColor,
+                ),
               ),
             ),
             Text(
               value,
-              style: FontManager.boldHeading(fontSize: 18.sp, color: valueColor),
+              style: FontManager.boldHeading(
+                fontSize: 18.sp,
+                color: valueColor,
+              ),
             ),
           ],
         ),

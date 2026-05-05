@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:geography_geyser/provider/auth_provider/signup_provider/signup_provider.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
@@ -19,9 +18,9 @@ import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/provider/forgot_password/forgot_pass_provider.dart';
 import 'package:geography_geyser/provider/forgot_password/new_pass_set_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:geography_geyser/splash/splash_screen.dart';
 import 'package:geography_geyser/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shimmer/main.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -58,25 +57,4 @@ void main() async {
       child: const MyApp(),
     ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(402, 874),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) => MaterialApp(
-        navigatorKey: navigatorKey,
-        debugShowCheckedModeBanner: false,
-        title: 'Geography Geyser',
-        theme: ThemeData(),
-        home: child,
-      ),
-      child: SplashScreen(),
-    );
-  }
 }
