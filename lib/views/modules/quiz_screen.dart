@@ -892,12 +892,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           value: '$wrongCount',
           gradient: const [Color(0xFFFF4D6D), Color(0xFFFF6B9D)],
         ),
-        SizedBox(width: 10.w),
-        _StatPill(
-          label: 'Score',
-          value: '$pct%',
-          gradient: const [Color(0xFF7C6BFF), Color(0xFFA78BFA)],
-        ),
+        // SizedBox(width: 10.w),
+        // _StatPill(
+        //   label: 'Score',
+        //   value: '$pct%',
+        //   gradient: const [Color(0xFF7C6BFF), Color(0xFFA78BFA)],
+        // ),
       ],
     );
   }
