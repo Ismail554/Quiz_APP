@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/models/quiz_finish_model.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 
 class QuizFinishProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -21,55 +21,39 @@ class QuizFinishProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Required for ngrok
-      };
-
-      // Add auth token if available
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      final response = await http.post(
-        Uri.parse(ApiService.quizFinishUrl),
-        headers: headers,
-        body: json.encode({
+      final response = await HttpManager.apiRequest(
+        url: ApiService.quizFinishUrl,
+        method: Method.post,
+        body: {
           'quiz_id': quizId,
           'correct': correctAnswers,
           'attempted': attempted,
-        }),
+        },
+        name: 'QuizFinish',
+        statusCode: 200, // or 201
       );
 
-      if (kDebugMode) {
-        debugPrint("Quiz Finish API Status: ${response.statusCode}");
-        debugPrint("Quiz Finish API Response: ${response.body}");
-      }
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(response.body);
-        quizFinishData = QuizFinishModel.fromJson(data);
-        attemptedQuestions = attempted; // Store attempted count
-        errorMessage = null;
-        isLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        errorMessage = "Failed to finish quiz: ${response.statusCode}";
-        if (kDebugMode) {
-          debugPrint("Response body: ${response.body}");
-        }
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
+      return response.fold(
+        (error) {
+          errorMessage = "Failed to finish quiz: $error";
+          AppLogger.error('Failed to finish quiz: $error');
+          isLoading = false;
+          notifyListeners();
+          return false;
+        },
+        (data) {
+          final decodedData = json.decode(data);
+          quizFinishData = QuizFinishModel.fromJson(decodedData);
+          attemptedQuestions = attempted; // Store attempted count
+          errorMessage = null;
+          isLoading = false;
+          notifyListeners();
+          return true;
+        },
+      );
     } catch (e) {
       errorMessage = "Error finishing quiz: $e";
-      if (kDebugMode) {
-        debugPrint("Error finishing quiz: $e");
-      }
+      AppLogger.error('Error finishing quiz', e);
       isLoading = false;
       notifyListeners();
       return false;

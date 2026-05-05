@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geography_geyser/models/home_model.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/services/https_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -21,19 +20,9 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
-
-      final headers = <String, String>{'ngrok-skip-browser-warning': 'true'};
-
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      final getProfile = ApiService.getProfile;
       final response = await HttpManager.apiRequest(
-        url: getProfile,
+        url: ApiService.getProfile,
         method: Method.get,
-        headers: headers,
         name: 'GetProfile',
         statusCode: 200,
       );

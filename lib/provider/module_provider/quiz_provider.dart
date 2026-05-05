@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/models/quiz_model.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 
 class QuizProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -16,45 +16,28 @@ class QuizProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        // 'ngrok-skip-browser-warning': 'true', // Required for ngrok
-      };
-
-      // Add auth token if available
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      final response = await http.post(
-        Uri.parse(ApiService.quizStartUrl),
-        headers: headers,
-        body: json.encode({'module_id': moduleId}),
+      final response = await HttpManager.apiRequest(
+        url: ApiService.quizStartUrl,
+        method: Method.post,
+        body: {'module_id': moduleId},
+        name: 'QuizStart',
+        statusCode: 200,
       );
 
-      if (kDebugMode) {
-        debugPrint("Quiz API Status: ${response.statusCode}");
-        debugPrint("Quiz API Response: ${response.body}");
-      }
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        quizData = QuizModel.fromJson(data);
-        errorMessage = null;
-      } else {
-        errorMessage = "There is an error. Try agian ${response.statusCode}";
-        if (kDebugMode) {
-          debugPrint("Response body: ${response.body}");
-        }
-      }
+      response.fold(
+        (error) {
+          errorMessage = "There is an error. Try again";
+          AppLogger.error('Failed to load quiz: $error');
+        },
+        (data) {
+          final decodedData = json.decode(data);
+          quizData = QuizModel.fromJson(decodedData);
+          errorMessage = null;
+        },
+      );
     } catch (e) {
-      // errorMessage = "Error fetching quiz: $e";
-      errorMessage = "There is an error. Try agian";
-      if (kDebugMode) {
-        debugPrint("Error fetching quiz: $e");
-      }
+      errorMessage = "There is an error. Try again";
+      AppLogger.error('Error fetching quiz', e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -68,44 +51,28 @@ class QuizProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Required for ngrok
-      };
-
-      // Add auth token if available
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      final response = await http.post(
-        Uri.parse(ApiService.synopticQuizStartUrl),
-        headers: headers,
-        body: json.encode({}), // Synoptic quiz doesn't need module_id
+      final response = await HttpManager.apiRequest(
+        url: ApiService.synopticQuizStartUrl,
+        method: Method.post,
+        body: {}, // Synoptic quiz doesn't need module_id
+        name: 'SynopticQuizStart',
+        statusCode: 200,
       );
 
-      if (kDebugMode) {
-        debugPrint("Synoptic Quiz API Status: ${response.statusCode}");
-        debugPrint("Synoptic Quiz API Response: ${response.body}");
-      }
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        quizData = QuizModel.fromJson(data);
-        errorMessage = null;
-      } else {
-        errorMessage = "Failed to fetch synoptic quiz: ${response.statusCode}";
-        if (kDebugMode) {
-          debugPrint("Response body: ${response.body}");
-        }
-      }
+      response.fold(
+        (error) {
+          errorMessage = "Failed to fetch synoptic quiz";
+          AppLogger.error('Failed to load synoptic quiz: $error');
+        },
+        (data) {
+          final decodedData = json.decode(data);
+          quizData = QuizModel.fromJson(decodedData);
+          errorMessage = null;
+        },
+      );
     } catch (e) {
       errorMessage = "Error fetching synoptic quiz: $e";
-      if (kDebugMode) {
-        debugPrint("Error fetching synoptic quiz: $e");
-      }
+      AppLogger.error('Error fetching synoptic quiz', e);
     } finally {
       isLoading = false;
       notifyListeners();

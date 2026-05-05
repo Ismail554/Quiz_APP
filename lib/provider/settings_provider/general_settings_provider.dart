@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/services/api_service.dart';
+import 'package:geography_geyser/services/https_service.dart';
+import 'package:geography_geyser/models/profile_update_response.dart';
 import 'package:http/http.dart' as http;
-import 'package:geography_geyser/models/profile_update_response.dart'; // make sure path correct
 
 class ProfileUpdateProvider with ChangeNotifier {
   bool _isLoading = false;
@@ -16,59 +17,58 @@ class ProfileUpdateProvider with ChangeNotifier {
   String? get message => _message;
 
   /// PATCH profile update request
-  Future<void> updateProfile({
+  Future<bool> updateProfile({
     required String fullName,
     File? profilePic,
-    required String token,
   }) async {
     _isLoading = true;
+    _message = null;
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
-      var request = http.MultipartRequest(
-        'PATCH',
-        Uri.parse(ApiService.updateProfile),
-      );
+      final fields = {
+        'full_name': fullName,
+      };
 
-      // Add Authorization header
-     request.headers['Authorization'] = 'Bearer $token';
-
-      // Add text fields
-      request.fields['full_name'] = fullName;
-
-      // Add image if selected
+      final List<http.MultipartFile> files = [];
       if (profilePic != null) {
-        request.files.add(
+        files.add(
           await http.MultipartFile.fromPath('profile_pic', profilePic.path),
         );
       }
 
-      // Send request
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
+      final response = await HttpManager.multipartRequest(
+        url: ApiService.updateProfile,
+        method: Method.patch,
+        fields: fields,
+        files: files,
+        name: 'UpdateProfile',
+        statusCode: 200,
+      );
 
-      debugPrint("STATUS: ${response.statusCode}");
-      debugPrint("BODY: ${response.body}");
+      return response.fold(
+        (error) {
+          _message = error;
+          return false;
+        },
+        (data) {
+          final decodedData = jsonDecode(data);
+          final profileResponse = ProfileUpdateResponse.fromJson(decodedData);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        final profileResponse = ProfileUpdateResponse.fromJson(data);
+          _updatedProfile = profileResponse.data;
+          _message = profileResponse.message;
 
-        _updatedProfile = profileResponse.data;
-        _message = profileResponse.message;
-
-        debugPrint("Profile updated: ${_updatedProfile?.fullName}");
-      } else {
-        debugPrint("Failed to update profile: ${response.statusCode}");
-        _message = "Failed to update profile";
-      }
+          AppLogger.debug("Profile updated: ${_updatedProfile?.fullName}");
+          return true;
+        },
+      );
     } catch (e) {
-      debugPrint("Exception: $e");
+      AppLogger.error("ProfileUpdateProvider Error", e);
       _message = "Something went wrong!";
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 }

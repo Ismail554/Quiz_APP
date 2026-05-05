@@ -1,10 +1,8 @@
-// user_stats_provider.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geography_geyser/models/userstats_model.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class UserStatsProvider extends ChangeNotifier {
@@ -23,36 +21,26 @@ class UserStatsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
-      final fetchStats = ApiService.userState;
+      final response = await HttpManager.apiRequest(
+        url: ApiService.userState,
+        method: Method.get,
+        name: 'UserStats',
+        statusCode: 200,
+      );
 
-      // Build headers with ngrok skip warning and auth token
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Required for ngrok
-      };
+      await response.fold(
+        (error) async {
+          debugPrint('Failed to load user stats: $error');
+        },
+        (data) async {
+          final decodedData = json.decode(data);
+          _userStats = UserStatsModel.fromJson(decodedData);
 
-      // Add auth token if available
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      final response = await http.get(Uri.parse(fetchStats), headers: headers);
-
-      debugPrint('User Stats API Status: ${response.statusCode}');
-      debugPrint('User Stats API Response: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        _userStats = UserStatsModel.fromJson(data);
-
-        // Save to secure storage
-        await _storage.write(key: _storageKey, value: jsonEncode(data));
-      } else {
-        debugPrint('Failed to load user stats: ${response.statusCode}');
-        debugPrint('Response body: ${response.body}');
-      }
+          // Save to secure storage
+          await _storage.write(key: _storageKey, value: data);
+          debugPrint('User stats saved to secure storage');
+        },
+      );
     } catch (e) {
       debugPrint('Error fetching stats: $e');
     } finally {

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 
 class NewPassSetProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -29,44 +30,37 @@ class NewPassSetProvider extends ChangeNotifier {
         };
       }
 
-      final response = await http.post(
-        Uri.parse(ApiService.newPasswordSet),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: jsonEncode({
+      final response = await HttpManager.apiRequest(
+        url: ApiService.newPasswordSet,
+        method: Method.post,
+        body: {
           'passwordResetVerified': passwordResetVerified,
           'new_password': newPassword,
-        }),
+        },
+        name: 'SetNewPassword',
+        statusCode: 200, // or 201
       );
 
-      debugPrint('Set New Password API Status: ${response.statusCode}');
-      debugPrint('Set New Password API Response: ${response.body}');
+      return await response.fold(
+        (error) async {
+          _errorMessage = error;
+          _isLoading = false;
+          notifyListeners();
+          throw {'error': error};
+        },
+        (data) async {
+          final Map<String, dynamic> responseData = jsonDecode(data);
+          // Clear reset tokens after successful password reset
+          await SecureStorageHelper.setPassResetToken('');
+          await SecureStorageHelper.setPasswordResetVerified('');
 
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Clear reset tokens after successful password reset
-        await SecureStorageHelper.setPassResetToken('');
-        await SecureStorageHelper.setPasswordResetVerified('');
-
-        _isLoading = false;
-        notifyListeners();
-        return responseData;
-      } else {
-        _errorMessage =
-            responseData['error'] ??
-            responseData['msg'] ??
-            responseData['message'] ??
-            'Failed to set new password';
-        _isLoading = false;
-        notifyListeners();
-        throw responseData;
-      }
+          _isLoading = false;
+          notifyListeners();
+          return responseData;
+        },
+      );
     } catch (e) {
-      debugPrint('Set New Password Error: $e');
+      AppLogger.error('Set New Password Error', e);
 
       // Handle different error types
       if (e is Map) {

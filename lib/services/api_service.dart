@@ -9,6 +9,7 @@ class ApiService {
   static String get verifyOtpUrl => "$_baseUrl/auth/verify-otp/";
   static String get googleLoginUrl => "$_baseUrl/auth/email/";
   static String get appleLoginUrl => "$_baseUrl/auth/apple/"; // body:
+  static String get refreshToken => "$_baseUrl/auth/access-token/"; // body: {   "refresh_token": ""}
 
   //General settings
   static String get updateProfile => "$_baseUrl/auth/profile-update/";

@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geography_geyser/models/user_performance_model.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProfileProvider extends ChangeNotifier {
@@ -22,40 +21,26 @@ class ProfileProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
-      final fetchPerformance = ApiService.userPerformance;
-
-      // Build headers with ngrok skip warning and auth token
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Required for ngrok
-      };
-
-      // Add auth token if available
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      final response = await http.get(
-        Uri.parse(fetchPerformance),
-        headers: headers,
+      final response = await HttpManager.apiRequest(
+        url: ApiService.userPerformance,
+        method: Method.get,
+        name: 'UserPerformance',
+        statusCode: 200,
       );
 
-      debugPrint('User Performance API Status: ${response.statusCode}');
-      debugPrint('User Performance API Response: ${response.body}');
+      await response.fold(
+        (error) async {
+          debugPrint('Failed to load user performance: $error');
+        },
+        (data) async {
+          final decodedData = json.decode(data);
+          _profileData = ProfileModel.fromJson(decodedData);
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        _profileData = ProfileModel.fromJson(data);
-
-        // Save to secure storage
-        await _storage.write(key: _storageKey, value: jsonEncode(data));
-        debugPrint('User performance saved to secure storage');
-      } else {
-        debugPrint('Failed to load user performance: ${response.statusCode}');
-        debugPrint('Response body: ${response.body}');
-      }
+          // Save to secure storage
+          await _storage.write(key: _storageKey, value: data);
+          debugPrint('User performance saved to secure storage');
+        },
+      );
     } catch (e) {
       debugPrint('Error fetching user performance: $e');
     } finally {

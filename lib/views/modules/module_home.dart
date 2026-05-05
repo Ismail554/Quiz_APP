@@ -69,7 +69,7 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                 if (mounted) {
                   provider.fetchSubjects().catchError((error) {
                     AppLogger.error('Failed to load modules', error);
-                    if (mounted) {
+                    if (context.mounted) {
                       CustomSnackBar.show(
                         context,
                         message: AppLogger.getSafeErrorMessage(

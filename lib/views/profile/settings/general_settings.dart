@@ -1,21 +1,21 @@
 import 'dart:io';
+import 'package:geography_geyser/models/home_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
+import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'dart:convert';
 
 class GeneralSettings_Screen extends StatefulWidget {
   const GeneralSettings_Screen({super.key});
@@ -58,13 +58,13 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
       }
 
       // Populate fields with user data
-      if (context.mounted) {
+      if (mounted) {
         _populateFields(userProvider.userModel);
       }
     });
   }
 
-  void _populateFields(userModel) {
+  void _populateFields(HomeModel? userModel) {
     if (userModel != null) {
       _nameController.text = userModel.fullName ?? '';
       _emailController.text = userModel.email ?? '';
@@ -103,7 +103,7 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
         });
       }
     } catch (e) {
-      debugPrint('${source.name} error: $e');
+      AppLogger.error('${source.name} error', e);
       if (mounted) {
         CustomSnackBar.show(
           context,
@@ -157,118 +157,60 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
     setState(() => _isLoading = true);
 
     try {
-      final token = await SecureStorageHelper.getToken();
+      final profileUpdateProvider = Provider.of<ProfileUpdateProvider>(
+        context,
+        listen: false,
+      );
 
-      if (token == null || token.isEmpty) {
-        throw Exception("Token not found! Please login again.");
-      }
+      final success = await profileUpdateProvider.updateProfile(
+        fullName: _nameController.text.trim(),
+        profilePic: _imageFile,
+      );
 
-      final url = Uri.parse(ApiService.updateProfile);
-      var request = http.MultipartRequest('PATCH', url);
+      if (!mounted) return;
 
-      //Add Bearer token
-      request.headers['Authorization'] = 'Bearer $token';
-
-      // Add text field
-      if (_nameController.text.isNotEmpty) {
-        request.fields['full_name'] = _nameController.text.trim();
-      }
-
-      // Add image file if selected
-      if (_imageFile != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath('profile_pic', _imageFile!.path),
+      if (success) {
+        CustomSnackBar.show(
+          context,
+          message: profileUpdateProvider.message ?? 'Profile updated!',
         );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      debugPrint("Status Code: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (!context.mounted) return;
-        try {
-          final data = jsonDecode(response.body);
-          CustomSnackBar.show(
-            context,
-            message: data['message'] ?? 'Profile updated!',
-          );
-        } catch (e) {
-          // If 200 but not valid JSON (unexpected), just show success with default message
-          if (mounted) {
-            CustomSnackBar.show(
-              context,
-              message: 'Profile updated successfully!',
-            );
-          }
-        }
 
         // Refresh user data after successful update
-        if (context.mounted) {
-          final userProvider = Provider.of<UserProvider>(
-            context,
-            listen: false,
-          );
-          await userProvider.fetchUserData();
+        final userProvider = Provider.of<UserProvider>(
+          context,
+          listen: false,
+        );
+        await userProvider.fetchUserData();
 
-          final profileProvider = Provider.of<ProfileProvider>(
-            context,
-            listen: false,
-          );
-          await profileProvider.fetchProfile();
+        if (!mounted) return;
 
-          // Navigate back to the previous screen
-          if (context.mounted) {
-            Navigator.pop(context);
-          }
+        final profileProvider = Provider.of<ProfileProvider>(
+          context,
+          listen: false,
+        );
+        await profileProvider.fetchProfile();
+
+        if (mounted) {
+          Navigator.pop(context);
         }
       } else {
-        // Try to parse error message, fallback to status text
-        String errorMsg = 'Update failed (${response.statusCode})';
-        try {
-          final data = jsonDecode(response.body);
-          if (data['message'] != null) {
-            errorMsg = data['message'];
-          } else if (data['error'] != null) {
-            errorMsg = data['error'];
-          } else if (data['detail'] != null) {
-            errorMsg = data['detail'];
-          } else if (data.isNotEmpty) {
-            // Extract DRF field errors (e.g., {"profile_pic": ["Upload a valid image."]})
-            final firstError = data.values.first;
-            if (firstError is List && firstError.isNotEmpty) {
-              errorMsg = firstError[0].toString();
-            } else {
-              errorMsg = firstError.toString();
-            }
-          }
-        } catch (_) {
-          // Body is not JSON (likely HTML)
-          if (response.body.contains('<!DOCTYPE html>')) {
-            errorMsg =
-                'Server Error (${response.statusCode}). Please contact support.';
-          } else if (response.body.isNotEmpty) {
-            // Take first 100 chars if plain text
-            errorMsg = response.body.length > 100
-                ? response.body.substring(0, 100)
-                : response.body;
-          }
-        }
-        throw Exception(errorMsg);
+        CustomSnackBar.show(
+          context,
+          message: profileUpdateProvider.message ?? 'Update failed',
+          isError: true,
+        );
       }
     } catch (e) {
-      debugPrint("Profile update error: $e");
-      String msg = e.toString();
-      if (msg.startsWith('Exception: ')) {
-        msg = msg.substring(11); // Remove "Exception: " prefix
-      }
+      AppLogger.error("Profile update UI error", e);
       if (mounted) {
-        CustomSnackBar.show(context, message: msg, isError: true);
+        CustomSnackBar.show(
+          context,
+          message: 'An unexpected error occurred.',
+          isError: true,
+        );
       }
     } finally {
-      if (context.mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

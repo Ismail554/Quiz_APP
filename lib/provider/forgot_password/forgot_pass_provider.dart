@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 
 class ForgotPasswordProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -21,47 +22,41 @@ class ForgotPasswordProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse(ApiService.forgotPassUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: jsonEncode({'email': email}),
+      final response = await HttpManager.apiRequest(
+        url: ApiService.forgotPassUrl,
+        method: Method.post,
+        body: {'email': email},
+        name: 'ForgotPasswordRequest',
+        statusCode: 200, // or 201
       );
 
-      debugPrint('Forgot Password API Status: ${response.statusCode}');
-      debugPrint('Forgot Password API Response: ${response.body}');
+      return await response.fold(
+        (error) async {
+          _errorMessage = error;
+          _isLoading = false;
+          notifyListeners();
+          throw {'error': error};
+        },
+        (data) async {
+          final Map<String, dynamic> responseData = jsonDecode(data);
+          // Store passResetToken in memory and secure storage if present in response
+          if (responseData.containsKey('passResetToken')) {
+            _passResetToken = responseData['passResetToken'];
+            await SecureStorageHelper.setPassResetToken(_passResetToken!);
+            AppLogger.debug('Pass Reset Token stored successfully');
+          }
 
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
+          // Store email for later use (from response or input)
+          final userEmail = responseData['user']?['email'] ?? email;
+          await SecureStorageHelper.setResetPasswordEmail(userEmail);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Store passResetToken in memory and secure storage if present in response
-        if (responseData.containsKey('passResetToken')) {
-          _passResetToken = responseData['passResetToken'];
-          await SecureStorageHelper.setPassResetToken(_passResetToken!);
-          debugPrint('Pass Reset Token stored successfully');
-        }
-
-        // Store email for later use (from response or input)
-        final userEmail = responseData['user']?['email'] ?? email;
-        await SecureStorageHelper.setResetPasswordEmail(userEmail);
-
-        _isLoading = false;
-        notifyListeners();
-        return responseData;
-      } else {
-        _errorMessage =
-            responseData['error'] ??
-            responseData['message'] ??
-            'Failed to send reset password request';
-        _isLoading = false;
-        notifyListeners();
-        throw responseData;
-      }
+          _isLoading = false;
+          notifyListeners();
+          return responseData;
+        },
+      );
     } catch (e) {
-      debugPrint('Forgot Password Error: $e');
+      AppLogger.error('Forgot Password Error', e);
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -88,45 +83,38 @@ class ForgotPasswordProvider extends ChangeNotifier {
         };
       }
 
-      final response = await http.post(
-        Uri.parse(ApiService.verifyForgotPassOtpUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: jsonEncode({'passResetToken': passResetToken, 'otp': otp}),
+      final response = await HttpManager.apiRequest(
+        url: ApiService.verifyForgotPassOtpUrl,
+        method: Method.post,
+        body: {'passResetToken': passResetToken, 'otp': otp},
+        name: 'VerifyForgotPassOtp',
+        statusCode: 200, // or 201
       );
 
-      debugPrint('Verify OTP API Status: ${response.statusCode}');
-      debugPrint('Verify OTP API Response: ${response.body}');
+      return await response.fold(
+        (error) async {
+          _errorMessage = error;
+          _isLoading = false;
+          notifyListeners();
+          throw {'error': error};
+        },
+        (data) async {
+          final Map<String, dynamic> responseData = jsonDecode(data);
+          // Store passwordResetVerified if present in response
+          if (responseData.containsKey('passwordResetVerified')) {
+            await SecureStorageHelper.setPasswordResetVerified(
+              responseData['passwordResetVerified'],
+            );
+            AppLogger.debug('Password Reset Verified stored successfully');
+          }
 
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Store passwordResetVerified if present in response
-        if (responseData.containsKey('passwordResetVerified')) {
-          await SecureStorageHelper.setPasswordResetVerified(
-            responseData['passwordResetVerified'],
-          );
-          debugPrint('Password Reset Verified stored successfully');
-        }
-
-        _isLoading = false;
-        notifyListeners();
-        return responseData;
-      } else {
-        _errorMessage =
-            responseData['error'] ??
-            responseData['msg'] ??
-            responseData['message'] ??
-            'Failed to verify OTP';
-        _isLoading = false;
-        notifyListeners();
-        throw responseData;
-      }
+          _isLoading = false;
+          notifyListeners();
+          return responseData;
+        },
+      );
     } catch (e) {
-      debugPrint('Verify OTP Error: $e');
+      AppLogger.error('Verify OTP Error', e);
 
       // Handle different error types
       if (e is Map) {
@@ -150,42 +138,36 @@ class ForgotPasswordProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse(ApiService.forgotPassUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: jsonEncode({'email': email}),
+      final response = await HttpManager.apiRequest(
+        url: ApiService.forgotPassUrl,
+        method: Method.post,
+        body: {'email': email},
+        name: 'ResendForgotPasswordOtp',
+        statusCode: 200, // or 201
       );
 
-      debugPrint('Resend OTP API Status: ${response.statusCode}');
-      debugPrint('Resend OTP API Response: ${response.body}');
+      return await response.fold(
+        (error) async {
+          _errorMessage = error;
+          _isLoading = false;
+          notifyListeners();
+          throw {'error': error};
+        },
+        (data) async {
+          final Map<String, dynamic> responseData = jsonDecode(data);
+          // Update stored token if present
+          if (responseData.containsKey('passResetToken')) {
+            _passResetToken = responseData['passResetToken'];
+            await SecureStorageHelper.setPassResetToken(_passResetToken!);
+          }
 
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Update stored token if present
-        if (responseData.containsKey('passResetToken')) {
-          _passResetToken = responseData['passResetToken'];
-          await SecureStorageHelper.setPassResetToken(_passResetToken!);
-        }
-
-        _isLoading = false;
-        notifyListeners();
-        return responseData;
-      } else {
-        _errorMessage =
-            responseData['error'] ??
-            responseData['message'] ??
-            'Failed to resend OTP';
-        _isLoading = false;
-        notifyListeners();
-        throw responseData;
-      }
+          _isLoading = false;
+          notifyListeners();
+          return responseData;
+        },
+      );
     } catch (e) {
-      debugPrint('Resend OTP Error: $e');
+      AppLogger.error('Resend OTP Error', e);
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -211,43 +193,37 @@ class ForgotPasswordProvider extends ChangeNotifier {
         };
       }
 
-      final response = await http.post(
-        Uri.parse(ApiService.newPasswordSet),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: jsonEncode({
+      final response = await HttpManager.apiRequest(
+        url: ApiService.newPasswordSet,
+        method: Method.post,
+        body: {
           'passwordResetVerified': passwordResetVerified,
           'new_password': newPassword,
-        }),
+        },
+        name: 'SetNewPassword',
+        statusCode: 200, // or 201
       );
 
-      debugPrint('Set New Password API Status: ${response.statusCode}');
-      debugPrint('Set New Password API Response: ${response.body}');
+      return await response.fold(
+        (error) async {
+          _errorMessage = error;
+          _isLoading = false;
+          notifyListeners();
+          throw {'error': error};
+        },
+        (data) async {
+          final Map<String, dynamic> responseData = jsonDecode(data);
+          // Clear reset tokens after successful password reset
+          await SecureStorageHelper.setPassResetToken('');
+          await SecureStorageHelper.setPasswordResetVerified('');
 
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Clear reset tokens after successful password reset
-        await SecureStorageHelper.setPassResetToken('');
-        await SecureStorageHelper.setPasswordResetVerified('');
-
-        _isLoading = false;
-        notifyListeners();
-        return responseData;
-      } else {
-        _errorMessage =
-            responseData['error'] ??
-            responseData['message'] ??
-            'Failed to set new password';
-        _isLoading = false;
-        notifyListeners();
-        throw responseData;
-      }
+          _isLoading = false;
+          notifyListeners();
+          return responseData;
+        },
+      );
     } catch (e) {
-      debugPrint('Set New Password Error: $e');
+      AppLogger.error('Set New Password Error', e);
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();

@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupProvider extends ChangeNotifier {
@@ -19,8 +19,7 @@ class SignupProvider extends ChangeNotifier {
     BuildContext context,
   ) async {
     isLoading.value = true;
-    debugPrint('🔵 Trying signup with: $email / $fullName / $password');
-    debugPrint('🔵 API URL: ${ApiService.signupUrl}');
+    AppLogger.debug('🔵 Trying signup with: $email / $fullName / $password');
 
     try {
       final requestBody = {
@@ -29,109 +28,33 @@ class SignupProvider extends ChangeNotifier {
         'password': password,
       };
 
-      debugPrint('🔵 Request Body: ${jsonEncode(requestBody)}');
+      final response = await HttpManager.apiRequest(
+        url: ApiService.signupUrl,
+        method: Method.post,
+        body: requestBody,
+        name: 'Signup',
+        statusCode: 201,
+      );
 
-      final response = await http
-          .post(
-            Uri.parse(ApiService.signupUrl),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode(requestBody),
-          )
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () {
-              throw TimeoutException(
-                'Request timeout. Please check your internet connection.',
-              );
-            },
-          );
-
-      debugPrint('🔵 Response Status Code: ${response.statusCode}');
-      debugPrint('🔵 Response Headers: ${response.headers}');
-      debugPrint('🔵 Response Body: ${response.body}');
-
-      // Check if response body is empty
-      if (response.body.isEmpty) {
-        throw {
-          'success': false,
-          'message': 'Empty response from server. Please try again.',
-        };
-      }
-
-      // Parse JSON response
-      Map<String, dynamic> responseData;
-      try {
-        responseData = jsonDecode(response.body) as Map<String, dynamic>;
-      } catch (e) {
-        debugPrint('❌ JSON Parse Error: $e');
-        throw {
-          'success': false,
-          'message': 'Invalid response from server. Please try again.',
-          'error': e.toString(),
-        };
-      }
-
-      // Handle successful response
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Signup successful!');
-        await _storeSignupData(responseData);
-        return responseData;
-      } else {
-        // Handle error response
-        final errorMessage =
-            responseData['message'] ??
-            responseData['error'] ??
-            'Signup failed. Please try again.';
-        throw {
-          'success': false,
-          'message': errorMessage,
-          'statusCode': response.statusCode,
-          'data': responseData,
-        };
-      }
-    } on SocketException catch (e) {
-      debugPrint('❌ Network Error (SocketException): $e');
-      throw {
-        'success': false,
-        'message':
-            'No internet connection. Please check your network and try again.',
-        'error': e.toString(),
-      };
-    } on HttpException catch (e) {
-      debugPrint('❌ HTTP Error: $e');
-      throw {
-        'success': false,
-        'message': 'HTTP error occurred. Please try again.',
-        'error': e.toString(),
-      };
-    } on TimeoutException catch (e) {
-      debugPrint('❌ Timeout Error: $e');
-      throw {
-        'success': false,
-        'message':
-            'Request timeout. Please check your internet connection and try again.',
-        'error': e.toString(),
-      };
-    } on FormatException catch (e) {
-      debugPrint('❌ Format Error: $e');
-      throw {
-        'success': false,
-        'message': 'Invalid response format. Please try again.',
-        'error': e.toString(),
-      };
+      return await response.fold(
+        (error) {
+          throw {
+            'success': false,
+            'message': error,
+          };
+        },
+        (data) async {
+          final responseData = jsonDecode(data) as Map<String, dynamic>;
+          AppLogger.debug('✅ Signup successful!');
+          await _storeSignupData(responseData);
+          return responseData;
+        },
+      );
     } catch (e) {
-      debugPrint('❌ Signup Error: $e');
-      debugPrint('❌ Error Type: ${e.runtimeType}');
-
-      // If it's already a Map (from our error handling), rethrow it
+      AppLogger.error('Signup Error', e);
       if (e is Map<String, dynamic>) {
         rethrow;
       }
-
-      // Otherwise, wrap it in a Map
       throw {
         'success': false,
         'message': 'An unexpected error occurred. Please try again.',

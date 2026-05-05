@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:async';
-import 'package:flutter/foundation.dart'; // <-- for compute
+import 'package:flutter/foundation.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/models/module_model.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 
 class SubjectProvider extends ChangeNotifier {
   List<ModuleModel> _subjects = [];
@@ -37,92 +36,46 @@ class SubjectProvider extends ChangeNotifier {
 
     _isLoading = true;
     _errorMessage = null;
-    // Only notify once at the start
     notifyListeners();
 
     try {
-      final token = await SecureStorageHelper.getToken();
+      final response = await HttpManager.apiRequest(
+        url: ApiService.moduleListUrl,
+        method: Method.get,
+        name: 'FetchSubjects',
+        statusCode: 200,
+      );
 
-      // ✅ Fix: Create mutable map properly
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      final url = Uri.parse(ApiService.moduleListUrl);
-
-      final response = await http
-          .get(url, headers: headers)
-          .timeout(const Duration(seconds: 10));
-
-      debugPrint("Status: ${response.statusCode}");
-
-      List<ModuleModel> newSubjects = [];
-      String? newErrorMessage;
-
-      if (response.statusCode == 200) {
-        // 🔥 Heavy parsing moved to background
-        newSubjects = await compute(parseModules, response.body);
-
-        if (newSubjects.isEmpty) {
-          newErrorMessage = "No modules available at this moment.";
-        } else {
-          newErrorMessage = null;
-        }
-      } else if (response.statusCode == 401) {
-        newErrorMessage = "Authentication failed. Please login again.";
-      } else if (response.statusCode >= 500) {
-        newErrorMessage = "Server error. Please try again later.";
-      } else {
-        newErrorMessage = "Server Error: ${response.statusCode}";
-      }
-
-      // ✅ Only update and notify if data actually changed
-      final hasChanged =
-          !_listEquals(_subjects, newSubjects) ||
-          _errorMessage != newErrorMessage;
-
-      if (hasChanged) {
-        _subjects = newSubjects;
-        _errorMessage = newErrorMessage;
-        _lastFetchTime = DateTime.now();
-        notifyListeners();
-      } else {
-        _lastFetchTime = DateTime.now();
-      }
-    } on SocketException {
-      if (_subjects.isEmpty ||
-          _errorMessage !=
-              "No Internet! Please check your network and try again.") {
-        _subjects = [];
-        _errorMessage = "No Internet! Please check your network and try again.";
-        notifyListeners();
-      }
-    } on TimeoutException {
-      if (_subjects.isEmpty ||
-          _errorMessage != "Server not responding. Try again!") {
-        _subjects = [];
-        _errorMessage = "Server not responding. Try again!";
-        notifyListeners();
-      }
+      await response.fold(
+        (error) async {
+          _errorMessage = error;
+          _subjects = [];
+        },
+        (data) async {
+          final newSubjects = await compute<String, List<ModuleModel>>(parseModules, data.toString());
+          
+          if (newSubjects.isEmpty) {
+            _errorMessage = "No modules available at this moment.";
+            _subjects = [];
+          } else {
+            // Only update and notify if data actually changed
+            final hasChanged = !_listEquals(_subjects, newSubjects);
+            if (hasChanged) {
+              _subjects = newSubjects;
+            }
+            _errorMessage = null;
+          }
+        },
+      );
+      
+      _lastFetchTime = DateTime.now();
     } catch (e) {
-      if (_subjects.isEmpty ||
-          _errorMessage != "Something went wrong: ${e.toString()}") {
-        _subjects = [];
-        _errorMessage = "Something went wrong: ${e.toString()}";
-        notifyListeners();
-      }
+      AppLogger.error("SubjectProvider Error", e);
+      _errorMessage = "Something went wrong. Please try again.";
+      _subjects = [];
     } finally {
-      final wasLoading = _isLoading;
       _isLoading = false;
-      // Only notify if loading state changed and we haven't already notified
-      if (wasLoading) {
-        notifyListeners();
-      }
+      notifyListeners();
     }
   }
 
@@ -145,8 +98,6 @@ class SubjectProvider extends ChangeNotifier {
 // TOP-LEVEL FUNCTION (Compute needs this)
 List<ModuleModel> parseModules(String responseBody) {
   final data = json.decode(responseBody);
-
   final results = data["results"] as List;
-
   return results.map((e) => ModuleModel.fromJson(e)).toList();
 }

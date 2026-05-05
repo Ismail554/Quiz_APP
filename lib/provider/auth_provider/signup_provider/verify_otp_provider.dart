@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:http/http.dart' as http;
+import 'package:geography_geyser/services/https_service.dart';
 
 class VerifyProvider extends ChangeNotifier {
   static final ValueNotifier<bool> isLoading = ValueNotifier(false);
@@ -13,7 +14,7 @@ class VerifyProvider extends ChangeNotifier {
     BuildContext context,
   ) async {
     isLoading.value = true;
-    debugPrint(' Verifying OTP: $otp');
+    AppLogger.debug(' Verifying OTP: $otp');
 
     try {
       // Get verification token from SecureStorage
@@ -24,37 +25,33 @@ class VerifyProvider extends ChangeNotifier {
         throw {'message': 'Verification token not found. Please signup again.'};
       }
 
-      debugPrint(verificationToken);
-      // Prepare body
-      final body = {'otp': otp, 'verificationToken': verificationToken};
-
       // API call
-      final response = await http.post(
-        Uri.parse(ApiService.verifyOtpUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+      final response = await HttpManager.apiRequest(
+        url: ApiService.verifyOtpUrl,
+        method: Method.post,
+        body: {'otp': otp, 'verificationToken': verificationToken},
+        name: 'VerifyOTP',
+        statusCode: 200,
       );
 
-      debugPrint('Response Status Code: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
-
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-      // Handle success
-      if (response.statusCode == 200) {
-        debugPrint("✅ OTP Verification Successful!");
-        return {
-          'success': true,
-          'message': responseData['message'] ?? 'OTP verified successfully',
-        };
-      } else {
-        return {
-          'success': false,
-          'message': responseData['message'] ?? 'OTP failed',
-        };
-      }
+      return response.fold(
+        (error) {
+          return {
+            'success': false,
+            'message': error,
+          };
+        },
+        (data) {
+          final decodedData = json.decode(data);
+          AppLogger.debug("✅ OTP Verification Successful!");
+          return {
+            'success': true,
+            'message': decodedData['message'] ?? 'OTP verified successfully',
+          };
+        },
+      );
     } catch (e) {
-      debugPrint(" Verify OTP Error: $e");
+      AppLogger.error(" Verify OTP Error", e);
       rethrow;
     } finally {
       isLoading.value = false;
