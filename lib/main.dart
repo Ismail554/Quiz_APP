@@ -21,6 +21,7 @@ import 'package:geography_geyser/provider/forgot_password/new_pass_set_provider.
 import 'package:provider/provider.dart';
 import 'package:geography_geyser/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:geography_geyser/services/notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -33,6 +34,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService().initialize();
   runApp(
     MultiProvider(
       providers: [
