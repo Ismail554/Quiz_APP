@@ -19,8 +19,7 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: SizedBox(
+    return SizedBox(
         width: 150.w,
         height: 48.h,
         child: OutlinedButton(
@@ -104,7 +103,6 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                   ],
                 ),
         ),
-      ),
     );
   }
 }

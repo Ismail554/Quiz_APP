@@ -1,17 +1,6 @@
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/playstore.png"
+  image_path: "assets/icons/play_store.png"
   min_sdk_android: 21
-  web:
-    generate: true
-    image_path: "assets/icons/playstore.png"
-    background_color: "#ffffff"
-    theme_color: "#ffffff"
-  windows:
-    generate: true
-    image_path: "assets/icons/playstore.png"
-    icon_size: 48
-  macos:
-    generate: true
-    image_path: "assets/icons/playstore.png"
+  

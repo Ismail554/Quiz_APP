@@ -276,7 +276,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         Row(
                           spacing: 18.w,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [GoogleLoginBtn(), AppleLoginBtn()],
+                          children: [
+                            Expanded(child: GoogleLoginBtn()),
+                            Expanded(child: AppleLoginBtn()),
+                          ],
                         ),
                         AppSpacing.h12,
 

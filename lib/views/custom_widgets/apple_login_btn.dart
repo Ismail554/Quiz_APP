@@ -19,8 +19,7 @@ class _AppleLoginBtnState extends State<AppleLoginBtn> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: SizedBox(
+    return SizedBox(
         width: 150.w,
         height: 48.h,
         child: OutlinedButton(
@@ -99,7 +98,6 @@ class _AppleLoginBtnState extends State<AppleLoginBtn> {
                   ],
                 ),
         ),
-      ),
     );
   }
 }

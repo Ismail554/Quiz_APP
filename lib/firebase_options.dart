@@ -30,14 +30,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.windows:
         return windows;
       case TargetPlatform.linux:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       default:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions are not supported for this platform.',
-        );
+        return android;
     }
   }
 
@@ -88,4 +83,23 @@ class DefaultFirebaseOptions {
     storageBucket: dotenv.env['FIREBASE_WINDOWS_STORAGE_BUCKET'] ?? '',
     measurementId: dotenv.env['FIREBASE_WINDOWS_MEASUREMENT_ID'] ?? '',
   );
+
+  // static const FirebaseOptions ios = FirebaseOptions(
+  //   apiKey: 'AIzaSyAQMqqPicYEKrN2VEh6TaV_A_t74tROgJk',
+  //   appId: '1:868957439431:ios:36dfd0187449432b7585e2',
+  //   messagingSenderId: '868957439431',
+  //   projectId: 'geography-geyser',
+  //   storageBucket: 'geography-geyser.firebasestorage.app',
+  //   androidClientId: '868957439431-98v3u21gps5ljdgo0o5h0qs2u5jn0fme.apps.googleusercontent.com',
+  //   iosClientId: '868957439431-dcgq6e1amcop1ted4ar48hdjha9ejg7j.apps.googleusercontent.com',
+  //   iosBundleId: 'com.geographygeyser.app',
+  // );
+
+  // static const FirebaseOptions android = FirebaseOptions(
+  //   apiKey: 'AIzaSyDPe-8IPY6_JQcFh4a9g3-4R9MZwkl8J7o',
+  //   appId: '1:868957439431:android:cbfd06d9b335ae227585e2',
+  //   messagingSenderId: '868957439431',
+  //   projectId: 'geography-geyser',
+  //   storageBucket: 'geography-geyser.firebasestorage.app',
+  // );
 }

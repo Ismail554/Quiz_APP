@@ -8,6 +8,7 @@ import 'package:geography_geyser/services/https_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class LoginProvider extends ChangeNotifier {
   static final ValueNotifier<bool> isLoading = ValueNotifier(false);
@@ -75,8 +76,7 @@ class LoginProvider extends ChangeNotifier {
 
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId:
-            '868957439431-sf3477q19dik6ltr2jc96fclthibfo2t.apps.googleusercontent.com',
+        serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
         scopes: ['email', 'profile'],
       );
 
