@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 
@@ -25,7 +26,7 @@ class BuildTextField extends StatelessWidget {
     required this.hint,
     this.controller,
     this.prefixIcon,
-    this.bgcolor = AppColors.white,
+    this.bgcolor = const Color(0xFFF8FAFC),
     this.keyboardType = TextInputType.text,
     this.isPassword = false,
     this.suffixIcon,
@@ -43,16 +44,18 @@ class BuildTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Label
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'SegoeUI',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
+        if (label.isNotEmpty) ...[
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.neutralDark,
+              letterSpacing: 0.1,
+            ),
           ),
-        ),
-        AppSpacing.h8,
+          AppSpacing.h8,
+        ],
 
         // Input field
         TextFormField(
@@ -63,51 +66,60 @@ class BuildTextField extends StatelessWidget {
           obscureText: isPassword ? obscureText : false,
           onChanged: onChanged,
           validator: validator,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.neutralDark,
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: bgcolor,
             hintText: hint,
-            hintStyle: TextStyle(fontSize: 14.sp, color: Colors.grey[400]),
+            hintStyle: GoogleFonts.plusJakartaSans(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF94A3B8),
+            ),
             contentPadding: EdgeInsets.symmetric(
               horizontal: 16.w,
-              vertical: 12.h,
+              vertical: 14.h,
             ),
             suffixIcon: suffixIcon,
             prefixIcon: prefixIcon,
             errorText: errorText,
-            errorStyle: TextStyle(
+            errorStyle: GoogleFonts.plusJakartaSans(
               fontSize: 12.sp,
-              color: Colors.red,
-              fontWeight: FontWeight.w500,
+              color: Colors.red.shade600,
+              fontWeight: FontWeight.w600,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(14.r),
               borderSide: BorderSide(
-                color: errorText != null ? Colors.red : Colors.grey[300]!,
-                width: 1.5,
+                color: errorText != null ? Colors.red : const Color(0xFFE2E8F0),
+                width: 1.2.w,
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(14.r),
               borderSide: BorderSide(
-                color: errorText != null ? Colors.red : Colors.grey,
-                width: 1.5,
+                color: errorText != null ? Colors.red : const Color(0xFFE2E8F0),
+                width: 1.2.w,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(14.r),
               borderSide: BorderSide(
-                color: errorText != null ? Colors.red : const Color(0xFF42A5F5),
-                width: 2.w,
+                color: errorText != null ? Colors.red : AppColors.primaryAzure,
+                width: 1.8.w,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.red, width: 1.5.w),
+              borderRadius: BorderRadius.circular(14.r),
+              borderSide: BorderSide(color: Colors.red.shade400, width: 1.5.w),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: Colors.red, width: 2.w),
+              borderRadius: BorderRadius.circular(14.r),
+              borderSide: BorderSide(color: Colors.red, width: 1.8.w),
             ),
           ),
         ),

@@ -33,4 +33,14 @@ class AppColors {
   static const Color splashBG = Color(0xffA8D8FF);
   static const Color cardBG = Color(0xffcde9ff);
   static const Color subtitleText = Colors.grey;
+
+  /* ==================== Stitch Design System ==================== */
+  static const Color primaryAzure = Color(0xFF0284C7);
+  static const Color primarySky = Color(0xFF52B1FF);
+  static const Color accentGold = Color(0xFFF59E0B);
+  static const Color neutralDark = Color(0xFF0F172A);
+  static const Color softSky = Color(0xFFF0F9FF);
+  static const Color azureBorder = Color(0xFFE0F2FE);
+  static const Color softSlate = Color(0xFF64748B);
+  static const Color glowAzure = Color(0x400284C7);
 }
