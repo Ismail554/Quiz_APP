@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/views/modules/quiz_screen.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 
 ///
 ///
@@ -170,12 +171,7 @@ class _QuizCompleteScreenState extends State<QuizCompleteScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => QuizScreen(),
-                            ),
-                          );
+                          context.push(AppRoutes.quiz);
                         },
 
                         style: ElevatedButton.styleFrom(

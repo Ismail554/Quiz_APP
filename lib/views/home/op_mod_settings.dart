@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/settings_provider/optional_module_provider.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_toggle_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
 import 'package:provider/provider.dart';
 
 class OptionalModuleSettings extends StatefulWidget {
@@ -47,7 +48,7 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
         automaticallyImplyLeading: widget.isFirstLogin ? false : true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           widget.isFirstLogin
@@ -232,13 +233,7 @@ class _OptionalModuleSettingsState extends State<OptionalModuleSettings> {
                                 );
 
                                 // Navigate to home after successful save
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const HomePageScreen(),
-                                  ),
-                                );
+                                context.go(AppRoutes.home);
                               } else {
                                 // Error message is already shown in provider
                                 if (provider.errorMessage != null) {

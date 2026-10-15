@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_constants.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/views/auth/login/login.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -33,20 +33,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (refreshToken != null && refreshToken.isNotEmpty) {
       // User is logged in, navigate to HomePage
-      // Note: is_optional_module_selected is only checked during login
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePageScreen()),
-        );
+        context.go(AppRoutes.home);
       }
     } else {
       // User is not logged in, navigate to LoginScreen
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        context.go(AppRoutes.login);
       }
     }
   }

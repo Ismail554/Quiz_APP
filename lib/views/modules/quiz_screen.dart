@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
@@ -13,7 +14,7 @@ import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.d
 import 'package:geography_geyser/provider/module_provider/delete_xp_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
-import 'package:geography_geyser/views/modules/quiz_result.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/modules/time_out_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -213,19 +214,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (mounted) Navigator.of(context).pop();
 
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-          (route) => false,
-        );
+        context.go(AppRoutes.quizResult);
       }
     } else {
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-          (route) => false,
-        );
+        context.go(AppRoutes.quizResult);
       }
     }
   }
@@ -276,19 +269,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (mounted) Navigator.of(context).pop();
 
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-          (route) => false,
-        );
+        context.go(AppRoutes.quizResult);
       }
     } else {
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => QuizResult_Screen()),
-          (route) => false,
-        );
+        context.go(AppRoutes.quizResult);
       }
     }
   }
@@ -877,7 +862,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             ? 0
             : currentQuestionIndex);
     final wrongCount = total - correctAnswersCount;
-    final pct = total > 0 ? (correctAnswersCount / total * 100).round() : 0;
 
     return Row(
       children: [

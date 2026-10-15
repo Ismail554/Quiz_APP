@@ -3,11 +3,12 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/auth_provider/signup_provider/verify_otp_provider.dart';
-import 'package:geography_geyser/views/auth/sign_up/reg_congratulations.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:pinput/pinput.dart';
@@ -105,12 +106,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
             isError: false,
           );
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const RegCongratulations_Screen(),
-            ),
-          );
+          context.go(AppRoutes.registrationSuccess);
         }
       } else {
         throw {

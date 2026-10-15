@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/custom_module.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:geography_geyser/provider/module_provider/subject_provider.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
-import 'package:geography_geyser/views/modules/select_time.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -36,13 +36,7 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const HomePageScreen(),
-                    ),
-                    (route) => false,
-                  );
+                  context.go(AppRoutes.home);
                 },
               )
             : null,
@@ -124,15 +118,12 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                       ),
                       onPressed: () {
                         selectedIndex = index;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                SelectTime_screen(
-                                  moduleId: 'synoptic',
-                                  moduleName: 'Synoptic',
-                                ),
-                          ),
+                        context.push(
+                          AppRoutes.selectTime,
+                          extra: {
+                            'moduleId': 'synoptic',
+                            'moduleName': 'Synoptic',
+                          },
                         );
                       },
                     ),
@@ -149,17 +140,13 @@ class _ModuleHomeScreenState extends State<ModuleHomeScreen> {
                     text: subject.moduleName,
                     isSelected: selectedIndex == index,
                     onPressed: () {
-                      // ✅ Don't call setState if navigating immediately
                       selectedIndex = index;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              SelectTime_screen(
-                                moduleId: subject.id,
-                                moduleName: subject.moduleName,
-                              ),
-                        ),
+                      context.push(
+                        AppRoutes.selectTime,
+                        extra: {
+                          'moduleId': subject.id,
+                          'moduleName': subject.moduleName,
+                        },
                       );
                     },
                   ),

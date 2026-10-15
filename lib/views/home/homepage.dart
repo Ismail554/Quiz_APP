@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/modules/module_home.dart';
 import 'package:geography_geyser/views/profile/profile_screen.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
@@ -271,12 +273,8 @@ class HomeContent extends StatelessWidget {
                     icon: Icons.bar_chart_outlined,
                     label: 'Student Stats',
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const ProfileScreen(hideSettingsCard: true),
-                        ),
+                      context.push(
+                        AppRoutes.profilePath(hideSettingsCard: true),
                       );
                     },
                   ),
@@ -284,12 +282,7 @@ class HomeContent extends StatelessWidget {
                     icon: Icons.quiz_outlined,
                     label: 'Take a Quiz',
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ModuleHomeScreen(),
-                        ),
-                      );
+                      context.push(AppRoutes.modules);
                     },
                   ),
                 ],

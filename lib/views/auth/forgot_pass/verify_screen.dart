@@ -3,12 +3,12 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
-import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/forgot_password/forgot_pass_provider.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
-import 'package:geography_geyser/views/auth/forgot_pass/new_pass.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:pinput/pinput.dart';
@@ -461,13 +461,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
                                                 isError: false,
                                               );
 
-                                              Navigator.pushAndRemoveUntil(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const NewPass_screen(),
-                                                ),
-                                                (route) => false,
+                                              context.go(
+                                                AppRoutes.resetPassword,
                                               );
                                             }
                                           } catch (e) {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
-import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
 class GoogleLoginBtn extends StatefulWidget {
   final double? width;
@@ -59,14 +59,13 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                         response['is_optional_module_selected'] == true ||
                         response['is_optional_module_selected'] == 'true';
 
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => isOptionalModuleSelected
-                            ? HomePageScreen()
-                            : OptionalModuleSettings(isFirstLogin: true),
-                      ),
-                    );
+                    if (isOptionalModuleSelected) {
+                      context.go(AppRoutes.home);
+                    } else {
+                      context.go(
+                        AppRoutes.optionalModulesPath(isFirstLogin: true),
+                      );
+                    }
                   } catch (e) {
                     if (!context.mounted) return;
                     String message = 'Google sign-in failed';

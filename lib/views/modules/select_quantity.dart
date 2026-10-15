@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/custom_q_quantity.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
-import 'package:geography_geyser/views/modules/quiz_screen.dart';
 
 class SelectQuantityScreen extends StatefulWidget {
   final int? selectedTimeInMinutes;
@@ -87,15 +88,13 @@ class _SelectQuantityScreenState extends State<SelectQuantityScreen> {
                   final selectedQuantity = selectedIndex != null
                       ? quantityOptions[selectedIndex!]
                       : null;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => QuizScreen(
-                        totalQuestions: selectedQuantity,
-                        timeInMinutes: widget.selectedTimeInMinutes,
-                        moduleId: widget.moduleId,
-                      ),
-                    ),
+                  context.push(
+                    AppRoutes.quiz,
+                    extra: {
+                      'totalQuestions': selectedQuantity,
+                      'timeInMinutes': widget.selectedTimeInMinutes,
+                      'moduleId': widget.moduleId,
+                    },
                   );
                 },
               ),

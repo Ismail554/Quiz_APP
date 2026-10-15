@@ -2,9 +2,10 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
-import 'package:geography_geyser/views/auth/login/login.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 
 class RegCongratulations_Screen extends StatefulWidget {
@@ -198,13 +199,7 @@ class _RegCongratulations_ScreenState extends State<RegCongratulations_Screen> {
                         child: CustomLoginButton(
                           text: "Begin Journey (Log In) 🚀",
                           onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                              (Route<dynamic> route) => false,
-                            );
+                            context.go(AppRoutes.login);
                           },
                         ),
                       ),

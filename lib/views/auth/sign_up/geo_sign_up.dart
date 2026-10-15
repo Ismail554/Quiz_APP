@@ -3,14 +3,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/auth_provider/signup_provider/signup_provider.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/utils/validators.dart';
-import 'package:geography_geyser/views/auth/login/login.dart';
-import 'package:geography_geyser/views/auth/sign_up/verify_otp.dart';
 import 'package:geography_geyser/views/custom_widgets/apple_login_btn.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
@@ -112,14 +112,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
           isError: false,
         );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => VerifyOtpScreen(
-              email: email,
-            ),
-          ),
-        );
+        context.go(AppRoutes.verifyOtpPath(email: email));
       }
     } catch (e) {
       String message = 'Signup failed. Please try again.';
@@ -560,13 +553,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                                     ),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const LoginScreen(),
-                                          ),
-                                        );
+                                        context.go(AppRoutes.login);
                                       },
                                   ),
                                 ],

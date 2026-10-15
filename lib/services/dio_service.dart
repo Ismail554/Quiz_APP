@@ -2,14 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/network/logging_interceptor.dart';
 import 'package:geography_geyser/main.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
-import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 
 enum Method { post, get, put, patch, delete }
@@ -332,11 +332,7 @@ class DioManager {
         message: "Your session expired. Please login again",
         isError: true,
       );
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+      context.go(AppRoutes.login);
     }
   }
 

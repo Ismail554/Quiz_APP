@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/provider/module_provider/selecttime_provider.dart';
-import 'package:geography_geyser/views/modules/quiz_screen.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:provider/provider.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
@@ -169,15 +170,13 @@ class _SelectTime_screenState extends State<SelectTime_screen> {
                             ? provider.timeList[selectedIndex!].duration
                             : customTimeMinutes;
 
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => QuizScreen(
-                              moduleId: widget.moduleId,
-                              moduleName: widget.moduleName,
-                              timeInMinutes: selectedTime,
-                            ),
-                          ),
+                        context.pushReplacement(
+                          AppRoutes.quiz,
+                          extra: {
+                            'moduleId': widget.moduleId,
+                            'moduleName': widget.moduleName,
+                            'timeInMinutes': selectedTime,
+                          },
                         );
                       },
                     ),

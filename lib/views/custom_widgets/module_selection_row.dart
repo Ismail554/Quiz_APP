@@ -57,8 +57,6 @@ class ModuleSelectionRow extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    bool shouldAnimate = text.length > 11; // 👈 condition
-
     return GestureDetector(
       onTap: onTap,
       child: Container(

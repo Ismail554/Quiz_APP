@@ -30,7 +30,7 @@ class LoginProvider extends ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      return await response.fold(
         (error) {
           throw error;
         },
@@ -101,7 +101,7 @@ class LoginProvider extends ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      return await response.fold(
         (error) {
           throw error;
         },
@@ -160,7 +160,7 @@ class LoginProvider extends ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      return await response.fold(
         (error) {
           throw error;
         },

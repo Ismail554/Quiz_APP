@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
@@ -8,9 +9,7 @@ import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/custom_widgets/custom_module.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
-import 'package:geography_geyser/views/modules/module_home.dart';
-import 'package:geography_geyser/views/modules/select_time.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:provider/provider.dart';
 
 class QuizResult_Screen extends StatefulWidget {
@@ -222,12 +221,12 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
                           child: CustomModule(
                             text: quiz.moduleName,
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      SelectTime_screen(moduleId: quiz.id),
-                                ),
+                              context.push(
+                                AppRoutes.selectTime,
+                                extra: {
+                                  'moduleId': quiz.id,
+                                  'moduleName': quiz.moduleName,
+                                },
                               );
                             },
                           ),
@@ -243,12 +242,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ModuleHomeScreen(),
-                              ),
-                            );
+                            context.go(AppRoutes.modules);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.green,
@@ -270,13 +264,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomePageScreen(),
-                              ),
-                              (route) => false,
-                            );
+                            context.go(AppRoutes.home);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.buttonColor,
@@ -323,12 +311,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ModuleHomeScreen(),
-                      ),
-                    );
+                    context.go(AppRoutes.modules);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.green,
@@ -350,11 +333,7 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePageScreen()),
-                      (route) => false,
-                    );
+                    context.go(AppRoutes.home);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.buttonColor,

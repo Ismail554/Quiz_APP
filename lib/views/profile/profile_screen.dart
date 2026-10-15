@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:geography_geyser/views/profile/settings/app_info.dart';
+import 'package:go_router/go_router.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:provider/provider.dart';
 
 // Core imports
@@ -23,13 +24,6 @@ import 'package:geography_geyser/provider/settings_provider/optional_module_prov
 
 // Services
 import 'package:geography_geyser/services/api_service.dart';
-
-// Views
-import 'package:geography_geyser/views/auth/login/login.dart';
-import 'package:geography_geyser/views/home/op_mod_settings.dart';
-import 'package:geography_geyser/views/profile/account_delete.dart';
-import 'package:geography_geyser/views/profile/settings/general_settings.dart';
-import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool hideSettingsCard;
@@ -319,12 +313,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.settings_outlined,
             text: AppStrings.generalSetting,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GeneralSettings_Screen(),
-                ),
-              );
+              context.push(AppRoutes.generalSettings);
             },
           ),
           Divider(height: 1, color: Colors.grey[300]),
@@ -333,12 +322,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.lock_outline,
             text: AppStrings.privacySetting,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PrivacySettings_Screen(),
-                ),
-              );
+              context.push(AppRoutes.privacySettings);
             },
           ),
 
@@ -348,12 +332,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.settings_outlined,
             text: AppStrings.moduleSettingOption,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OptionalModuleSettings(),
-                ),
-              );
+              context.push(AppRoutes.optionalModules);
             },
           ),
           // Account Deletion
@@ -362,10 +341,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.delete_sweep_sharp,
             text: AppStrings.accountdelection,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AccountDelete()),
-              );
+              context.push(AppRoutes.accountDelete);
             },
           ),
 
@@ -375,10 +351,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.info_outline,
             text: "About App",
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AboutAppScreen()),
-              );
+              context.push(AppRoutes.aboutApp);
             },
           ),
           Divider(height: 1, color: Colors.grey[300]),
@@ -718,11 +691,7 @@ class ProfileScreen extends StatelessWidget {
 
                       if (!context.mounted) return;
 
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (_) => false,
-                      );
+                      context.go(AppRoutes.login);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.redAccent,

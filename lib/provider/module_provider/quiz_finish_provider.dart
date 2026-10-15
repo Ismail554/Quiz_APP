@@ -33,7 +33,7 @@ class QuizFinishProvider extends ChangeNotifier {
         statusCode: 200, // or 201
       );
 
-      return response.fold(
+      final result = response.fold(
         (error) {
           errorMessage = "Failed to finish quiz: $error";
           AppLogger.error('Failed to finish quiz: $error');
@@ -51,6 +51,7 @@ class QuizFinishProvider extends ChangeNotifier {
           return true;
         },
       );
+      return result;
     } catch (e) {
       errorMessage = "Error finishing quiz: $e";
       AppLogger.error('Error finishing quiz', e);
