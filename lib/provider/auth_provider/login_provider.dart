@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:geography_geyser/core/data/static_backend_responder.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/services/https_service.dart';
@@ -30,7 +31,7 @@ class LoginProvider extends ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      return await response.fold(
         (error) {
           throw error;
         },
@@ -63,7 +64,9 @@ class LoginProvider extends ChangeNotifier {
       await SecureStorageHelper.setToken(data['access_token'].toString());
     }
     if (data['refresh_token'] != null) {
-      await SecureStorageHelper.setRefreshToken(data['refresh_token'].toString());
+      await SecureStorageHelper.setRefreshToken(
+        data['refresh_token'].toString(),
+      );
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -75,20 +78,23 @@ class LoginProvider extends ChangeNotifier {
     isLoading.value = true;
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
-        scopes: ['email', 'profile'],
-      );
+      String email = 'explorer.google@geographygeyser.com';
+      if (!StaticBackendResponder.enabled) {
+        final GoogleSignIn googleSignIn = GoogleSignIn(
+          serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
+          scopes: ['email', 'profile'],
+        );
 
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      if (googleUser == null) {
-        throw {'message': 'Google sign-in was canceled'};
-      }
+        if (googleUser == null) {
+          throw {'message': 'Google sign-in was canceled'};
+        }
 
-      final String email = googleUser.email;
-      if (email.isEmpty) {
-        throw {'message': 'Failed to get email from Google'};
+        email = googleUser.email;
+        if (email.isEmpty) {
+          throw {'message': 'Failed to get email from Google'};
+        }
       }
 
       debugPrint('📧 Got email: $email');
@@ -101,7 +107,7 @@ class LoginProvider extends ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      return await response.fold(
         (error) {
           throw error;
         },
@@ -126,31 +132,40 @@ class LoginProvider extends ChangeNotifier {
     isLoading.value = true;
 
     try {
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      final String? email = credential.email;
-      final String idToken = credential.identityToken ?? "";
-
-      debugPrint('📧 Got Apple credential. Email: $email');
-
+      String? email = 'explorer.apple@geographygeyser.com';
       Map<String, dynamic> body = {
-        "id_token": idToken,
+        "id_token": "static_apple_token",
         "user": {
           "name": {
-            "givenName": (credential.givenName ?? "").trim(),
-            "familyName": (credential.familyName ?? "").trim(),
+            "givenName": "Alex",
+            "familyName": "Mercer",
           },
         },
       };
 
-      // if (email != null && email.isNotEmpty) {
-      //   body["email"] = email;
-      // }
+      if (!StaticBackendResponder.enabled) {
+        final credential = await SignInWithApple.getAppleIDCredential(
+          scopes: [
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+        );
+
+        email = credential.email;
+        final String idToken = credential.identityToken ?? "";
+
+        debugPrint('📧 Got Apple credential. Email: $email');
+
+        body = {
+          "id_token": idToken,
+          "user": {
+            "name": {
+              "givenName": (credential.givenName ?? "").trim(),
+              "familyName": (credential.familyName ?? "").trim(),
+            },
+          },
+        };
+      }
 
       final response = await HttpManager.apiRequest(
         url: ApiService.appleLoginUrl,
@@ -160,7 +175,7 @@ class LoginProvider extends ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      return await response.fold(
         (error) {
           throw error;
         },
@@ -183,21 +198,25 @@ class LoginProvider extends ChangeNotifier {
   }
 
   static Future<void> logout() async {
-    await GoogleSignIn().signOut();
+    try {
+      await GoogleSignIn().signOut();
+    } catch (_) {
+      // Ignore if Google Sign-In is not initialized on current platform
+    }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await prefs.remove('user_email');
 
-    final storage = const FlutterSecureStorage();
+    const storage = FlutterSecureStorage();
     await storage.deleteAll();
 
-    debugPrint("🚪 All login data cleared (both Secure + Shared).");
+    debugPrint("🚪 Login credentials cleared.");
   }
 
   static Future<void> printAllStorageData() async {
     debugPrint("========== Checking Stored Data ==========");
 
-    final secureStorage = const FlutterSecureStorage();
+    const secureStorage = FlutterSecureStorage();
     final secureData = await secureStorage.readAll();
     debugPrint("🔐 Secure Storage:");
     if (secureData.isEmpty) {

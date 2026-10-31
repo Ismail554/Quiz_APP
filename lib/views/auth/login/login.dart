@@ -1,21 +1,21 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
-import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
-import 'package:geography_geyser/views/auth/forgot_pass/forget_pass_screen.dart';
-import 'package:geography_geyser/views/auth/sign_up/geo_sign_up.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:geography_geyser/services/pending_deep_link_service.dart';
 import 'package:geography_geyser/views/custom_widgets/apple_login_btn.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/google_login_btn.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
-import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,294 +30,512 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _pendingDeepLink;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPendingDeepLink();
+  }
+
+  Future<void> _checkPendingDeepLink() async {
+    final pending = await PendingDeepLinkService.peekPendingRoute();
+    if (mounted && pending != null) {
+      setState(() {
+        _pendingDeepLink = pending;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      CustomSnackBar.show(
+        context,
+        message: 'Please enter both email and password',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await LoginProvider.login(email, password);
+
+      if (!mounted) return;
+
+      CustomSnackBar.show(
+        context,
+        message: 'Welcome back to Geography Geyser!',
+        isError: false,
+      );
+
+      final pendingRoute = await PendingDeepLinkService.consumePendingRoute();
+      if (!mounted) return;
+      if (pendingRoute != null && pendingRoute.isNotEmpty) {
+        context.go(pendingRoute);
+        return;
+      }
+
+      final isOptionalModuleSelected =
+          response['is_optional_module_selected'] == true ||
+          response['is_optional_module_selected'] == 'true';
+
+      if (isOptionalModuleSelected) {
+        context.go(AppRoutes.home);
+      } else {
+        context.go(AppRoutes.optionalModulesPath(isFirstLogin: true));
+      }
+    } catch (e) {
+      String message = 'Invalid email or password.';
+      if (e is Map && e['message'] != null) {
+        message = e['message'].toString();
+      }
+      if (mounted) {
+        CustomSnackBar.show(
+          context,
+          message: AppLogger.getSafeErrorMessage(message),
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.splashBG,
+      backgroundColor: const Color(0xFFF0F9FF),
       resizeToAvoidBottomInset: true,
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
+          // Ambient decorative background gradients
+          Positioned(
+            top: -60.h,
+            right: -50.w,
+            child: Container(
+              width: 220.w,
+              height: 220.h,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF52B1FF).withValues(alpha: 0.35),
+                    const Color(0xFF52B1FF).withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 120.h,
+            left: -40.w,
+            child: Container(
+              width: 160.w,
+              height: 160.h,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFF59E0B).withValues(alpha: 0.20),
+                    const Color(0xFFF59E0B).withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Main scrollable content
+          SafeArea(
+            bottom: false,
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  AppSpacing.h80,
+                  AppSpacing.h18,
 
-                  // Logo & Title
-                  Column(
-                    children: [
-                      Container(
-                        // margin: EdgeInsets.only(bottom: 18.h),
-                        width: 100.w,
-                        height: 100.h,
-
-                        decoration: BoxDecoration(
-                          // shape: BoxShape.circle,
-                          // border: Border.all(
-                          //   color: const Color(0xFF4CAF50),
-                          //   width: 4,
-                          // ),
-                          image: const DecorationImage(
-                            image: AssetImage('assets/images/logo.png'),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        AppStrings.appName,
-
-                        style: FontManager.splashTitle(fontSize: 24.sp),
-                        textAlign: TextAlign.center,
-                      ),
-                      AppSpacing.h24,
-                    ],
-                  ),
-                  AppSpacing.h10,
-
-                  // Login Form Section
-                  Container(
-                    width: double.infinity,
-                    constraints: BoxConstraints(
-                      minHeight: MediaQuery.of(context).size.height * 0.80,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(130.r),
-                      ),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24.w,
-                      vertical: 30.h,
-                    ),
+                  // Top Header & Logo Section
+                  FadeInDown(
+                    duration: const Duration(milliseconds: 600),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          AppStrings.logInButton,
-                          // 'Login',
-                          style: TextStyle(
-                            fontSize: 32.sp,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
-                          ),
-                        ),
-                        AppSpacing.h20,
-
-                        // Email Field
-                        BuildTextField(
-                          label: AppStrings.emailLabel,
-                          hint: AppStrings.emailPlaceholder,
-                          textInputAction: TextInputAction.next,
-                          controller: emailController,
-                        ),
-                        AppSpacing.h16,
-
-                        // Password Field
-                        BuildTextField(
-                          label: AppStrings.passwordLabel,
-                          hint: AppStrings.passwordPlaceholder,
-                          controller: passwordController,
-                          isPassword: true,
-                          textInputAction: TextInputAction.done,
-                          obscureText: _obscurePassword,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: const Color(0xFF42A5F5),
+                        // Premium Explorer Emblem with Gradient Ring & Glow
+                        Container(
+                          width: 104.w,
+                          height: 104.h,
+                          padding: EdgeInsets.all(3.5.w),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF52B1FF), Color(0xFF0284C7)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF0284C7,
+                                ).withValues(alpha: 0.28),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF52B1FF,
+                                ).withValues(alpha: 0.18),
+                                blurRadius: 12,
+                                spreadRadius: 1,
+                              ),
+                            ],
                           ),
-                        ),
-                        AppSpacing.h4,
-
-                        // Forgot Password
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PassResetScreen(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              AppStrings.forgotPassword,
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: const Color(0xFF42A5F5),
-                                fontWeight: FontWeight.bold,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            padding: EdgeInsets.all(2.w),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                        ),
-                        AppSpacing.h20,
-
-                        // Login Button
-                        CustomLoginButton(
-                          text: AppStrings.logInTitle,
-                          isLoading: _isLoading,
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-                                  final email = emailController.text.trim();
-                                  final password = passwordController.text;
-
-                                  if (email.isEmpty || password.isEmpty) {
-                                    CustomSnackBar.show(
-                                      context,
-                                      message:
-                                          'Please enter email and password',
-                                      isError: true,
-                                    );
-                                    return;
-                                  }
-
-                                  setState(() {
-                                    _isLoading = true;
-                                  });
-
-                                  try {
-                                    final response = await LoginProvider.login(
-                                      email,
-                                      password,
-                                    );
-
-                                    if (!context.mounted) return;
-
-                                    CustomSnackBar.show(
-                                      context,
-                                      message: 'Welcome to the app',
-                                      isError: false,
-                                    );
-
-                                    // Check is_optional_module_selected from login response
-                                    final isOptionalModuleSelected =
-                                        response['is_optional_module_selected'] ==
-                                            true ||
-                                        response['is_optional_module_selected'] ==
-                                            'true';
-
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => isOptionalModuleSelected
-                                            ? HomePageScreen()
-                                            : OptionalModuleSettings(
-                                                isFirstLogin: true,
-                                              ),
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    String message =
-                                        'Invalid email or password.';
-                                    if (e is Map && e['message'] != null) {
-                                      message = e['message'].toString();
-                                    }
-                                    if (context.mounted) {
-                                      CustomSnackBar.show(
-                                        context,
-                                        message: AppLogger.getSafeErrorMessage(
-                                          message,
-                                        ),
-                                        isError: true,
-                                      );
-                                    }
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() {
-                                        _isLoading = false;
-                                      });
-                                    }
-                                  }
-                                },
-                        ),
-                        AppSpacing.h20,
-
-                        // OR Divider
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey[300],
-                                thickness: 1,
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w),
-                              child: Text(
-                                AppStrings.orLoginWith,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey[300],
-                                thickness: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.h20,
-
-                        // Google login
-                        Row(
-                          spacing: 18.w,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(child: GoogleLoginBtn()),
-                            Expanded(child: AppleLoginBtn()),
-                          ],
                         ),
                         AppSpacing.h12,
 
-                        // Create Account
-                        Center(
-                          child: RichText(
-                            text: TextSpan(
-                              text: AppStrings.noAccountPrefix,
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: AppColors.subtitleText,
-                                //  Colors.grey[600],
-                              ),
-                              children: [
-                                TextSpan(
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const GeoSignUpScreen(),
-                                        ),
-                                      );
-                                    },
-                                  text: ' ${AppStrings.createAccountTitle}',
-                                  style: TextStyle(
-                                    fontSize: 16.sp,
-                                    color: AppColors.primaryColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        // App Title
+                        Text(
+                          AppStrings.appName,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 26.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.neutralDark,
+                            letterSpacing: -0.5,
                           ),
                         ),
-                        AppSpacing.h24,
+                        AppSpacing.h12,
+
+                        // Gamified Tagline Pill
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 14.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(9999.r),
+                            border: Border.all(
+                              color: const Color(0xFFE0F2FE),
+                              width: 1.2.w,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withValues(alpha: 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "🌍 Explore the World",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryAzure,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 6.w),
+                                child: Text(
+                                  "•",
+                                  style: TextStyle(
+                                    color: const Color(0xFF94A3B8),
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.star_rounded,
+                                size: 14.sp,
+                                color: const Color(0xFFF59E0B),
+                              ),
+                              SizedBox(width: 3.w),
+                              Text(
+                                "Daily Trivia",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFD97706),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        AppSpacing.h28,
                       ],
+                    ),
+                  ),
+
+                  // Login Form Card
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 700),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(36.r),
+                          topRight: Radius.circular(36.r),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF0284C7,
+                            ).withValues(alpha: 0.10),
+                            blurRadius: 30,
+                            offset: const Offset(0, -8),
+                          ),
+                        ],
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 32.h,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_pendingDeepLink != null) ...[
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 9.h,
+                              ),
+                              margin: EdgeInsets.only(bottom: 16.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2FE),
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
+                                  color: AppColors.primaryAzure.withValues(
+                                    alpha: 0.25,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.link_rounded,
+                                    color: AppColors.primaryAzure,
+                                    size: 18.sp,
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Expanded(
+                                    child: Text(
+                                      'Quiz Link Ready! Sign in to jump straight into your requested Geography Geyser quiz.',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 11.5.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.deepOcean,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          // Card Greeting
+                          Text(
+                            "Welcome Back! 👋",
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.neutralDark,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          AppSpacing.h6,
+                          Text(
+                            "Log in to challenge your mind and level up your ranking",
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                          AppSpacing.h24,
+
+                          // Email Field
+                          BuildTextField(
+                            label: "Explorer Email",
+                            hint: AppStrings.emailPlaceholder,
+                            textInputAction: TextInputAction.next,
+                            keyboardType: TextInputType.emailAddress,
+                            controller: emailController,
+                            prefixIcon: Icon(
+                              Icons.alternate_email_rounded,
+                              color: AppColors.primaryAzure,
+                              size: 20.sp,
+                            ),
+                          ),
+                          AppSpacing.h18,
+
+                          // Password Field
+                          BuildTextField(
+                            label: "Secret Passcode",
+                            hint: AppStrings.passwordPlaceholder,
+                            controller: passwordController,
+                            isPassword: true,
+                            textInputAction: TextInputAction.done,
+                            obscureText: _obscurePassword,
+                            prefixIcon: Icon(
+                              Icons.lock_outline_rounded,
+                              color: AppColors.primaryAzure,
+                              size: 20.sp,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: const Color(0xFF64748B),
+                                size: 20.sp,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          AppSpacing.h10,
+
+                          // Forgot Password
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8.r),
+                              onTap: () {
+                                context.push(AppRoutes.forgotPassword);
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 4.w,
+                                  vertical: 4.h,
+                                ),
+                                child: Text(
+                                  AppStrings.forgotPassword,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13.sp,
+                                    color: AppColors.primaryAzure,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          AppSpacing.h24,
+
+                          // Log In Button
+                          CustomLoginButton(
+                            text: "Start Exploring",
+                            fontSize: 16.sp,
+                            isLoading: _isLoading,
+                            onPressed: _isLoading ? null : _handleLogin,
+                          ),
+                          AppSpacing.h24,
+
+                          // OR Divider
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Divider(
+                                  color: Color(0xFFE2E8F0),
+                                  thickness: 1,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 14.w),
+                                child: Text(
+                                  "or continue with",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ),
+                              const Expanded(
+                                child: Divider(
+                                  color: Color(0xFFE2E8F0),
+                                  thickness: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          AppSpacing.h20,
+
+                          // Google & Apple Login Buttons
+                          Row(
+                            children: [
+                              const Expanded(child: GoogleLoginBtn()),
+                              SizedBox(width: 14.w),
+                              const Expanded(child: AppleLoginBtn()),
+                            ],
+                          ),
+                          AppSpacing.h24,
+
+                          // Create Account Link
+                          Center(
+                            child: RichText(
+                              text: TextSpan(
+                                text: AppStrings.noAccountPrefix,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF64748B),
+                                ),
+                                children: [
+                                  TextSpan(
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {
+                                        context.push(AppRoutes.signup);
+                                      },
+                                    text: ' ${AppStrings.createAccountTitle}',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 14.sp,
+                                      color: AppColors.primaryAzure,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          AppSpacing.h16,
+                        ],
+                      ),
                     ),
                   ),
                 ],

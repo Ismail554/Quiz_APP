@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/home/homepage.dart';
-import 'package:geography_geyser/views/profile/settings/general_settings.dart';
-import 'package:geography_geyser/views/profile/settings/privacy_settings.dart';
 
 class EditProfileOption extends StatefulWidget {
   const EditProfileOption({super.key});
@@ -25,7 +25,7 @@ class _EditProfileOptionState extends State<EditProfileOption> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context);
+            context.pop();
           },
         ),
       ),
@@ -39,12 +39,7 @@ class _EditProfileOptionState extends State<EditProfileOption> {
                   icon: Icons.settings_outlined,
                   label: AppStrings.generalSetting,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GeneralSettings_Screen(),
-                      ),
-                    );
+                    context.push(AppRoutes.generalSettings);
                   },
                 ),
                 AppSpacing.h6,
@@ -52,12 +47,7 @@ class _EditProfileOptionState extends State<EditProfileOption> {
                   icon: Icons.lock_outline,
                   label: AppStrings.privacySetting,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PrivacySettings_Screen(),
-                      ),
-                    );
+                    context.push(AppRoutes.privacySettings);
                   },
                 ),
               ],

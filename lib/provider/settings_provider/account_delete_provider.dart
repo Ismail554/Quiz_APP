@@ -1,14 +1,14 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/models/delete_account.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/optional_module_provider.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/services/https_service.dart';
-import 'package:geography_geyser/views/auth/login/login.dart';
 import 'package:geography_geyser/views/profile/profile_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
@@ -80,12 +80,8 @@ class AccountDeleteProvider extends ChangeNotifier {
 
           if (context.mounted) {
             CustomSnackBar.show(context, message: "Account deleted successfully");
-            // Navigate to Login or Splash screen
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false,
-            );
+            // Navigate to Login screen
+            context.go(AppRoutes.login);
           }
           return true;
         },

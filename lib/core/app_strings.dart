@@ -1,6 +1,6 @@
 class AppStrings {
   // General
-  static const String appName = "Geography\nGeyser";
+  static const String appName = "Geography Geyser";
 
   // Welcome / Intro
 

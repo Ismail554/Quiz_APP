@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:geography_geyser/services/pending_deep_link_service.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
-import 'package:geography_geyser/views/home/op_mod_settings.dart';
 
 class GoogleLoginBtn extends StatefulWidget {
-  const GoogleLoginBtn({super.key});
+  final double? width;
+  final double? height;
+
+  const GoogleLoginBtn({super.key, this.width, this.height});
 
   @override
   State<GoogleLoginBtn> createState() => _GoogleLoginBtnState();
@@ -19,11 +25,26 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-        width: 150.w,
-        height: 48.h,
-        child: OutlinedButton(
-          onPressed: _isLoading
+    return Container(
+      width: widget.width,
+      height: widget.height ?? 50.h,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2.w),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14.r),
+          onTap: _isLoading
               ? null
               : () async {
                   setState(() {
@@ -35,19 +56,25 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
 
                     if (!context.mounted) return;
 
-                    // Check is_optional_module_selected from login response
+                    final pendingRoute =
+                        await PendingDeepLinkService.consumePendingRoute();
+                    if (!context.mounted) return;
+                    if (pendingRoute != null && pendingRoute.isNotEmpty) {
+                      context.go(pendingRoute);
+                      return;
+                    }
+
                     final isOptionalModuleSelected =
                         response['is_optional_module_selected'] == true ||
                         response['is_optional_module_selected'] == 'true';
 
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => isOptionalModuleSelected
-                            ? HomePageScreen()
-                            : OptionalModuleSettings(isFirstLogin: true),
-                      ),
-                    );
+                    if (isOptionalModuleSelected) {
+                      context.go(AppRoutes.home);
+                    } else {
+                      context.go(
+                        AppRoutes.optionalModulesPath(isFirstLogin: true),
+                      );
+                    }
                   } catch (e) {
                     if (!context.mounted) return;
                     String message = 'Google sign-in failed';
@@ -67,42 +94,41 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                     }
                   }
                 },
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: Colors.grey[400]!, width: 1.5.w),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-          ),
-          child: _isLoading
-              ? SizedBox(
-                  height: 20.h,
-                  width: 20.w,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/google_logo.png',
-                      width: 20.w,
-                      height: 20.h,
-                    ),
-                    AppSpacing.w8,
-                    Text(
-                      // 'Google',
-                      AppStrings.googleLogin,
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
+          child: Center(
+            child: _isLoading
+                ? SizedBox(
+                    height: 20.h,
+                    width: 20.w,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.neutralDark,
                       ),
                     ),
-                  ],
-                ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        'assets/images/google_logo.png',
+                        width: 20.w,
+                        height: 20.h,
+                      ),
+                      AppSpacing.w8,
+                      Text(
+                        AppStrings.googleLogin,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.neutralDark,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
+      ),
     );
   }
 }

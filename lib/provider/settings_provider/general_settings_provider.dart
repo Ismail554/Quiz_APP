@@ -5,7 +5,7 @@ import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/services/https_service.dart';
 import 'package:geography_geyser/models/profile_update_response.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 class ProfileUpdateProvider with ChangeNotifier {
   bool _isLoading = false;
@@ -30,10 +30,13 @@ class ProfileUpdateProvider with ChangeNotifier {
         'full_name': fullName,
       };
 
-      final List<http.MultipartFile> files = [];
+      final List<MultipartFile> files = [];
       if (profilePic != null) {
         files.add(
-          await http.MultipartFile.fromPath('profile_pic', profilePic.path),
+          await MultipartFile.fromFile(
+            profilePic.path,
+            filename: profilePic.path.split(Platform.pathSeparator).last,
+          ),
         );
       }
 
@@ -46,7 +49,7 @@ class ProfileUpdateProvider with ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      final isSuccess = response.fold(
         (error) {
           _message = error;
           return false;
@@ -62,6 +65,7 @@ class ProfileUpdateProvider with ChangeNotifier {
           return true;
         },
       );
+      return isSuccess;
     } catch (e) {
       AppLogger.error("ProfileUpdateProvider Error", e);
       _message = "Something went wrong!";

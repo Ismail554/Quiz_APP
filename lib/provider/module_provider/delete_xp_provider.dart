@@ -24,7 +24,7 @@ class DeleteXpProvider extends ChangeNotifier {
         statusCode: 200, // or 201
       );
 
-      return response.fold(
+      final result = response.fold(
         (error) {
           errorMessage = "Failed to delete XP: $error";
           AppLogger.error('Failed to delete XP: $error');
@@ -41,6 +41,7 @@ class DeleteXpProvider extends ChangeNotifier {
           return true;
         },
       );
+      return result;
     } catch (e) {
       errorMessage = "Error deleting XP: $e";
       AppLogger.error('Error deleting XP', e);

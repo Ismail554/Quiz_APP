@@ -1,16 +1,18 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
-import 'package:geography_geyser/custom_widgets/custom_module.dart';
+import 'package:geography_geyser/models/quiz_model.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
-import 'package:geography_geyser/views/home/homepage.dart';
-import 'package:geography_geyser/views/modules/module_home.dart';
-import 'package:geography_geyser/views/modules/select_time.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';
 import 'package:provider/provider.dart';
 
 class QuizResult_Screen extends StatefulWidget {
@@ -42,54 +44,184 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
       );
       final quizProvider = Provider.of<QuizProvider>(context, listen: false);
 
-      // If quiz finish data is not available and not currently loading, try to fetch it
-      // This is a fallback in case finishQuiz wasn't called before navigation
       if (quizFinishProvider.quizFinishData == null &&
           !quizFinishProvider.isLoading) {
-        // Get quiz data from QuizProvider
         final quizId = quizProvider.quizData?.quizId;
         final questions = quizProvider.quizData?.questions ?? [];
 
         if (quizId != null && quizId.isNotEmpty && questions.isNotEmpty) {
-          // Calculate attempted from questions length
-          // Note: This is a fallback - correct answers will be 0 since we don't have that data
-          // In normal flow, finishQuiz should be called before navigation
           final attempted = questions.length;
-          final correctAnswers = 0; // Default fallback value
-
-          await quizFinishProvider.finishQuiz(
-            quizId,
-            correctAnswers,
-            attempted,
-          );
+          await quizFinishProvider.finishQuiz(quizId, 0, attempted);
         }
       }
     });
   }
 
+  void _showQuestionReviewSheet(
+    BuildContext context,
+    List<QuestionModel> questions,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.82,
+          minChildSize: 0.5,
+          maxChildSize: 0.94,
+          builder: (_, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.softSky,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+              ),
+              padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 20.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.slateBorder,
+                        borderRadius: BorderRadius.circular(999.r),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Question & Mark Scheme Review',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.neutralDark,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8.h),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: questions.length,
+                      separatorBuilder: (_, __) => SizedBox(height: 10.h),
+                      itemBuilder: (context, index) {
+                        final q = questions[index];
+                        final options = q.optionsList;
+                        final correctIdx = q.correctAnswerIndex.clamp(
+                          0,
+                          options.isEmpty ? 0 : options.length - 1,
+                        );
+                        final correctOption = options.isNotEmpty
+                            ? options[correctIdx]
+                            : q.correctAnswer;
+
+                        return StitchCard(
+                          padding: EdgeInsets.all(14.r),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'QUESTION ${index + 1}',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 10.5.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primaryAzure,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                              SizedBox(height: 6.h),
+                              Text(
+                                q.questionText,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.neutralDark,
+                                ),
+                              ),
+                              SizedBox(height: 10.h),
+                              Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 9.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  border: Border.all(
+                                    color: AppColors.emeraldSuccess.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 17.sp,
+                                      color: AppColors.emeraldSuccess,
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Expanded(
+                                      child: Text(
+                                        'Correct Answer: $correctOption',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 12.5.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFF065F46),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgColor,
+    final quizProvider = context.watch<QuizProvider>();
+    final questions = quizProvider.quizData?.questions ?? [];
+
+    return StitchAmbientScaffold(
       body: SafeArea(
         child: Consumer<QuizFinishProvider>(
           builder: (context, provider, child) {
-            // Loading state
             if (provider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryAzure),
+              );
             }
 
-            // Error state
             if (provider.errorMessage != null) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64.sp,
-                      color: AppColors.red,
-                    ),
+                    Icon(Icons.error_outline, size: 64.sp, color: AppColors.red),
                     AppSpacing.h16,
                     Text(
                       AppLogger.getSafeErrorMessage(provider.errorMessage!),
@@ -101,195 +233,301 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
               );
             }
 
-            // Get quiz finish data
             final quizData = provider.quizFinishData;
-
-            // If no data, show default/fallback UI
             if (quizData == null) {
               return _buildFallbackUI(context);
             }
 
-            // Calculate values from API data
-            // Use attempted questions from provider instead of totalQuestions from API
             final attempted =
                 provider.attemptedQuestions ?? quizData.totalQuestions;
             final correctAnswers = quizData.correctAnswers;
-            final totalQuestions = attempted; // Use attempted as totalQuestions
-            final incorrectAnswers = totalQuestions - correctAnswers;
+            final totalQuestions = attempted;
+            final incorrectAnswers = (totalQuestions - correctAnswers).clamp(
+              0,
+              999,
+            );
             final score = quizData.score;
             final grade = quizData.grade;
             final xpGained = quizData.xpGained;
             final attendAnotherQuiz = quizData.attendAnotherQuiz;
 
             return SingleChildScrollView(
-              padding: EdgeInsets.all(16.w),
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(18.w, 16.h, 18.w, 28.h),
               child: Column(
                 children: [
-                  // Title
-                  Text(
-                    AppStrings.quizCompleteTitle,
-                    style: FontManager.bigTitle(
-                      fontSize: 28,
-                      color: AppColors.blue,
+                  // Celebratory Header Banner
+                  FadeInDown(
+                    duration: const Duration(milliseconds: 450),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(22.r),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.oceanHeaderGradient,
+                        borderRadius: BorderRadius.circular(26.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryAzure.withValues(
+                              alpha: 0.24,
+                            ),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 72.w,
+                            height: 72.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.16),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.35),
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                grade,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 28.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 12.h),
+                          Text(
+                            AppStrings.quizCompleteTitle,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            'You scored $score% ($correctAnswers/$totalQuestions correct)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                          SizedBox(height: 14.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14.w,
+                              vertical: 7.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.emeraldSuccess,
+                              borderRadius: BorderRadius.circular(999.r),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  color: Colors.white,
+                                  size: 17.sp,
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  '+$xpGained XP Earned',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  AppSpacing.h24,
+                  SizedBox(height: 18.h),
 
-                  // Result Summary Card
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        buildResultRow(
-                          icon: Icons.check_circle,
-                          iconColor: AppColors.green,
-                          label: AppStrings.correctLabel,
-                          value: correctAnswers.toString(),
-                          valueColor: AppColors.green,
-                        ),
-                        buildResultRow(
-                          icon: Icons.cancel,
-                          iconColor: AppColors.red,
-                          label: AppStrings.incorrectLabel,
-                          value: incorrectAnswers.toString(),
-                          valueColor: AppColors.red,
-                        ),
-                        buildResultRow(
-                          icon: Icons.emoji_events,
-                          iconColor: AppColors.yellow,
-                          label: AppStrings.scoreLabel,
-                          value: '$score',
-                          valueColor: AppColors.yellow,
-                        ),
-                        buildResultRow(
-                          icon: Icons.star,
-                          iconColor: AppColors.yellow,
-                          label: AppStrings.gradeLabel,
-                          value: grade,
-                          valueColor: AppColors.yellow,
-                        ),
-                        AppSpacing.h8,
-                        buildXPGainedRow(
-                          labelText: AppStrings.xpGainedLabel,
-                          valueText: '+$xpGained XP',
-                        ),
-                      ],
+                  // Detailed Breakdown Card
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 500),
+                    child: StitchCard(
+                      padding: EdgeInsets.all(18.r),
+                      child: Column(
+                        children: [
+                          buildResultRow(
+                            icon: Icons.check_circle_rounded,
+                            iconColor: AppColors.emeraldSuccess,
+                            label: AppStrings.correctLabel,
+                            value: '$correctAnswers',
+                            valueColor: AppColors.emeraldSuccess,
+                          ),
+                          Divider(
+                            color: AppColors.slateBorder,
+                            height: 18.h,
+                          ),
+                          buildResultRow(
+                            icon: Icons.cancel_rounded,
+                            iconColor: AppColors.errorCoral,
+                            label: AppStrings.incorrectLabel,
+                            value: '$incorrectAnswers',
+                            valueColor: AppColors.errorCoral,
+                          ),
+                          Divider(
+                            color: AppColors.slateBorder,
+                            height: 18.h,
+                          ),
+                          buildResultRow(
+                            icon: Icons.emoji_events_rounded,
+                            iconColor: AppColors.accentGold,
+                            label: AppStrings.scoreLabel,
+                            value: '$score%',
+                            valueColor: AppColors.accentGoldDark,
+                          ),
+                          if (questions.isNotEmpty) ...[
+                            SizedBox(height: 16.h),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () =>
+                                    _showQuestionReviewSheet(context, questions),
+                                icon: Icon(
+                                  Icons.fact_check_rounded,
+                                  size: 18.sp,
+                                ),
+                                label: const Text(
+                                  'Review Questions & Mark Scheme',
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primaryAzure,
+                                  side: const BorderSide(
+                                    color: AppColors.primaryAzure,
+                                  ),
+                                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14.r),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
-                  AppSpacing.h32,
+                  SizedBox(height: 22.h),
 
-                  // Attend another Quiz section
+                  // Recommended Next Quizzes
                   if (attendAnotherQuiz.isNotEmpty) ...[
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         AppStrings.attendAnotherQuizInstruction,
-                        style: FontManager.boldHeading(
-                          fontSize: 18.sp,
-                          color: AppColors.grey4B,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.neutralDark,
                         ),
                       ),
                     ),
-                    AppSpacing.h16,
-
-                    // Dynamic quiz topic options from API
-                    ...attendAnotherQuiz.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final quiz = entry.value;
-                      final isLast = index == attendAnotherQuiz.length - 1;
+                    SizedBox(height: 12.h),
+                    ...attendAnotherQuiz.map((quiz) {
                       return Padding(
-                        padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: AppColors.blueTransparent,
-                            ),
-                            borderRadius: BorderRadius.circular(8.r),
+                        padding: EdgeInsets.only(bottom: 10.h),
+                        child: StitchCard(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 14.h,
                           ),
-                          child: CustomModule(
-                            text: quiz.moduleName,
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      SelectTime_screen(moduleId: quiz.id),
+                          onTap: () {
+                            context.push(
+                              AppRoutes.selectTime,
+                              extra: {
+                                'moduleId': quiz.id,
+                                'moduleName': quiz.moduleName,
+                              },
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(10.r),
+                                decoration: BoxDecoration(
+                                  color: AppColors.softSky,
+                                  borderRadius: BorderRadius.circular(12.r),
                                 ),
-                              );
-                            },
+                                child: Icon(
+                                  Icons.explore_rounded,
+                                  color: AppColors.primaryAzure,
+                                  size: 20.sp,
+                                ),
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: Text(
+                                  quiz.moduleName,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.neutralDark,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 15.sp,
+                                color: AppColors.primaryAzure,
+                              ),
+                            ],
                           ),
                         ),
                       );
                     }),
-                    AppSpacing.h32,
+                    SizedBox(height: 16.h),
                   ],
 
-                  // Bottom action buttons
+                  // Bottom Action Buttons
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton(
+                        child: OutlinedButton.icon(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ModuleHomeScreen(),
-                              ),
-                            );
+                            context.go(AppRoutes.modules);
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.green,
-                            foregroundColor: AppColors.white,
-                            padding: EdgeInsets.symmetric(vertical: 16.h),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.r),
+                          icon: const Icon(Icons.replay_rounded),
+                          label: Text(AppStrings.retryQuizButton),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryAzure,
+                            side: const BorderSide(
+                              color: AppColors.primaryAzure,
+                              width: 1.4,
                             ),
-                          ),
-                          child: Text(
-                            AppStrings.retryQuizButton,
-                            style: FontManager.buttonText().copyWith(
-                              color: AppColors.white,
+                            padding: EdgeInsets.symmetric(vertical: 15.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.r),
                             ),
                           ),
                         ),
                       ),
-                      AppSpacing.w16,
+                      SizedBox(width: 12.w),
                       Expanded(
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomePageScreen(),
-                              ),
-                              (route) => false,
-                            );
+                            context.go(AppRoutes.home);
                           },
+                          icon: const Icon(Icons.home_rounded),
+                          label: Text(AppStrings.returnMenuButton),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.buttonColor,
-                            foregroundColor: AppColors.white,
-                            padding: EdgeInsets.symmetric(vertical: 16.h),
+                            backgroundColor: AppColors.primaryAzure,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 15.h),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                          ),
-                          child: Text(
-                            AppStrings.returnMenuButton,
-                            style: FontManager.buttonText().copyWith(
-                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(16.r),
                             ),
                           ),
                         ),
@@ -306,75 +544,56 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
   }
 
   Widget _buildFallbackUI(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        children: [
-          Text(
-            AppStrings.quizCompleteTitle,
-            style: FontManager.bigTitle(fontSize: 28.sp, color: AppColors.blue),
-            textAlign: TextAlign.center,
-          ),
-          AppSpacing.h24,
-          Text('No quiz data available', style: FontManager.bodyText()),
-          AppSpacing.h32,
-          Row(
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: StitchCard(
+          padding: EdgeInsets.all(24.r),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ModuleHomeScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green,
-                    foregroundColor: AppColors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                  ),
-                  child: Text(
-                    AppStrings.retryQuizButton,
-                    style: FontManager.buttonText().copyWith(
-                      color: AppColors.white,
-                    ),
-                  ),
+              Text(
+                AppStrings.quizCompleteTitle,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.neutralDark,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              AppSpacing.h16,
+              Text(
+                'Your quiz session has been recorded.',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.5.sp,
+                  color: AppColors.neutralSlate,
                 ),
               ),
-              AppSpacing.w16,
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePageScreen()),
-                      (route) => false,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.buttonColor,
-                    foregroundColor: AppColors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
+              AppSpacing.h24,
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.go(AppRoutes.modules),
+                      child: Text(AppStrings.retryQuizButton),
                     ),
                   ),
-                  child: Text(
-                    AppStrings.returnMenuButton,
-                    style: FontManager.buttonText().copyWith(
-                      color: AppColors.white,
+                  AppSpacing.w12,
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => context.go(AppRoutes.home),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryAzure,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(AppStrings.returnMenuButton),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -386,101 +605,37 @@ class _QuizResult_ScreenState extends State<QuizResult_Screen> {
     required String value,
     required Color valueColor,
   }) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 8.0.h),
-        child: Row(
-          children: [
-            Container(
-              width: 40.w,
-              height: 40.h,
-              decoration: BoxDecoration(
-                color: iconColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: AppColors.white, size: 20.sp),
-            ),
-            AppSpacing.w16,
-            Expanded(
-              child: Text(
-                label,
-                style: FontManager.headlineText(
-                  fontSize: 18.sp,
-                  color: iconColor,
-                ),
-              ),
-            ),
-            Text(
-              value,
-              style: FontManager.boldHeading(
-                fontSize: 18.sp,
-                color: valueColor,
-              ),
-            ),
-          ],
+    return Row(
+      children: [
+        Container(
+          width: 38.w,
+          height: 38.w,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: iconColor, size: 20.sp),
         ),
-      ),
-    );
-  }
-
-  Widget buildXPGainedRow({
-    required String labelText,
-    required String valueText,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppColors.green,
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40.w,
-            height: 40.h,
-            decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.flash_on, color: AppColors.white, size: 20.sp),
-          ),
-          AppSpacing.w16,
-          Expanded(
-            child: Text(
-              labelText,
-              // AppStrings.xpGainedLabel,
-              style: FontManager.generalText(
-                fontSize: 16.sp,
-              ).copyWith(color: AppColors.white, fontWeight: FontWeight.w600),
+        SizedBox(width: 14.w),
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14.5.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.neutralDark,
             ),
           ),
-          Text(
-            valueText,
-            // AppStrings.xpGainedValue,
-            style: FontManager.boldHeading(
-              fontSize: 18.sp,
-              color: AppColors.white,
-            ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w800,
+            color: valueColor,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget CustomQuizTopicOption(String topic) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: AppColors.borderColor),
-      ),
-      child: Text(
-        topic,
-        style: FontManager.bodyText().copyWith(fontWeight: FontWeight.w500),
-      ),
+        ),
+      ],
     );
   }
 }

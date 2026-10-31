@@ -5,6 +5,7 @@ import 'package:geography_geyser/app.dart';
 import 'package:geography_geyser/provider/auth_provider/signup_provider/signup_provider.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
+import 'package:geography_geyser/provider/local_progress_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
 import 'package:geography_geyser/provider/module_provider/delete_xp_provider.dart';
@@ -27,18 +28,33 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-    // Lock the orientation to portrait
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Env fallback active: $e");
+  }
+
+  // Lock the orientation to portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await NotificationService().initialize();
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await NotificationService().initialize();
+  } catch (e) {
+    debugPrint("Firebase/Notification offline fallback: $e");
+  }
+
   runApp(
     MultiProvider(
       providers: [
-        // ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(
+          create: (_) => LocalProgressProvider()..initialize(),
+        ),
         ChangeNotifierProvider(create: (_) => LoginProvider()),
         ChangeNotifierProvider(create: (_) => SignupProvider()),
         ChangeNotifierProvider(create: (_) => SubjectProvider()),

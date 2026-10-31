@@ -34,7 +34,7 @@ class VerifyProvider extends ChangeNotifier {
         statusCode: 200,
       );
 
-      return response.fold(
+      final result = response.fold(
         (error) {
           return {
             'success': false,
@@ -50,6 +50,7 @@ class VerifyProvider extends ChangeNotifier {
           };
         },
       );
+      return result;
     } catch (e) {
       AppLogger.error(" Verify OTP Error", e);
       rethrow;

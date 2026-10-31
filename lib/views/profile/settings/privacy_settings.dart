@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/provider/settings_provider/privacy_settings.dart';
-
-import 'package:geography_geyser/views/auth/forgot_pass/forget_pass_screen.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
@@ -71,21 +71,21 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                             label: AppStrings.currentPasswordLabel,
                             hint: AppStrings.currentPasswordEditLabel,
                             isPassword: true,
-                            // obscureText: _obscureOldPassword,
+                            obscureText: _obscureOldPassword,
                             textInputAction: TextInputAction.next,
-                            // suffixIcon: IconButton(
-                            //   icon: Icon(
-                            //     _obscureOldPassword
-                            //         ? Icons.visibility_off
-                            //         : Icons.visibility,
-                            //     color: const Color(0xFF42A5F5),
-                            //   ),
-                            //   onPressed: () {
-                            //     setState(() {
-                            //       _obscureOldPassword = !_obscureOldPassword;
-                            //     });
-                            //   },
-                            // ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureOldPassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: const Color(0xFF42A5F5),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureOldPassword = !_obscureOldPassword;
+                                });
+                              },
+                            ),
                           ),
                           AppSpacing.h12,
                           BuildTextField(
@@ -159,13 +159,7 @@ class _PrivacySettings_ScreenState extends State<PrivacySettings_Screen> {
                             alignment: Alignment.topRight,
                             child: TextButton(
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const PassResetScreen(),
-                                  ),
-                                );
+                                context.push(AppRoutes.forgotPassword);
                               },
                               child: Text(
                                 AppStrings.forgotPassword,
