@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/services/https_service.dart';
@@ -13,13 +14,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class LoginProvider extends ChangeNotifier {
   static final ValueNotifier<bool> isLoading = ValueNotifier(false);
 
-  // ---------------- LOGIN ----------------
+  // ---------------- LOGIN (Spec 3.1) ----------------
   static Future<Map<String, dynamic>> login(
     String email,
     String password,
   ) async {
     isLoading.value = true;
-    debugPrint('Trying login with: $email / $password');
+    AppLogger.debug('Trying login with: $email');
 
     try {
       final response = await HttpManager.apiRequest(
@@ -28,6 +29,7 @@ class LoginProvider extends ChangeNotifier {
         body: {'email': email, 'password': password},
         name: 'Login',
         statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(
@@ -38,39 +40,48 @@ class LoginProvider extends ChangeNotifier {
           final Map<String, dynamic> responseData = jsonDecode(data);
           await _storeLoginData(responseData);
 
-          debugPrint('Login Successful!');
-          if (responseData.containsKey('access_token')) {
-            debugPrint('Access Token: ${responseData['access_token']}');
-          }
-          if (responseData.containsKey('refresh_token')) {
-            debugPrint('Refresh Token: ${responseData['refresh_token']}');
-          }
-
+          AppLogger.debug('Login Successful!');
           return responseData;
         },
       );
     } catch (e) {
-      debugPrint("Login Error: $e");
+      AppLogger.error("Login Error", e);
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // ---------------- STORE DATA ----------------
+  // ---------------- STORE DATA (Spec Dual Token Compatibility) ----------------
   static Future<void> _storeLoginData(Map<String, dynamic> data) async {
-    if (data['access_token'] != null) {
-      await SecureStorageHelper.setToken(data['access_token'].toString());
+    final accessToken = data['access_token'] ?? data['access'];
+    if (accessToken != null && accessToken.toString().isNotEmpty) {
+      await SecureStorageHelper.setToken(accessToken.toString());
     }
-    if (data['refresh_token'] != null) {
-      await SecureStorageHelper.setRefreshToken(data['refresh_token'].toString());
+
+    final refreshToken = data['refresh_token'] ?? data['refresh'];
+    if (refreshToken != null && refreshToken.toString().isNotEmpty) {
+      await SecureStorageHelper.setRefreshToken(refreshToken.toString());
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_email', data['email'] ?? '');
+    final userEmail = data['email'] ?? data['user']?['email'] ?? '';
+    if (userEmail.isNotEmpty) {
+      await prefs.setString('user_email', userEmail.toString());
+    }
+
+    if (data['user'] is Map) {
+      final userMap = data['user'] as Map<String, dynamic>;
+      if (userMap['id'] != null) {
+        await prefs.setString('user_id', userMap['id'].toString());
+      }
+      if (userMap['full_name'] != null) {
+        await prefs.setString('user_full_name', userMap['full_name'].toString());
+      }
+    }
   }
 
-  // ---------------- GOOGLE SIGN IN ----------------
+  // ---------------- GOOGLE SIGN IN (Spec 3.8) ----------------
   static Future<Map<String, dynamic>> signInWithGoogle() async {
     isLoading.value = true;
 
@@ -91,7 +102,7 @@ class LoginProvider extends ChangeNotifier {
         throw {'message': 'Failed to get email from Google'};
       }
 
-      debugPrint('📧 Got email: $email');
+      AppLogger.debug('📧 Got Google email: $email');
 
       final response = await HttpManager.apiRequest(
         url: ApiService.googleLoginUrl,
@@ -99,6 +110,7 @@ class LoginProvider extends ChangeNotifier {
         body: {'email': email},
         name: 'GoogleLogin',
         statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(
@@ -109,19 +121,19 @@ class LoginProvider extends ChangeNotifier {
           final Map<String, dynamic> responseData = jsonDecode(data);
           responseData['email'] = email;
           await _storeLoginData(responseData);
-          debugPrint('🎉 Google Login Successful!');
+          AppLogger.debug('🎉 Google Login Successful!');
           return responseData;
         },
       );
     } catch (e) {
-      debugPrint('Google Login Error: $e');
+      AppLogger.error('Google Login Error', e);
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // ---------------- APPLE SIGN IN ----------------
+  // ---------------- APPLE SIGN IN (Spec 3.9) ----------------
   static Future<Map<String, dynamic>> signInWithApple() async {
     isLoading.value = true;
 
@@ -136,7 +148,7 @@ class LoginProvider extends ChangeNotifier {
       final String? email = credential.email;
       final String idToken = credential.identityToken ?? "";
 
-      debugPrint('📧 Got Apple credential. Email: $email');
+      AppLogger.debug('📧 Got Apple credential. Email: $email');
 
       Map<String, dynamic> body = {
         "id_token": idToken,
@@ -148,16 +160,13 @@ class LoginProvider extends ChangeNotifier {
         },
       };
 
-      // if (email != null && email.isNotEmpty) {
-      //   body["email"] = email;
-      // }
-
       final response = await HttpManager.apiRequest(
         url: ApiService.appleLoginUrl,
         method: Method.post,
         body: body,
         name: 'AppleLogin',
         statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(
@@ -170,28 +179,77 @@ class LoginProvider extends ChangeNotifier {
             responseData['email'] = email;
           }
           await _storeLoginData(responseData);
-          debugPrint('🎉 Apple Login Successful!');
+          AppLogger.debug('🎉 Apple Login Successful!');
           return responseData;
         },
       );
     } catch (e) {
-      debugPrint('Apple Login Error: $e');
+      AppLogger.error('Apple Login Error', e);
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ---------------- FETCH CURRENT USER (Spec 3.10) ----------------
+  static Future<Map<String, dynamic>?> fetchCurrentUser() async {
+    try {
+      final response = await HttpManager.apiRequest(
+        url: ApiService.meUrl,
+        method: Method.get,
+        name: 'CurrentUserProfile',
+        statusCode: 200,
+        skipAuth: false,
+      );
+
+      return response.fold(
+        (error) {
+          AppLogger.error('Fetch Current User Error', error);
+          return null;
+        },
+        (data) {
+          final Map<String, dynamic> profile = jsonDecode(data);
+          return profile;
+        },
+      );
+    } catch (e) {
+      AppLogger.error('Fetch Current User Exception', e);
+      return null;
+    }
+  }
+
+  // ---------------- LOGOUT (Spec 3.12) ----------------
   static Future<void> logout() async {
-    await GoogleSignIn().signOut();
+    try {
+      final refreshToken = await SecureStorageHelper.getRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await HttpManager.apiRequest(
+          url: ApiService.logoutUrl,
+          method: Method.post,
+          body: {
+            'refresh_token': refreshToken,
+            'refresh': refreshToken,
+          },
+          name: 'Logout',
+          statusCode: 204,
+          skipAuth: false,
+        );
+      }
+    } catch (e) {
+      AppLogger.error("Backend logout revocation notice (ignored during cleanup)", e);
+    } finally {
+      try {
+        await GoogleSignIn().signOut();
+      } catch (_) {}
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
 
-    final storage = const FlutterSecureStorage();
-    await storage.deleteAll();
+      final storage = const FlutterSecureStorage();
+      await storage.deleteAll();
 
-    debugPrint("🚪 All login data cleared (both Secure + Shared).");
+      AppLogger.log("🚪 All login data cleared (Secure + Shared).");
+    }
   }
 
   static Future<void> printAllStorageData() async {

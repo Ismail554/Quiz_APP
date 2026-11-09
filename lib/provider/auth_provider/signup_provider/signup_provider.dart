@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SignupProvider extends ChangeNotifier {
   static final ValueNotifier<bool> isLoading = ValueNotifier(false);
 
-  // ---------------- SIGNUP ----------------
+  // ---------------- SIGNUP (Spec 3.2) ----------------
   static Future<Map<String, dynamic>> signup(
     String email,
     String fullName,
@@ -19,7 +19,7 @@ class SignupProvider extends ChangeNotifier {
     BuildContext context,
   ) async {
     isLoading.value = true;
-    AppLogger.debug('🔵 Trying signup with: $email / $fullName / $password');
+    AppLogger.debug('🔵 Trying signup with: $email / $fullName');
 
     try {
       final requestBody = {
@@ -34,6 +34,7 @@ class SignupProvider extends ChangeNotifier {
         body: requestBody,
         name: 'Signup',
         statusCode: 201,
+        skipAuth: true,
       );
 
       return await response.fold(
@@ -67,17 +68,25 @@ class SignupProvider extends ChangeNotifier {
 
   // ---------------- STORE SIGNUP DATA ----------------
   static Future<void> _storeSignupData(Map<String, dynamic> data) async {
-    // 🧠 Save verification token securely (for OTP verify)
-    if (data.containsKey('verificationToken')) {
-      await SecureStorageHelper.setVerificationToken(data['verificationToken']);
-      debugPrint("✅ Verification Token Saved Securely!");
+    // Save verification token securely (supports camelCase and snake_case)
+    final verificationToken =
+        data['verificationToken'] ?? data['verification_token'];
+    if (verificationToken != null && verificationToken.toString().isNotEmpty) {
+      await SecureStorageHelper.setVerificationToken(
+          verificationToken.toString());
+      AppLogger.debug("✅ Verification Token Saved Securely!");
     }
 
-    // 🧠 Optional: save email and user id for later use
+    // Optional: save email and user id for later use
     final prefs = await SharedPreferences.getInstance();
-    if (data['user'] != null) {
-      await prefs.setString('signup_user_id', data['user']['id'] ?? '');
-      await prefs.setString('signup_email', data['user']['email'] ?? '');
+    if (data['user'] != null && data['user'] is Map) {
+      final userMap = data['user'] as Map<String, dynamic>;
+      if (userMap['id'] != null) {
+        await prefs.setString('signup_user_id', userMap['id'].toString());
+      }
+      if (userMap['email'] != null) {
+        await prefs.setString('signup_email', userMap['email'].toString());
+      }
     }
   }
 

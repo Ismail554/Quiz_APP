@@ -14,7 +14,7 @@ class ForgotPasswordProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get passResetToken => _passResetToken;
 
-  /// Send forgot password request with email
+  /// Send forgot password request with email (Spec 3.4)
   /// Returns passResetToken on success
   Future<Map<String, dynamic>> sendForgotPasswordRequest(String email) async {
     _isLoading = true;
@@ -27,7 +27,8 @@ class ForgotPasswordProvider extends ChangeNotifier {
         method: Method.post,
         body: {'email': email},
         name: 'ForgotPasswordRequest',
-        statusCode: 200, // or 201
+        statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(
@@ -39,16 +40,16 @@ class ForgotPasswordProvider extends ChangeNotifier {
         },
         (data) async {
           final Map<String, dynamic> responseData = jsonDecode(data);
-          // Store passResetToken in memory and secure storage if present in response
-          if (responseData.containsKey('passResetToken')) {
-            _passResetToken = responseData['passResetToken'];
+          final token =
+              responseData['passResetToken'] ?? responseData['pass_reset_token'];
+          if (token != null && token.toString().isNotEmpty) {
+            _passResetToken = token.toString();
             await SecureStorageHelper.setPassResetToken(_passResetToken!);
             AppLogger.debug('Pass Reset Token stored successfully');
           }
 
-          // Store email for later use (from response or input)
           final userEmail = responseData['user']?['email'] ?? email;
-          await SecureStorageHelper.setResetPasswordEmail(userEmail);
+          await SecureStorageHelper.setResetPasswordEmail(userEmail.toString());
 
           _isLoading = false;
           notifyListeners();
@@ -64,15 +65,14 @@ class ForgotPasswordProvider extends ChangeNotifier {
     }
   }
 
-  /// Verify OTP for forgot password
-  /// Requires passResetToken and otp, returns passwordResetVerified
+  /// Verify OTP for forgot password (Spec 3.5)
+  /// Requires passResetToken and otp, returns passwordResetVerified ticket
   Future<Map<String, dynamic>> verifyForgotPasswordOtp(String otp) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // Use in-memory token first, fallback to storage
       final passResetToken =
           _passResetToken ?? await SecureStorageHelper.getPassResetToken();
 
@@ -86,9 +86,14 @@ class ForgotPasswordProvider extends ChangeNotifier {
       final response = await HttpManager.apiRequest(
         url: ApiService.verifyForgotPassOtpUrl,
         method: Method.post,
-        body: {'passResetToken': passResetToken, 'otp': otp},
+        body: {
+          'passResetToken': passResetToken,
+          'pass_reset_token': passResetToken,
+          'otp': otp,
+        },
         name: 'VerifyForgotPassOtp',
-        statusCode: 200, // or 201
+        statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(
@@ -100,10 +105,11 @@ class ForgotPasswordProvider extends ChangeNotifier {
         },
         (data) async {
           final Map<String, dynamic> responseData = jsonDecode(data);
-          // Store passwordResetVerified if present in response
-          if (responseData.containsKey('passwordResetVerified')) {
+          final verifiedTicket = responseData['passwordResetVerified'] ??
+              responseData['password_reset_verified'];
+          if (verifiedTicket != null && verifiedTicket.toString().isNotEmpty) {
             await SecureStorageHelper.setPasswordResetVerified(
-              responseData['passwordResetVerified'],
+              verifiedTicket.toString(),
             );
             AppLogger.debug('Password Reset Verified stored successfully');
           }
@@ -116,7 +122,6 @@ class ForgotPasswordProvider extends ChangeNotifier {
     } catch (e) {
       AppLogger.error('Verify OTP Error', e);
 
-      // Handle different error types
       if (e is Map) {
         _errorMessage =
             e['msg'] ?? e['error'] ?? e['message'] ?? 'Failed to verify OTP';
@@ -130,8 +135,7 @@ class ForgotPasswordProvider extends ChangeNotifier {
     }
   }
 
-  /// Resend OTP for forgot password
-  /// Requires email
+  /// Resend OTP for forgot password (Spec 3.4)
   Future<Map<String, dynamic>> resendForgotPasswordOtp(String email) async {
     _isLoading = true;
     _errorMessage = null;
@@ -143,7 +147,8 @@ class ForgotPasswordProvider extends ChangeNotifier {
         method: Method.post,
         body: {'email': email},
         name: 'ResendForgotPasswordOtp',
-        statusCode: 200, // or 201
+        statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(
@@ -155,9 +160,10 @@ class ForgotPasswordProvider extends ChangeNotifier {
         },
         (data) async {
           final Map<String, dynamic> responseData = jsonDecode(data);
-          // Update stored token if present
-          if (responseData.containsKey('passResetToken')) {
-            _passResetToken = responseData['passResetToken'];
+          final token =
+              responseData['passResetToken'] ?? responseData['pass_reset_token'];
+          if (token != null && token.toString().isNotEmpty) {
+            _passResetToken = token.toString();
             await SecureStorageHelper.setPassResetToken(_passResetToken!);
           }
 
@@ -175,7 +181,7 @@ class ForgotPasswordProvider extends ChangeNotifier {
     }
   }
 
-  /// Set new password
+  /// Set new password (Spec 3.6)
   /// Requires passwordResetVerified and new_password
   Future<Map<String, dynamic>> setNewPassword(String newPassword) async {
     _isLoading = true;
@@ -198,10 +204,12 @@ class ForgotPasswordProvider extends ChangeNotifier {
         method: Method.post,
         body: {
           'passwordResetVerified': passwordResetVerified,
+          'password_reset_verified': passwordResetVerified,
           'new_password': newPassword,
         },
         name: 'SetNewPassword',
-        statusCode: 200, // or 201
+        statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(

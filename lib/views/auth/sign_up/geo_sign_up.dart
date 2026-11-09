@@ -84,11 +84,14 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
       _nameError = name.isEmpty ? "Please enter your full name" : null;
       _emailError = Validators.validateEmail(email);
       _passwordError = Validators.validatePassword(password);
-      _confirmPasswordError =
-          Validators.validateConfirmPassword(confirmPassword, password);
+      _confirmPasswordError = Validators.validateConfirmPassword(
+        confirmPassword,
+        password,
+      );
     });
 
-    final isValid = _nameError == null &&
+    final isValid =
+        _nameError == null &&
         _emailError == null &&
         _passwordError == null &&
         _confirmPasswordError == null;
@@ -98,12 +101,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await SignupProvider.signup(
-        email,
-        name,
-        password,
-        context,
-      );
+      await SignupProvider.signup(email, name, password, context);
 
       if (mounted) {
         CustomSnackBar.show(
@@ -117,9 +115,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
     } catch (e) {
       String message = 'Signup failed. Please try again.';
       if (e is Map<String, dynamic>) {
-        message = e['message']?.toString() ??
-            e['error']?.toString() ??
-            message;
+        message = e['message']?.toString() ?? e['error']?.toString() ?? message;
       } else if (e is String) {
         message = e;
       } else {
@@ -213,12 +209,16 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.28),
+                                color: const Color(
+                                  0xFF0284C7,
+                                ).withValues(alpha: 0.28),
                                 blurRadius: 22,
                                 offset: const Offset(0, 7),
                               ),
                               BoxShadow(
-                                color: const Color(0xFF52B1FF).withValues(alpha: 0.18),
+                                color: const Color(
+                                  0xFF52B1FF,
+                                ).withValues(alpha: 0.18),
                                 blurRadius: 10,
                                 spreadRadius: 1,
                               ),
@@ -300,7 +300,9 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.10),
+                            color: const Color(
+                              0xFF0284C7,
+                            ).withValues(alpha: 0.10),
                             blurRadius: 30,
                             offset: const Offset(0, -8),
                           ),
@@ -314,7 +316,7 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Join The Expedition 🚀",
+                            "Join The Expedition ",
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 24.sp,
                               fontWeight: FontWeight.w800,
@@ -385,14 +387,17 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                             ),
                             onChanged: (value) {
                               setState(() {
-                                _passwordError =
-                                    Validators.validatePassword(value);
-                                if (_confirmPasswordController.text.isNotEmpty) {
+                                _passwordError = Validators.validatePassword(
+                                  value,
+                                );
+                                if (_confirmPasswordController
+                                    .text
+                                    .isNotEmpty) {
                                   _confirmPasswordError =
                                       Validators.validateConfirmPassword(
-                                    _confirmPasswordController.text,
-                                    value,
-                                  );
+                                        _confirmPasswordController.text,
+                                        value,
+                                      );
                                 }
                               });
                             },
@@ -462,9 +467,9 @@ class _GeoSignUpScreenState extends State<GeoSignUpScreen> {
                               setState(() {
                                 _confirmPasswordError =
                                     Validators.validateConfirmPassword(
-                                  value,
-                                  _passwordController.text,
-                                );
+                                      value,
+                                      _passwordController.text,
+                                    );
                               });
                             },
                             suffixIcon: IconButton(

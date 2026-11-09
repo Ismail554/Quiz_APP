@@ -1,49 +1,81 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
-  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? "https://api.geographygeyser.com";
-  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? "https://api.geographygeyser.com";
+  /// Raw base host URL from environment (default: https://geographygeyser.tech)
+  static String get _rawBaseUrl {
+    final envUrl =
+        (dotenv.env['API_BASE_URL'] ?? "https://geographygeyser.tech").trim();
+    return envUrl.endsWith('/')
+        ? envUrl.substring(0, envUrl.length - 1)
+        : envUrl;
+  }
 
-  static String get loginUrl => "$_baseUrl/auth/login/";
-  static String get signupUrl => "$_baseUrl/auth/register/";
-  static String get verifyOtpUrl => "$_baseUrl/auth/verify-otp/";
-  static String get googleLoginUrl => "$_baseUrl/auth/email/";
-  static String get appleLoginUrl => "$_baseUrl/auth/apple/"; // body:
-  static String get refreshToken => "$_baseUrl/auth/access-token/"; // body: {   "refresh_token": ""}
+  /// Base URL for authentication endpoints (Spec Section 1 & 3)
+  /// Resolves to https://geographygeyser.tech/api/v1/auth with support for local /auth/ alias
+  static String get authBaseUrl {
+    final base = _rawBaseUrl;
+    if (base.endsWith('/api/v1/auth') || base.endsWith('/auth')) {
+      return base;
+    }
+    if (base.endsWith('/api/v1')) {
+      return "$base/auth";
+    }
+    return "$base/api/v1/auth";
+  }
 
-  //General settings
-  static String get updateProfile => "$_baseUrl/auth/profile-update/";
-  //Privacy settings
-  static String get updatePrivacy => "$_baseUrl/auth/password-update/";
+  /// Base URL for student and quiz endpoints
+  static String get apiBaseUrl {
+    final base = _rawBaseUrl;
+    if (base.endsWith('/api/v1/auth')) {
+      return base.substring(0, base.length - '/api/v1/auth'.length);
+    }
+    if (base.endsWith('/auth')) {
+      return base.substring(0, base.length - '/auth'.length);
+    }
+    return base;
+  }
 
-  // Homepage
-  static String get getProfile => "$_baseUrl/auth/profile-update/";
-  static String get userState => "$_baseUrl/student/student-state/";
+  // Backward compatibility getters
+  static String get baseUrl => _rawBaseUrl;
+  static String get _baseUrl => apiBaseUrl;
 
-  // Module section
-  static String get timeListUrl => "$_baseUrl/student/time-list/";
-  static String get moduleListUrl => "$_baseUrl/student/module-list/";
-  static String get quizStartUrl => "$_baseUrl/student/quiz-start/";
-  static String get quizFinishUrl => "$_baseUrl/student/quiz-finish/";
-  static String get deleteXpUrl => "$_baseUrl/student/delete-xp/";
-  static String get optionalModuleUrl => "$_baseUrl/student/optional-module/";
-  static String get updateOptionalModuleUrl =>
-      "$_baseUrl/student/optional-module/";
-  static String get synopticQuizStartUrl =>
-      "$_baseUrl/student/synoptic-quiz-start/"; // for synoptic quiz start
+  // ---------------------------------------------------------------------------
+  // Auth Endpoints (Spec 3.1 - 3.13)
+  // ---------------------------------------------------------------------------
+  static String get loginUrl => "$authBaseUrl/login/";
+  static String get signupUrl => "$authBaseUrl/register/";
+  static String get verifyOtpUrl => "$authBaseUrl/verify-otp/";
+  static String get googleLoginUrl => "$authBaseUrl/email/";
+  static String get appleLoginUrl => "$authBaseUrl/apple/";
+  static String get refreshToken => "$authBaseUrl/access-token/";
+  static String get meUrl => "$authBaseUrl/me/";
+  static String get logoutUrl => "$authBaseUrl/logout/";
+  static String get deleteAccount => "$authBaseUrl/delete-account/";
 
-  // Auth section
-  static String get deleteAccount => "$_baseUrl/auth/delete-account/";
-  // Profile section
-  static String get userPerformance => "$_baseUrl/student/user-performance/";
-
-  // Forgot Password
-  static String get forgotPassUrl => "$_baseUrl/auth/forget-password/";
-  // static String get resendOtp => "$_baseUrl/auth/forget-password-resend/"; // pass the "passResetToken"
+  // Forgot Password Flow (Spec 3.4 - 3.6)
+  static String get forgotPassUrl => "$authBaseUrl/forget-password/";
   static String get verifyForgotPassOtpUrl =>
-      "$_baseUrl/auth/forget-password-otp-verify/"; // pass the "passResetToken" and otp and get "passwordResetVerified"
-  static String get newPasswordSet =>
-      "$_baseUrl/auth/forget-password-set/"; // pass the "passwordResetVerified" and "new_password" to reset password
-  // static String get resendOtpUrl =>
-  //     "$_baseUrl/auth/forget-password-resend/"; // pass the "passResetToken" to resend otp
+      "$authBaseUrl/forget-password-otp-verify/";
+  static String get newPasswordSet => "$authBaseUrl/forget-password-set/";
+
+  // Settings / Profile
+  static String get updatePrivacy => "$authBaseUrl/password-update/";
+  static String get updateProfile => "$authBaseUrl/profile-update/";
+  static String get getProfile => "$authBaseUrl/profile-update/";
+
+  // ---------------------------------------------------------------------------
+  // Student & Module Section
+  // ---------------------------------------------------------------------------
+  static String get userState => "$apiBaseUrl/student/student-state/";
+  static String get timeListUrl => "$apiBaseUrl/student/time-list/";
+  static String get moduleListUrl => "$apiBaseUrl/student/module-list/";
+  static String get quizStartUrl => "$apiBaseUrl/student/quiz-start/";
+  static String get quizFinishUrl => "$apiBaseUrl/student/quiz-finish/";
+  static String get deleteXpUrl => "$apiBaseUrl/student/delete-xp/";
+  static String get optionalModuleUrl => "$apiBaseUrl/student/optional-module/";
+  static String get updateOptionalModuleUrl =>
+      "$apiBaseUrl/student/optional-module/";
+  static String get synopticQuizStartUrl =>
+      "$apiBaseUrl/student/synoptic-quiz-start/";
+  static String get userPerformance => "$apiBaseUrl/student/user-performance/";
 }

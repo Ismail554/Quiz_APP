@@ -278,13 +278,17 @@ class DioManager {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
           },
         ),
       );
 
       final response = await refreshDio.post(
         ApiService.refreshToken,
-        data: {'refresh_token': refreshToken},
+        data: {
+          'refresh_token': refreshToken,
+          'refresh': refreshToken,
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

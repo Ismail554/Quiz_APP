@@ -166,12 +166,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.28),
+                                color: const Color(
+                                  0xFF0284C7,
+                                ).withValues(alpha: 0.28),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
                               BoxShadow(
-                                color: const Color(0xFF52B1FF).withValues(alpha: 0.18),
+                                color: const Color(
+                                  0xFF52B1FF,
+                                ).withValues(alpha: 0.18),
                                 blurRadius: 12,
                                 spreadRadius: 1,
                               ),
@@ -239,34 +243,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: AppColors.primaryAzure,
                                 ),
                               ),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 6.w),
-                                child: Text(
-                                  "•",
-                                  style: TextStyle(
-                                    color: const Color(0xFF94A3B8),
-                                    fontSize: 12.sp,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.star_rounded,
-                                size: 14.sp,
-                                color: const Color(0xFFF59E0B),
-                              ),
-                              SizedBox(width: 3.w),
-                              Text(
-                                "Daily Trivia",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFFD97706),
-                                ),
-                              ),
+                              // Padding(
+                              //   padding: EdgeInsets.symmetric(horizontal: 6.w),
+                              //   child: Text(
+                              //     "•",
+                              //     style: TextStyle(
+                              //       color: const Color(0xFF94A3B8),
+                              //       fontSize: 12.sp,
+                              //     ),
+                              //   ),
+                              // ),
+                              // Icon(
+                              //   Icons.star_rounded,
+                              //   size: 14.sp,
+                              //   color: const Color(0xFFF59E0B),
+                              // ),
+                              // SizedBox(width: 3.w),
+                              // Text(
+                              //   "Daily Trivia",
+                              //   style: GoogleFonts.plusJakartaSans(
+                              //     fontSize: 12.sp,
+                              //     fontWeight: FontWeight.w700,
+                              //     color: const Color(0xFFD97706),
+                              //   ),
+                              // ),
                             ],
                           ),
                         ),
-                        AppSpacing.h28,
+                        AppSpacing.h20,
                       ],
                     ),
                   ),
@@ -328,7 +332,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             controller: emailController,
                             prefixIcon: Icon(
-                              Icons.alternate_email_rounded,
+                              Icons.mail_outline_rounded,
                               color: AppColors.primaryAzure,
                               size: 20.sp,
                             ),

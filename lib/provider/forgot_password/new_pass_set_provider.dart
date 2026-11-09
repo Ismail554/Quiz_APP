@@ -12,7 +12,7 @@ class NewPassSetProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  /// Set new password
+  /// Set new password (Spec 3.6)
   /// Requires passwordResetVerified and new_password
   Future<Map<String, dynamic>> setNewPassword(String newPassword) async {
     _isLoading = true;
@@ -35,10 +35,12 @@ class NewPassSetProvider extends ChangeNotifier {
         method: Method.post,
         body: {
           'passwordResetVerified': passwordResetVerified,
+          'password_reset_verified': passwordResetVerified,
           'new_password': newPassword,
         },
         name: 'SetNewPassword',
-        statusCode: 200, // or 201
+        statusCode: 200,
+        skipAuth: true,
       );
 
       return await response.fold(
