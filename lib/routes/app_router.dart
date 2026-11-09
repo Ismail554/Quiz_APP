@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/data/static_curriculum_data.dart';
+import 'package:geography_geyser/core/data/static_youtube_data.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/main.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
+import 'package:geography_geyser/services/pending_deep_link_service.dart';
 import 'package:geography_geyser/splash/splash_screen.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/congratulations.dart';
 import 'package:geography_geyser/views/auth/forgot_pass/forget_pass_screen.dart';
@@ -21,6 +25,10 @@ import 'package:geography_geyser/views/modules/quiz_result.dart';
 import 'package:geography_geyser/views/modules/quiz_screen.dart';
 import 'package:geography_geyser/views/modules/select_quantity.dart';
 import 'package:geography_geyser/views/modules/select_time.dart';
+import 'package:geography_geyser/views/modules/specification/eq_selection_screen.dart';
+import 'package:geography_geyser/views/modules/specification/spec_module_list_screen.dart';
+import 'package:geography_geyser/views/modules/specification/sub_quiz_selection_screen.dart';
+import 'package:geography_geyser/views/modules/youtube/youtube_quiz_list_screen.dart';
 import 'package:geography_geyser/views/profile/account_delete.dart';
 import 'package:geography_geyser/views/profile/edit_profile_op.dart';
 import 'package:geography_geyser/views/profile/profile_screen.dart';
@@ -57,11 +65,30 @@ CustomTransitionPage<void> _buildSlideTransition({
   );
 }
 
-/// Global GoRouter instance configured with deep linking and route definitions
+/// Global GoRouter instance configured with deep linking, auth preservation, and V2 routes
 final GoRouter appRouter = GoRouter(
   navigatorKey: navigatorKey,
   initialLocation: AppRoutes.splash,
   debugLogDiagnostics: true,
+  redirect: (context, state) async {
+    final path = state.uri.path;
+    final isQuizDeepLink =
+        path == AppRoutes.quiz || path.startsWith('${AppRoutes.quiz}/');
+
+    if (isQuizDeepLink) {
+      final token = await SecureStorageHelper.getToken();
+      final refreshToken = await SecureStorageHelper.getRefreshToken();
+      final isAuthenticated =
+          (token != null && token.isNotEmpty) ||
+          (refreshToken != null && refreshToken.isNotEmpty);
+
+      if (!isAuthenticated) {
+        await PendingDeepLinkService.setPendingRoute(state.uri.toString());
+        return AppRoutes.login;
+      }
+    }
+    return null;
+  },
   routes: [
     // -------------------------------------------------------------------------
     // Splash & Auth Routes
@@ -91,7 +118,8 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.verifyOtp,
       name: AppRoutes.verifyOtpName,
       pageBuilder: (context, state) {
-        final email = state.uri.queryParameters['email'] ??
+        final email =
+            state.uri.queryParameters['email'] ??
             (state.extra is String
                 ? state.extra as String
                 : (state.extra as Map?)?['email'] as String?);
@@ -121,7 +149,8 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.forgotPasswordVerify,
       name: AppRoutes.forgotPasswordVerifyName,
       pageBuilder: (context, state) {
-        final email = state.uri.queryParameters['email'] ??
+        final email =
+            state.uri.queryParameters['email'] ??
             (state.extra is String
                 ? state.extra as String
                 : (state.extra as Map?)?['email'] as String?);
@@ -163,7 +192,8 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.optionalModules,
       name: AppRoutes.optionalModulesName,
       pageBuilder: (context, state) {
-        final isFirstLogin = state.uri.queryParameters['firstLogin'] == 'true' ||
+        final isFirstLogin =
+            state.uri.queryParameters['firstLogin'] == 'true' ||
             state.extra == true ||
             (state.extra as Map?)?['isFirstLogin'] == true;
         return _buildSlideTransition(
@@ -174,7 +204,7 @@ final GoRouter appRouter = GoRouter(
     ),
 
     // -------------------------------------------------------------------------
-    // Modules & Quizzes
+    // Tab 2: Quizzes Discovery Hub (Option A Spec Flow & Option B YouTube Flow)
     // -------------------------------------------------------------------------
     GoRoute(
       path: AppRoutes.modules,
@@ -185,16 +215,77 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: AppRoutes.specModules,
+      name: AppRoutes.specModulesName,
+      pageBuilder: (context, state) => _buildSlideTransition(
+        key: state.pageKey,
+        child: const SpecModuleListScreen(),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.specEqSelection,
+      name: AppRoutes.specEqSelectionName,
+      pageBuilder: (context, state) {
+        final extraMap = state.extra is Map ? state.extra as Map : {};
+        final moduleId =
+            state.uri.queryParameters['moduleId'] ??
+            extraMap['moduleId']?.toString() ??
+            'tectonics';
+        return _buildSlideTransition(
+          key: state.pageKey,
+          child: EqSelectionScreen(moduleId: moduleId),
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.specSubQuizzes,
+      name: AppRoutes.specSubQuizzesName,
+      pageBuilder: (context, state) {
+        final extraMap = state.extra is Map ? state.extra as Map : {};
+        final moduleId =
+            state.uri.queryParameters['moduleId'] ??
+            extraMap['moduleId']?.toString() ??
+            'tectonics';
+        final eqNumber =
+            int.tryParse(state.uri.queryParameters['eq'] ?? '') ??
+            (extraMap['eqNumber'] as int?) ??
+            1;
+        return _buildSlideTransition(
+          key: state.pageKey,
+          child: SubQuizSelectionScreen(
+            moduleId: moduleId,
+            eqNumber: eqNumber,
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.youtubeQuizzes,
+      name: AppRoutes.youtubeQuizzesName,
+      pageBuilder: (context, state) => _buildSlideTransition(
+        key: state.pageKey,
+        child: const YouTubeQuizListScreen(),
+      ),
+    ),
+
+    // -------------------------------------------------------------------------
+    // Shared Quiz Configuration, Engine & Deep Link Entrypoints
+    // -------------------------------------------------------------------------
+    GoRoute(
       path: AppRoutes.selectTime,
       name: AppRoutes.selectTimeName,
       pageBuilder: (context, state) {
         final extraMap = state.extra is Map ? state.extra as Map : {};
-        final selectedQuantityIndex = int.tryParse(
-                state.uri.queryParameters['selectedQuantityIndex'] ?? '') ??
+        final selectedQuantityIndex =
+            int.tryParse(
+              state.uri.queryParameters['selectedQuantityIndex'] ?? '',
+            ) ??
             extraMap['selectedQuantityIndex'] as int?;
-        final moduleId = state.uri.queryParameters['moduleId'] ??
+        final moduleId =
+            state.uri.queryParameters['moduleId'] ??
             extraMap['moduleId'] as String?;
-        final moduleName = state.uri.queryParameters['moduleName'] ??
+        final moduleName =
+            state.uri.queryParameters['moduleName'] ??
             extraMap['moduleName'] as String?;
 
         return _buildSlideTransition(
@@ -212,10 +303,13 @@ final GoRouter appRouter = GoRouter(
       name: AppRoutes.selectQuantityName,
       pageBuilder: (context, state) {
         final extraMap = state.extra is Map ? state.extra as Map : {};
-        final selectedTimeInMinutes = int.tryParse(
-                state.uri.queryParameters['selectedTimeInMinutes'] ?? '') ??
+        final selectedTimeInMinutes =
+            int.tryParse(
+              state.uri.queryParameters['selectedTimeInMinutes'] ?? '',
+            ) ??
             extraMap['selectedTimeInMinutes'] as int?;
-        final moduleId = state.uri.queryParameters['moduleId'] ??
+        final moduleId =
+            state.uri.queryParameters['moduleId'] ??
             extraMap['moduleId'] as String?;
 
         return _buildSlideTransition(
@@ -234,14 +328,20 @@ final GoRouter appRouter = GoRouter(
         final extraMap = state.extra is Map ? state.extra as Map : {};
         final totalQuestions =
             int.tryParse(state.uri.queryParameters['totalQuestions'] ?? '') ??
-                extraMap['totalQuestions'] as int?;
+            extraMap['totalQuestions'] as int?;
         final timeInMinutes =
             int.tryParse(state.uri.queryParameters['timeInMinutes'] ?? '') ??
-                extraMap['timeInMinutes'] as int?;
-        final moduleId = state.uri.queryParameters['moduleId'] ??
+            extraMap['timeInMinutes'] as int?;
+        final moduleId =
+            state.uri.queryParameters['moduleId'] ??
             extraMap['moduleId'] as String?;
-        final moduleName = state.uri.queryParameters['moduleName'] ??
+        final moduleName =
+            state.uri.queryParameters['moduleName'] ??
             extraMap['moduleName'] as String?;
+        final initialQuestionIndex = extraMap['initialQuestionIndex'] as int?;
+        final initialCorrectCount = extraMap['initialCorrectCount'] as int?;
+        final initialTimeRemainingSeconds =
+            extraMap['initialTimeRemainingSeconds'] as int?;
 
         return _buildSlideTransition(
           key: state.pageKey,
@@ -250,6 +350,62 @@ final GoRouter appRouter = GoRouter(
             timeInMinutes: timeInMinutes,
             moduleId: moduleId,
             moduleName: moduleName,
+            initialQuestionIndex: initialQuestionIndex,
+            initialCorrectCount: initialCorrectCount,
+            initialTimeRemainingSeconds: initialTimeRemainingSeconds,
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.quizById,
+      name: AppRoutes.quizByIdName,
+      pageBuilder: (context, state) {
+        final rawQuizId = state.pathParameters['quizId'] ?? '';
+        final quizId = Uri.decodeComponent(rawQuizId).trim();
+        final extraMap = state.extra is Map ? state.extra as Map : {};
+
+        final ytQuiz = StaticYouTubeData.findByQuizId(quizId);
+        final subQuiz = StaticCurriculumData.findSubQuizById(quizId);
+        final specMod = StaticCurriculumData.findModuleById(quizId);
+        final isSynoptic = quizId.toUpperCase() == 'SYNOPTIC';
+
+        final isKnownQuiz =
+            ytQuiz != null ||
+            subQuiz != null ||
+            specMod != null ||
+            isSynoptic;
+
+        final moduleName =
+            state.uri.queryParameters['moduleName'] ??
+            extraMap['moduleName'] as String? ??
+            ytQuiz?.title ??
+            subQuiz?.title ??
+            specMod?.title ??
+            (isSynoptic ? 'Synoptic Paper 3 Linkages' : null);
+
+        final totalQuestions =
+            int.tryParse(state.uri.queryParameters['totalQuestions'] ?? '') ??
+            extraMap['totalQuestions'] as int? ??
+            ytQuiz?.questionCount ??
+            subQuiz?.questionCount ??
+            10;
+
+        final timeInMinutes =
+            int.tryParse(state.uri.queryParameters['timeInMinutes'] ?? '') ??
+            extraMap['timeInMinutes'] as int? ??
+            ytQuiz?.estimatedMinutes ??
+            subQuiz?.estimatedMinutes ??
+            10;
+
+        return _buildSlideTransition(
+          key: state.pageKey,
+          child: QuizScreen(
+            moduleId: quizId,
+            moduleName: moduleName,
+            totalQuestions: totalQuestions,
+            timeInMinutes: timeInMinutes,
+            isInvalidQuizId: !isKnownQuiz,
           ),
         );
       },
@@ -363,7 +519,10 @@ final GoRouter appRouter = GoRouter(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryAzure,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

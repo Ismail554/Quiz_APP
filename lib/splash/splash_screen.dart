@@ -8,6 +8,7 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/secure_storage/secure_storage_helper.dart';
+import 'package:geography_geyser/services/pending_deep_link_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -28,16 +29,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    // Check if refresh_token exists
     final refreshToken = await SecureStorageHelper.getRefreshToken();
+    final accessToken = await SecureStorageHelper.getToken();
+    final isAuthenticated =
+        (refreshToken != null && refreshToken.isNotEmpty) ||
+        (accessToken != null && accessToken.isNotEmpty);
 
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      // User is logged in, navigate to HomePage
+    if (isAuthenticated) {
+      final pendingRoute = await PendingDeepLinkService.consumePendingRoute();
       if (mounted) {
-        context.go(AppRoutes.home);
+        if (pendingRoute != null && pendingRoute.isNotEmpty) {
+          context.go(pendingRoute);
+        } else {
+          context.go(AppRoutes.home);
+        }
       }
     } else {
-      // User is not logged in, navigate to LoginScreen
       if (mounted) {
         context.go(AppRoutes.login);
       }
@@ -62,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   FadeInDown(
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                     child: Image.asset(
                       'assets/images/logo.png',
                       width: 300,
@@ -70,16 +77,14 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ),
                   FadeInUp(
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                     child: Text(
                       'Geography\nGeyser',
                       textAlign: TextAlign.center,
-                      textScaler: const TextScaler.linear(
-                        1.0,
-                      ), // Added to prevent system scaling inconsistencies
+                      textScaler: const TextScaler.linear(1.0),
                       style: FontManager.splashTitle().copyWith(
                         decoration: TextDecoration.none,
-                      ), // Ensure no unwanted decorations
+                      ),
                     ),
                   ),
                   AppSpacing.h26,

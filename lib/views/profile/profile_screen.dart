@@ -1,29 +1,28 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-// Core imports
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
-import 'package:geography_geyser/core/font_manager.dart';
-
-// Models
 import 'package:geography_geyser/models/home_model.dart';
 import 'package:geography_geyser/models/userstats_model.dart';
 import 'package:geography_geyser/models/user_performance_model.dart';
-
-// Providers
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
-import 'package:geography_geyser/provider/userstats_provider.dart';
-import 'package:geography_geyser/provider/user_performance_provider.dart';
+import 'package:geography_geyser/provider/local_progress_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/optional_module_provider.dart';
-
-// Services
+import 'package:geography_geyser/provider/user_performance_provider.dart';
+import 'package:geography_geyser/provider/userstats_provider.dart';
+import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/services/api_service.dart';
+import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
+import 'package:geography_geyser/views/custom_widgets/explorer_avatar.dart';
+import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool hideSettingsCard;
@@ -32,19 +31,16 @@ class ProfileScreen extends StatelessWidget {
 
   static bool _isInitialized = false;
 
-  /// Reset initialization flag (useful after logout)
   static void resetInitialization() {
     _isInitialized = false;
   }
 
-  /// Initialize data by loading from storage first, then fetching from API if needed
   void _initializeData(BuildContext context) {
     if (_isInitialized) return;
     _isInitialized = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) return;
-
       await _loadUserData(context);
       if (!context.mounted) return;
       await _loadStatsData(context);
@@ -53,7 +49,6 @@ class ProfileScreen extends StatelessWidget {
     });
   }
 
-  /// Load user data from storage, then API if needed
   Future<void> _loadUserData(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     await userProvider.loadUserDataFromStorage();
@@ -65,7 +60,6 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
-  /// Load stats data from storage, then API if needed
   Future<void> _loadStatsData(BuildContext context) async {
     final statsProvider = Provider.of<UserStatsProvider>(
       context,
@@ -80,7 +74,6 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
-  /// Load performance data from storage, then API if needed
   Future<void> _loadPerformanceData(BuildContext context) async {
     final performanceProvider = Provider.of<ProfileProvider>(
       context,
@@ -95,7 +88,6 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
-  /// Refresh all data from API
   Future<void> _refreshAllData(
     UserProvider userProvider,
     UserStatsProvider statsProvider,
@@ -111,522 +103,1037 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     _initializeData(context);
-    return Scaffold(
-      backgroundColor: AppColors.bgColor,
+    return StitchAmbientScaffold(
       body: SafeArea(
-        child: Consumer3<UserProvider, UserStatsProvider, ProfileProvider>(
-          builder: (context, userProvider, statsProvider, performanceProvider, child) {
-            final user = userProvider.userModel;
-            final stats = statsProvider.userStats;
-            final performance = performanceProvider.profileData;
+        child:
+            Consumer4<
+              UserProvider,
+              UserStatsProvider,
+              ProfileProvider,
+              LocalProgressProvider
+            >(
+              builder:
+                  (
+                    context,
+                    userProvider,
+                    statsProvider,
+                    performanceProvider,
+                    localProgress,
+                    child,
+                  ) {
+                    final user = userProvider.userModel;
+                    final stats = statsProvider.userStats;
+                    final performance = performanceProvider.profileData;
 
-            // Only show loading if we have no data AND we're currently loading
-            final isLoading =
-                userProvider.isLoading ||
-                statsProvider.isLoading ||
-                performanceProvider.isLoading;
-            final hasNoData = user == null || stats == null;
+                    final isLoading =
+                        userProvider.isLoading ||
+                        statsProvider.isLoading ||
+                        performanceProvider.isLoading;
+                    final hasNoData = user == null && stats == null;
 
-            if (isLoading && hasNoData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+                    if (isLoading && hasNoData) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryAzure,
+                        ),
+                      );
+                    }
 
-            return RefreshIndicator(
-              onRefresh: () => _refreshAllData(
-                userProvider,
-                statsProvider,
-                performanceProvider,
-              ),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Back Button (only show when navigated to as a pushed screen)
-                    if (hideSettingsCard) ...[
-                      InkWell(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                        child: Row(
+                    return RefreshIndicator(
+                      color: AppColors.primaryAzure,
+                      onRefresh: () => _refreshAllData(
+                        userProvider,
+                        statsProvider,
+                        performanceProvider,
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 32.h),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.arrow_back, color: AppColors.black),
-                            AppSpacing.w8,
-                            Text(
-                              AppStrings.backButton,
-                              style: FontManager.bodyText(
-                                color: AppColors.black,
+                            if (hideSettingsCard) ...[
+                              InkWell(
+                                borderRadius: BorderRadius.circular(12.r),
+                                onTap: () => Navigator.pop(context),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 6.h),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.arrow_back_ios_new_rounded,
+                                        size: 16.sp,
+                                        color: AppColors.neutralDark,
+                                      ),
+                                      SizedBox(width: 6.w),
+                                      Text(
+                                        AppStrings.backButton,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.neutralDark,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 12.h),
+                            ],
+
+                            // 1. User Profile & Account Hero Card
+                            FadeInDown(
+                              duration: const Duration(milliseconds: 420),
+                              child: _buildProfileHeroCard(
+                                context,
+                                user,
+                                stats,
+                                performance,
                               ),
                             ),
+                            SizedBox(height: 20.h),
+
+                            // Learning Progress & Subject Mastery
+                            FadeInUp(
+                              duration: const Duration(milliseconds: 460),
+                              child: _buildProgressMetricsRow(
+                                stats,
+                                performance,
+                              ),
+                            ),
+                            SizedBox(height: 20.h),
+
+                            FadeInUp(
+                              duration: const Duration(milliseconds: 500),
+                              child: _buildSubjectPerformanceSection(
+                                performance,
+                              ),
+                            ),
+                            SizedBox(height: 24.h),
+
+                            if (!hideSettingsCard) ...[
+                              // Section 1: Account & Curriculum Settings
+                              _buildSectionTitle('Account & Curriculum'),
+                              SizedBox(height: 10.h),
+                              StitchCard(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 6.h,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildSettingsNavTile(
+                                      icon: Icons.person_outline_rounded,
+                                      iconColor: AppColors.primaryAzure,
+                                      title: 'Edit Profile & Account',
+                                      subtitle:
+                                          'Update your name, avatar, and explorer details',
+                                      onTap: () => context.push(
+                                        AppRoutes.generalSettings,
+                                      ),
+                                    ),
+                                    const Divider(
+                                      color: Color(0xFFF1F5F9),
+                                      height: 1,
+                                    ),
+                                    _buildSettingsNavTile(
+                                      icon: Icons.tune_rounded,
+                                      iconColor: const Color(0xFF8B5CF6),
+                                      title: AppStrings.moduleSettingOption,
+                                      subtitle:
+                                          'Choose Group B optional topics (Coasts/Glaciers, etc.)',
+                                      onTap: () => context.push(
+                                        AppRoutes.optionalModules,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 22.h),
+
+                              // Section 2: Theme Preferences
+                              _buildSectionTitle('Theme Preferences'),
+                              SizedBox(height: 10.h),
+                              StitchCard(
+                                padding: EdgeInsets.all(14.r),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.palette_outlined,
+                                          color: AppColors.primaryAzure,
+                                          size: 20.sp,
+                                        ),
+                                        SizedBox(width: 10.w),
+                                        Text(
+                                          'Appearance Mode',
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.neutralDark,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    Row(
+                                      children: [
+                                        _buildThemeModeChip(
+                                          context: context,
+                                          label: 'Light',
+                                          icon: Icons.light_mode_rounded,
+                                          mode: ThemeMode.light,
+                                          currentMode: localProgress.themeMode,
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        _buildThemeModeChip(
+                                          context: context,
+                                          label: 'Dark',
+                                          icon: Icons.dark_mode_rounded,
+                                          mode: ThemeMode.dark,
+                                          currentMode: localProgress.themeMode,
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        _buildThemeModeChip(
+                                          context: context,
+                                          label: 'System',
+                                          icon: Icons.brightness_auto_rounded,
+                                          mode: ThemeMode.system,
+                                          currentMode: localProgress.themeMode,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 22.h),
+
+                              // Section 3: Notification Preferences
+                              _buildSectionTitle('Notification Preferences'),
+                              SizedBox(height: 10.h),
+                              StitchCard(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 6.h,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildSwitchTile(
+                                      icon:
+                                          Icons.notifications_active_outlined,
+                                      iconColor: AppColors.accentGoldDark,
+                                      title: 'Daily Geyser Streak Reminders',
+                                      subtitle:
+                                          'Stay consistent with daily A-Level revision prompts',
+                                      value:
+                                          localProgress.notificationsEnabled,
+                                      onChanged: (val) => localProgress
+                                          .setNotificationsEnabled(val),
+                                    ),
+                                    const Divider(
+                                      color: Color(0xFFF1F5F9),
+                                      height: 1,
+                                    ),
+                                    _buildSwitchTile(
+                                      icon: Icons.ondemand_video_rounded,
+                                      iconColor: const Color(0xFFDC2626),
+                                      title:
+                                          'New @GeographyGeyser Video Quizzes',
+                                      subtitle:
+                                          'Get notified when a new YouTube lesson & quiz drops',
+                                      value: localProgress.youtubeAlertsEnabled,
+                                      onChanged: (val) => localProgress
+                                          .setYoutubeAlertsEnabled(val),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 22.h),
+
+                              // Section 4: App Preferences
+                              _buildSectionTitle('App Preferences'),
+                              SizedBox(height: 10.h),
+                              StitchCard(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 6.h,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildSwitchTile(
+                                      icon: Icons.volume_up_outlined,
+                                      iconColor: AppColors.primaryAzure,
+                                      title: 'Quiz Sound Effects',
+                                      subtitle:
+                                          'Play audio feedback on correct and wrong answers',
+                                      value: localProgress.soundEffectsEnabled,
+                                      onChanged: (val) => localProgress
+                                          .setSoundEffectsEnabled(val),
+                                    ),
+                                    const Divider(
+                                      color: Color(0xFFF1F5F9),
+                                      height: 1,
+                                    ),
+                                    _buildSwitchTile(
+                                      icon: Icons.vibration_rounded,
+                                      iconColor: AppColors.emeraldSuccess,
+                                      title: 'Tactile Haptic Feedback',
+                                      subtitle:
+                                          'Subtle vibrations during quiz interactions',
+                                      value: localProgress.hapticsEnabled,
+                                      onChanged: (val) =>
+                                          localProgress.setHapticsEnabled(val),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 22.h),
+
+                              // Section 5: Help & Support
+                              _buildSectionTitle('Help & Support'),
+                              SizedBox(height: 10.h),
+                              StitchCard(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 6.h,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildSettingsNavTile(
+                                      icon: Icons.smart_display_rounded,
+                                      iconColor: const Color(0xFFDC2626),
+                                      title: '@GeographyGeyser YouTube Channel',
+                                      subtitle:
+                                          'Watch Edexcel A-Level Geography revision lessons',
+                                      onTap: () async {
+                                        final uri = Uri.parse(
+                                          'https://www.youtube.com/@GeographyGeyser',
+                                        );
+                                        await launchUrl(
+                                          uri,
+                                          mode: LaunchMode.externalApplication,
+                                        );
+                                      },
+                                    ),
+                                    const Divider(
+                                      color: Color(0xFFF1F5F9),
+                                      height: 1,
+                                    ),
+                                    _buildSettingsNavTile(
+                                      icon: Icons.link_rounded,
+                                      iconColor: AppColors.primaryAzure,
+                                      title: 'Test YouTube Deep Link',
+                                      subtitle:
+                                          'Simulate clicking a YouTube description quiz link',
+                                      onTap: () =>
+                                          _showDeepLinkTesterDialog(context),
+                                    ),
+                                    const Divider(
+                                      color: Color(0xFFF1F5F9),
+                                      height: 1,
+                                    ),
+                                    _buildSettingsNavTile(
+                                      icon: Icons.mail_outline_rounded,
+                                      iconColor: AppColors.accentGoldDark,
+                                      title: 'Contact Creator & Support',
+                                      subtitle:
+                                          'simonA@standsureeducation.co.uk',
+                                      onTap: () async {
+                                        final emailUri = Uri(
+                                          scheme: 'mailto',
+                                          path:
+                                              'simonA@standsureeducation.co.uk',
+                                          query:
+                                              'subject=Geography Geyser V2 Support',
+                                        );
+                                        try {
+                                          await launchUrl(emailUri);
+                                        } catch (_) {
+                                          if (context.mounted) {
+                                            CustomSnackBar.show(
+                                              context,
+                                              message:
+                                                  'Support: simonA@standsureeducation.co.uk',
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 22.h),
+
+                              // Section 6: Privacy & Legal Information
+                              _buildSectionTitle('Privacy & Legal'),
+                              SizedBox(height: 10.h),
+                              StitchCard(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 6.h,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildSettingsNavTile(
+                                      icon: Icons.lock_outline_rounded,
+                                      iconColor: AppColors.primaryAzure,
+                                      title: AppStrings.privacySetting,
+                                      subtitle:
+                                          'Update your account password & security',
+                                      onTap: () => context.push(
+                                        AppRoutes.privacySettings,
+                                      ),
+                                    ),
+                                    const Divider(
+                                      color: Color(0xFFF1F5F9),
+                                      height: 1,
+                                    ),
+                                    _buildSettingsNavTile(
+                                      icon: Icons.info_outline_rounded,
+                                      iconColor: AppColors.emeraldSuccess,
+                                      title: 'About Geography Geyser & Legal',
+                                      subtitle:
+                                          'Version 2.0 • Terms of Use & Privacy Policy',
+                                      onTap: () =>
+                                          context.push(AppRoutes.aboutApp),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 22.h),
+
+                              // Section 7: Sign-Out & Account Management
+                              _buildSectionTitle('Account Management'),
+                              SizedBox(height: 10.h),
+                              StitchCard(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 6.h,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildSettingsNavTile(
+                                      icon: Icons.logout_rounded,
+                                      iconColor: AppColors.errorCoral,
+                                      title: AppStrings.logOutOption,
+                                      subtitle:
+                                          'Sign out of your Geography Geyser account',
+                                      titleColor: AppColors.errorCoral,
+                                      onTap: () => showLogoutDialog(context),
+                                    ),
+                                    const Divider(
+                                      color: Color(0xFFF1F5F9),
+                                      height: 1,
+                                    ),
+                                    _buildSettingsNavTile(
+                                      icon: Icons.delete_forever_rounded,
+                                      iconColor: AppColors.errorCoral,
+                                      title: AppStrings.accountdelection,
+                                      subtitle:
+                                          'Permanently delete your account and XP history',
+                                      titleColor: AppColors.errorCoral,
+                                      onTap: () =>
+                                          context.push(AppRoutes.accountDelete),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
-                      AppSpacing.h24,
-                    ],
-
-                    // Profile Header
-                    buildProfileHeader(user, stats, performance),
-
-                    AppSpacing.h24,
-
-                    // Progress Section
-                    buildProgressSection(stats, performance),
-
-                    AppSpacing.h24,
-
-                    // Subject Performance Section
-                    buildSubjectPerformanceSection(performance),
-
-                    AppSpacing.h40,
-                    // Settings Card (conditionally shown)
-                    if (!hideSettingsCard) ...[
-                      buildSettingsCard(context),
-                      AppSpacing.h24,
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+                    );
+                  },
+            ),
       ),
     );
   }
 
-  /// Build profile header with avatar, name, and XP
-  Widget buildProfileHeader(
+  Widget _buildProfileHeroCard(
+    BuildContext context,
     HomeModel? user,
     UserStatsModel? stats,
     ProfileModel? performance,
   ) {
-    // Prefer performance data, fallback to user/stats
     final profilePic = performance?.profilePic ?? user?.profilePic;
     final fullName =
-        performance?.fullName ?? user?.fullName ?? AppStrings.userName;
-    final totalXp = performance?.totalXp ?? stats?.totalXp;
+        performance?.fullName ?? user?.fullName ?? 'Alex Mercer';
+    final email = user?.email ?? 'explorer@geographygeyser.com';
+    final totalXp = performance?.totalXp ?? stats?.totalXp ?? 1240;
 
-    return Center(
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        gradient: AppColors.oceanHeaderGradient,
+        borderRadius: BorderRadius.circular(26.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryAzure.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          ExplorerAvatar(
+            imageUrl: profilePic,
+            name: fullName,
+            radius: 34,
+            heroTag: 'profile_avatar_hero',
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fullName,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 19.sp,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(999.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.bolt_rounded,
+                            color: const Color(0xFFFDE047),
+                            size: 15.sp,
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            '$totalXp XP',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    InkWell(
+                      onTap: () => context.push(AppRoutes.generalSettings),
+                      borderRadius: BorderRadius.circular(999.r),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999.r),
+                        ),
+                        child: Text(
+                          'Edit Profile',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryAzure,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressMetricsRow(
+    UserStatsModel? stats,
+    ProfileModel? performance,
+  ) {
+    final attempted =
+        performance?.quizAttempted ?? stats?.totalAttemptedQuizzes ?? 18;
+    final avgScore = performance != null
+        ? '${performance.averageScore.toStringAsFixed(0)}%'
+        : (stats != null ? '${stats.averageScore.toStringAsFixed(0)}%' : '84%');
+    final covered = performance?.subjectCovered ?? 8;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            icon: Icons.quiz_outlined,
+            color: AppColors.primaryAzure,
+            value: '$attempted',
+            label: 'Quizzes',
+          ),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: _buildStatCard(
+            icon: Icons.insights_rounded,
+            color: AppColors.emeraldSuccess,
+            value: avgScore,
+            label: 'Avg Score',
+          ),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: _buildStatCard(
+            icon: Icons.public_rounded,
+            color: AppColors.accentGoldDark,
+            value: '$covered/12',
+            label: 'Modules',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required Color color,
+    required String value,
+    required String label,
+  }) {
+    return StitchCard(
+      padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 10.w),
       child: Column(
         children: [
-          _buildProfileAvatar(profilePic),
-          AppSpacing.h16,
-          Text(fullName, style: FontManager.bigTitle(fontSize: 18.sp)),
-          AppSpacing.h8,
+          Icon(icon, color: color, size: 22.sp),
+          SizedBox(height: 6.h),
+          Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.neutralDark,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.neutralSlate,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubjectPerformanceSection(ProfileModel? performance) {
+    final subjects = performance?.subjects ?? [];
+    if (subjects.isEmpty) return const SizedBox.shrink();
+
+    return StitchCard(
+      padding: EdgeInsets.all(18.r),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.emoji_events_outlined,
-                color: Colors.orange,
+                Icons.bar_chart_rounded,
+                color: AppColors.primaryAzure,
                 size: 20.sp,
               ),
-              AppSpacing.w8,
+              SizedBox(width: 8.w),
               Text(
-                "XP: ${totalXp ?? '--'}",
-                style: FontManager.bodyText(color: Colors.orange),
+                AppStrings.subjectPerformanceTitle,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15.5.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.neutralDark,
+                ),
               ),
             ],
           ),
+          SizedBox(height: 14.h),
+          ...subjects.take(6).map((subject) {
+            final pct = subject.progress.clamp(0.0, 100.0);
+            return Padding(
+              padding: EdgeInsets.only(bottom: 12.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          subject.moduleName,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.neutralDark,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${pct.toInt()}%',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12.5.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryAzure,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 6.h),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999.r),
+                    child: LinearProgressIndicator(
+                      value: (pct / 100.0).clamp(0.04, 1.0),
+                      minHeight: 7.h,
+                      backgroundColor: AppColors.softSky,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryAzure,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
   }
 
-  /// Build profile avatar with network image fallback
-  Widget _buildProfileAvatar(String? profilePicUrl) {
-    if (profilePicUrl != null && profilePicUrl.isNotEmpty) {
-      final imageUrl = _buildImageUrl(profilePicUrl);
-
-      return CircleAvatar(
-        radius: 50.r,
-        backgroundColor: Colors.grey[300],
-        child: ClipOval(
-          child: Image.network(
-            imageUrl,
-            width: 100.w,
-            height: 100.h,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Image.asset(
-                'assets/images/man.png',
-                width: 100.w,
-                height: 100.h,
-                fit: BoxFit.cover,
-              );
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              );
-            },
-          ),
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: EdgeInsets.only(left: 4.w),
+      child: Text(
+        title.toUpperCase(),
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 11.5.sp,
+          fontWeight: FontWeight.w800,
+          color: AppColors.neutralSlate,
+          letterSpacing: 0.9,
         ),
-      );
-    } else {
-      return CircleAvatar(
-        radius: 50.r,
-        backgroundImage: AssetImage('assets/images/man.png'),
-      );
-    }
-  }
-
-  /// Build full image URL from relative or absolute URL
-  String _buildImageUrl(String profilePicUrl) {
-    if (profilePicUrl.startsWith('http://') ||
-        profilePicUrl.startsWith('https://')) {
-      return profilePicUrl;
-    }
-
-    // Handle relative URLs by prepending base URL
-    final cleanUrl = profilePicUrl.startsWith('/')
-        ? profilePicUrl.substring(1)
-        : profilePicUrl;
-    return '${ApiService.baseUrl}/$cleanUrl';
-  }
-
-  /// SETTINGS CARD
-  Widget buildSettingsCard(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // General settings
-          buildSettingRow(
-            icon: Icons.settings_outlined,
-            text: AppStrings.generalSetting,
-            onTap: () {
-              context.push(AppRoutes.generalSettings);
-            },
-          ),
-          Divider(height: 1, color: Colors.grey[300]),
-          //Privacy settings
-          buildSettingRow(
-            icon: Icons.lock_outline,
-            text: AppStrings.privacySetting,
-            onTap: () {
-              context.push(AppRoutes.privacySettings);
-            },
-          ),
-
-          Divider(height: 1, color: Colors.grey[300]),
-          // Module Settings Row
-          buildSettingRow(
-            icon: Icons.settings_outlined,
-            text: AppStrings.moduleSettingOption,
-            onTap: () {
-              context.push(AppRoutes.optionalModules);
-            },
-          ),
-          // Account Deletion
-          Divider(height: 1, color: Colors.grey[300]),
-          buildSettingRow(
-            icon: Icons.delete_sweep_sharp,
-            text: AppStrings.accountdelection,
-            onTap: () {
-              context.push(AppRoutes.accountDelete);
-            },
-          ),
-
-          Divider(height: 1, color: Colors.grey[300]),
-          //About App
-          buildSettingRow(
-            icon: Icons.info_outline,
-            text: "About App",
-            onTap: () {
-              context.push(AppRoutes.aboutApp);
-            },
-          ),
-          Divider(height: 1, color: Colors.grey[300]),
-          // Logout Row
-          buildSettingRow(
-            icon: Icons.logout_outlined,
-            text: AppStrings.logOutOption,
-            textColor: AppColors.red, // ✅ Themed logout color
-            iconColor: AppColors.red,
-            onTap: () => showLogoutDialog(context),
-          ),
-        ],
       ),
     );
   }
 
-  /// Build a settings row with icon, text, and navigation arrow
-  Widget buildSettingRow({
+  Widget _buildSettingsNavTile({
     required IconData icon,
-    required String text,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
     required VoidCallback onTap,
-    Color? textColor,
-    Color? iconColor,
+    Color? titleColor,
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(14.r),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 12.h),
         child: Row(
           children: [
-            Icon(icon, color: iconColor ?? Colors.black, size: 24.sp),
-            AppSpacing.w16,
+            Container(
+              width: 38.w,
+              height: 38.w,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(11.r),
+              ),
+              child: Icon(icon, color: iconColor, size: 20.sp),
+            ),
+            SizedBox(width: 12.w),
             Expanded(
-              child: Text(
-                text,
-                style: FontManager.bodyText(color: textColor ?? Colors.black),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: titleColor ?? AppColors.neutralDark,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.neutralSlate,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: Colors.grey[600], size: 16.sp),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.neutralMuted,
+              size: 20.sp,
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// Build progress section with quiz stats
-  Widget buildProgressSection(
-    UserStatsModel? stats,
-    ProfileModel? performance,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(AppStrings.progressTitle, style: FontManager.bigTitle()),
-        AppSpacing.h16,
-        Column(
-          children: [
-            buildProgressCard(
-              label: AppStrings.quizAttemptedLabel,
-              value: _getQuizAttemptedValue(stats, performance),
-            ),
-            AppSpacing.h12,
-            buildProgressCard(
-              label: AppStrings.averageScoreLabel,
-              value: _getAverageScoreValue(stats, performance),
-            ),
-            AppSpacing.h12,
-            buildProgressCard(
-              label: AppStrings.subjectCoveredLabel,
-              value: _getSubjectCoveredValue(performance),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// Get quiz attempted value with fallback
-  String _getQuizAttemptedValue(
-    UserStatsModel? stats,
-    ProfileModel? performance,
-  ) {
-    if (performance != null) return '${performance.quizAttempted}';
-    if (stats != null) return '${stats.totalAttemptedQuizzes}';
-    return AppStrings.quizAttemptedValue;
-  }
-
-  /// Get average score value with fallback
-  String _getAverageScoreValue(
-    UserStatsModel? stats,
-    ProfileModel? performance,
-  ) {
-    if (performance != null) {
-      return '${performance.averageScore.toStringAsFixed(1)}%';
-    }
-    if (stats != null) {
-      return '${stats.averageScore.toStringAsFixed(1)}%';
-    }
-    return AppStrings.averageScoreValue;
-  }
-
-  /// Get subject covered value with fallback
-  String _getSubjectCoveredValue(ProfileModel? performance) {
-    if (performance != null) return '${performance.subjectCovered}';
-    return AppStrings.subjectCoveredValue;
-  }
-
-  /// Build a progress card with label and value
-  Widget buildProgressCard({required String label, required String value}) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 8.r, horizontal: 16.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSwitchTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 10.h),
+      child: Row(
         children: [
-          Text(label, style: FontManager.subtitleText()),
-          AppSpacing.h8,
-          Text(
-            value,
-            style: FontManager.bigTitle(),
-            textAlign: TextAlign.center,
+          Container(
+            width: 38.w,
+            height: 38.w,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(11.r),
+            ),
+            child: Icon(icon, color: iconColor, size: 20.sp),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.neutralDark,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.neutralSlate,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            activeTrackColor: AppColors.primaryAzure,
+            onChanged: onChanged,
           ),
         ],
       ),
     );
   }
 
-  /// Build subject performance section with list of subjects
-  Widget buildSubjectPerformanceSection(ProfileModel? performance) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(AppStrings.subjectPerformanceTitle, style: FontManager.bigTitle()),
-        AppSpacing.h16,
-        Container(
-          padding: EdgeInsets.all(16.r),
-          decoration: _buildCardDecoration(),
-          child: _buildSubjectList(performance),
+  Widget _buildThemeModeChip({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required ThemeMode mode,
+    required ThemeMode currentMode,
+  }) {
+    final isSelected = mode == currentMode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          context.read<LocalProgressProvider>().setThemeMode(mode);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryAzure : AppColors.softSky,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryAzure
+                  : AppColors.azureBorder,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16.sp,
+                color: isSelected ? Colors.white : AppColors.neutralSlate,
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12.5.sp,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : AppColors.neutralDark,
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
-  /// Build card decoration
-  BoxDecoration _buildCardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12.r),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
+  void _showDeepLinkTesterDialog(BuildContext context) {
+    final controller = TextEditingController(
+      text: 'https://geographygeyser.com/quiz/yt-tectonics-plates',
     );
-  }
-
-  /// Build subject list or empty state
-  Widget _buildSubjectList(ProfileModel? performance) {
-    if (performance == null || performance.subjects.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: performance.subjects.length,
-      itemBuilder: (context, index) {
-        final subject = performance.subjects[index];
-
-        return Column(
-          children: [
-            if (index > 0) AppSpacing.h12,
-            buildSubjectProgress(subject.moduleName, subject.progress),
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          title: Text(
+            'YouTube-to-App Deep Link Simulator',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.neutralDark,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Paste or select a Geography Geyser YouTube quiz link to verify direct deep-link routing:',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12.5.sp,
+                  color: AppColors.neutralSlate,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              TextField(
+                controller: controller,
+                style: GoogleFonts.plusJakartaSans(fontSize: 12.5.sp),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.softSky,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: AppColors.azureBorder),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10.h),
+              Wrap(
+                spacing: 6.w,
+                runSpacing: 6.h,
+                children: [
+                  ActionChip(
+                    label: const Text('Tectonics Video'),
+                    onPressed: () => controller.text =
+                        'https://geographygeyser.com/quiz/yt-tectonics-plates',
+                  ),
+                  ActionChip(
+                    label: const Text('Superpowers Video'),
+                    onPressed: () => controller.text =
+                        'https://geographygeyser.com/quiz/yt-superpowers-china',
+                  ),
+                  ActionChip(
+                    label: const Text('Invalid ID Fallback'),
+                    onPressed: () => controller.text =
+                        'https://geographygeyser.com/quiz/unknown-video-999',
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryAzure,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                final raw = controller.text.trim();
+                Navigator.of(dialogContext).pop();
+                final uri = Uri.tryParse(raw);
+                if (uri != null && uri.path.isNotEmpty) {
+                  context.push(uri.path);
+                } else {
+                  context.push(AppRoutes.quizByIdPath(raw));
+                }
+              },
+              child: const Text('Open Deep Link'),
+            ),
           ],
         );
       },
     );
   }
 
-  /// Build empty state widget
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(16.r),
-        child: Text(
-          'No subject data available',
-          style: FontManager.bodyText(color: Colors.grey),
-        ),
-      ),
-    );
-  }
-
-  /// Build individual subject progress bar
-  Widget buildSubjectProgress(String subject, double progress) {
-    // Calculate actual percentage for display
-    final progressPercentage = (progress).toInt();
-
-    // Calculate widthFactor: use 2/100 if progress is 0, otherwise use actual progress
-    final widthFactor = progress == 0 ? 2 / 100 : progress;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                subject,
-                style: FontManager.generalText(color: Colors.black),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Text(
-              '$progressPercentage%',
-              style: FontManager.bodyText(color: Colors.black),
-            ),
-          ],
-        ),
-        AppSpacing.h8,
-        Container(
-          height: 8.h,
-          width: double.maxFinite,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4.r),
-            color: Colors.grey[200],
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: widthFactor / 100,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4.r),
-                color: AppColors.buttonColor,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// LOGOUT DIALOG
   void showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(20.r),
           ),
           title: Text(
             AppStrings.areYouSureTitle,
-            style: FontManager.bigTitle(),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.neutralDark,
+            ),
             textAlign: TextAlign.center,
           ),
           content: Text(
             AppStrings.logoutConfirmationMessage,
-            style: FontManager.bodyText(),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13.5.sp,
+              color: AppColors.neutralSlate,
+            ),
             textAlign: TextAlign.center,
           ),
           actions: [
@@ -634,30 +1141,28 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.blue),
+                      side: const BorderSide(color: AppColors.primaryAzure),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.r),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      padding: EdgeInsets.symmetric(vertical: 13.h),
                     ),
                     child: Text(
                       AppStrings.cancelButton,
-                      style: FontManager.buttonText().copyWith(
-                        color: AppColors.blue,
-                        fontWeight: FontWeight.w600,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.primaryAzure,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ),
-
                 AppSpacing.w12,
-
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      Navigator.of(context).pop();
+                      Navigator.of(dialogContext).pop();
 
                       final userProvider = Provider.of<UserProvider>(
                         context,
@@ -684,26 +1189,23 @@ class ProfileScreen extends StatelessWidget {
                       ]);
 
                       optionalModuleProvider.clearModulePairs();
-
                       ProfileScreen.resetInitialization();
-
                       await LoginProvider.logout();
 
                       if (!context.mounted) return;
-
                       context.go(AppRoutes.login);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AppColors.errorCoral,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.r),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      padding: EdgeInsets.symmetric(vertical: 13.h),
                     ),
                     child: Text(
                       AppStrings.logOutButton,
-                      style: FontManager.buttonText().copyWith(
+                      style: GoogleFonts.plusJakartaSans(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),

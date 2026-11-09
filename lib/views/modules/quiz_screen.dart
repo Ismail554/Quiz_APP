@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
@@ -9,12 +10,15 @@ import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/core/font_manager.dart';
 import 'package:geography_geyser/core/sound_helper.dart';
 import 'package:geography_geyser/models/quiz_model.dart';
+import 'package:geography_geyser/models/v2_curriculum_models.dart';
+import 'package:geography_geyser/provider/local_progress_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_provider.dart';
 import 'package:geography_geyser/provider/module_provider/quiz_finish_provider.dart';
 import 'package:geography_geyser/provider/module_provider/delete_xp_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';
 import 'package:geography_geyser/views/modules/time_out_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +27,10 @@ class QuizScreen extends StatefulWidget {
   final int? timeInMinutes;
   final String? moduleId;
   final String? moduleName;
+  final int? initialQuestionIndex;
+  final int? initialCorrectCount;
+  final int? initialTimeRemainingSeconds;
+  final bool isInvalidQuizId;
 
   const QuizScreen({
     super.key,
@@ -30,6 +38,10 @@ class QuizScreen extends StatefulWidget {
     this.timeInMinutes,
     this.moduleId,
     this.moduleName,
+    this.initialQuestionIndex,
+    this.initialCorrectCount,
+    this.initialTimeRemainingSeconds,
+    this.isInvalidQuizId = false,
   });
 
   @override
@@ -37,7 +49,6 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
-  // Quiz state variables
   int currentQuestionIndex = 0;
   late int totalQuestions;
   late int timeRemaining;
@@ -48,7 +59,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   int correctAnswersCount = 0;
   bool _isSoundEnabled = true;
 
-  // Animation controllers
   late AnimationController _questionAnimController;
   late Animation<double> _questionFadeAnim;
   late Animation<Offset> _questionSlideAnim;
@@ -65,10 +75,14 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     _initializeQuizSettings();
     _initAnimations();
 
+    if (widget.isInvalidQuizId) {
+      return;
+    }
+
     if (widget.moduleId != null && widget.moduleId!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-        final future = widget.moduleId == 'synoptic'
+        final future = widget.moduleId!.toLowerCase() == 'synoptic'
             ? quizProvider.fetchSynopticQuiz()
             : quizProvider.fetchQuiz(widget.moduleId!);
         future.then((_) {
@@ -76,6 +90,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             startTimer();
             _questionAnimController.forward();
             _optionsStaggerController.forward();
+            _saveInProgressSession();
           }
         });
       });
@@ -85,9 +100,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 
   void _initAnimations() {
-    // Question card float-in animation
     _questionAnimController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 450),
       vsync: this,
     );
     _questionFadeAnim = CurvedAnimation(
@@ -95,33 +109,65 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       curve: Curves.easeOut,
     );
     _questionSlideAnim =
-        Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
+        Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
           CurvedAnimation(
             parent: _questionAnimController,
             curve: Curves.easeOutCubic,
           ),
         );
 
-    // Timer pulse for urgent state
     _timerPulseController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _timerPulseAnim = Tween<double>(begin: 1.0, end: 1.08).animate(
+    _timerPulseAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
       CurvedAnimation(parent: _timerPulseController, curve: Curves.easeInOut),
     );
 
-    // Options stagger
     _optionsStaggerController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 520),
       vsync: this,
     );
   }
 
   void _initializeQuizSettings() {
+    currentQuestionIndex = widget.initialQuestionIndex ?? 0;
+    correctAnswersCount = widget.initialCorrectCount ?? 0;
     totalQuestions = widget.totalQuestions ?? 10;
-    final minutes = widget.timeInMinutes ?? 5;
-    timeRemaining = minutes * 60;
+    final minutes = widget.timeInMinutes ?? 8;
+    timeRemaining = widget.initialTimeRemainingSeconds ?? (minutes * 60);
+  }
+
+  Future<void> _saveInProgressSession() async {
+    if (!mounted || widget.isInvalidQuizId) return;
+    final quizProvider = Provider.of<QuizProvider>(context, listen: false);
+    final questions = quizProvider.quizData?.questions ?? [];
+    if (questions.isEmpty) return;
+
+    final effectiveTotal = questions.length > totalQuestions
+        ? totalQuestions
+        : questions.length;
+    final progressProvider = Provider.of<LocalProgressProvider>(
+      context,
+      listen: false,
+    );
+
+    await progressProvider.saveUnfinishedSession(
+      UnfinishedQuizSession(
+        quizId: widget.moduleId ?? quizProvider.quizData?.quizId ?? 'tectonics',
+        quizTitle:
+            widget.moduleName ??
+            quizProvider.quizData?.subjectName ??
+            'Geography Quiz',
+        moduleName: quizProvider.quizData?.subjectName ?? 'Geography',
+        currentQuestionIndex: currentQuestionIndex,
+        totalQuestions: effectiveTotal,
+        correctAnswersSoFar: correctAnswersCount,
+        timeRemainingSeconds: timeRemaining,
+        updatedAt: DateTime.now(),
+        isYouTubeQuiz: (widget.moduleId ?? '').toLowerCase().startsWith('yt-'),
+      ),
+    );
   }
 
   @override
@@ -134,12 +180,12 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 
   void startTimer() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (timeRemaining > 0) {
         setState(() {
           timeRemaining--;
         });
-        // Start pulsing when under 30 seconds
         if (timeRemaining <= 30 && !_timerPulseController.isAnimating) {
           _timerPulseController.repeat(reverse: true);
         }
@@ -175,6 +221,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   bool get _isTimerUrgent => timeRemaining <= 30;
 
   Future<void> _finishQuizAndNavigate() async {
+    _timer?.cancel();
     final quizProvider = Provider.of<QuizProvider>(context, listen: false);
     final quizFinishProvider = Provider.of<QuizFinishProvider>(
       context,
@@ -188,20 +235,46 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       context,
       listen: false,
     );
+    final progressProvider = Provider.of<LocalProgressProvider>(
+      context,
+      listen: false,
+    );
 
-    final quizId = quizProvider.quizData?.quizId;
+    final quizId = widget.moduleId ?? quizProvider.quizData?.quizId;
+    final questions = quizProvider.quizData?.questions ?? [];
+    final effectiveTotal = questions.isEmpty
+        ? totalQuestions
+        : (questions.length > totalQuestions
+              ? totalQuestions
+              : questions.length);
+    final attemptedQuestions = (currentQuestionIndex + 1).clamp(
+      1,
+      effectiveTotal,
+    );
+
+    await progressProvider.recordCompletedAttempt(
+      quizId: quizId ?? 'tectonics',
+      quizTitle:
+          widget.moduleName ??
+          quizProvider.quizData?.subjectName ??
+          'Geography Quiz',
+      moduleName: quizProvider.quizData?.subjectName ?? 'Geography',
+      correctAnswers: correctAnswersCount,
+      totalQuestions: attemptedQuestions,
+      isYouTubeQuiz: (quizId ?? '').toLowerCase().startsWith('yt-'),
+    );
 
     if (quizId != null && quizId.isNotEmpty) {
       if (mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryAzure),
+          ),
         );
       }
 
-      final attemptedQuestions = currentQuestionIndex + 1;
       await quizFinishProvider.finishQuiz(
         quizId,
         correctAnswersCount,
@@ -224,6 +297,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _deleteXpAndNavigate() async {
+    _timer?.cancel();
     final quizProvider = Provider.of<QuizProvider>(context, listen: false);
     final deleteXpProvider = Provider.of<DeleteXpProvider>(
       context,
@@ -241,16 +315,23 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       context,
       listen: false,
     );
+    final progressProvider = Provider.of<LocalProgressProvider>(
+      context,
+      listen: false,
+    );
 
-    final quizId = quizProvider.quizData?.quizId;
+    await progressProvider.clearUnfinishedSession();
+
+    final quizId = widget.moduleId ?? quizProvider.quizData?.quizId;
 
     if (quizId != null && quizId.isNotEmpty) {
       if (mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryAzure),
+          ),
         );
       }
 
@@ -295,11 +376,13 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       if (isCorrect) correctAnswersCount++;
     });
 
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(milliseconds: 1400), () {
       if (mounted) {
         final provider = Provider.of<QuizProvider>(context, listen: false);
         final questions = provider.quizData?.questions ?? [];
-        final actualTotalQuestions = questions.length;
+        final actualTotalQuestions = questions.length > totalQuestions
+            ? totalQuestions
+            : questions.length;
 
         if (currentQuestionIndex < actualTotalQuestions - 1) {
           setState(() {
@@ -308,6 +391,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             showAnswerFeedback = false;
             isCorrectAnswer = false;
           });
+          _saveInProgressSession();
           _animateToNextQuestion();
         } else {
           _finishQuizAndNavigate();
@@ -318,6 +402,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isInvalidQuizId) {
+      return StitchAmbientScaffold(body: SafeArea(child: _buildInvalidQuizUI()));
+    }
+
     return Consumer<QuizProvider>(
       builder: (context, provider, child) {
         final bool canPopAutomatically =
@@ -331,8 +419,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
             if (didPop) return;
             showCancelQuizDialog(context);
           },
-          child: Scaffold(
-            backgroundColor: AppColors.bgColor,
+          child: StitchAmbientScaffold(
             body: SafeArea(child: _buildBody(context, provider)),
           ),
         );
@@ -340,9 +427,93 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildInvalidQuizUI() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: StitchCard(
+          padding: EdgeInsets.all(24.r),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.link_off_rounded,
+                  size: 40.sp,
+                  color: const Color(0xFFD97706),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Quiz Not Available',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.neutralDark,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'The quiz ID "${widget.moduleId ?? 'unknown'}" could not be found or has been updated. Explore our Edexcel Specification or YouTube lessons below!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.neutralSlate,
+                  height: 1.45,
+                ),
+              ),
+              SizedBox(height: 22.h),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.go(AppRoutes.youtubeQuizzes),
+                  icon: const Icon(Icons.ondemand_video_rounded),
+                  label: const Text('Browse YouTube Quizzes'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 13.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10.h),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.go(AppRoutes.home),
+                  icon: const Icon(Icons.home_rounded),
+                  label: const Text('Back to Home Dashboard'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryAzure,
+                    side: const BorderSide(color: AppColors.primaryAzure),
+                    padding: EdgeInsets.symmetric(vertical: 13.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBody(BuildContext context, QuizProvider provider) {
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryAzure),
+      );
     }
 
     if (provider.errorMessage != null) {
@@ -379,31 +550,21 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     }
 
     if (provider.quizData == null || provider.quizData!.questions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.quiz_outlined, size: 64.sp, color: Colors.grey),
-            AppSpacing.h16,
-            const Text('No quiz data available'),
-            AppSpacing.h24,
-            _GlassButton(
-              label: 'Go Back',
-              onTap: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-      );
+      return _buildInvalidQuizUI();
     }
 
     final questions = provider.quizData!.questions;
-    final actualTotalQuestions = questions.length;
+    final actualTotalQuestions = questions.length > totalQuestions
+        ? totalQuestions
+        : questions.length;
 
     if (currentQuestionIndex >= actualTotalQuestions) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _finishQuizAndNavigate();
       });
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryAzure),
+      );
     }
 
     final currentQuestion = questions[currentQuestionIndex];
@@ -412,27 +573,19 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       children: [
         Expanded(
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 12.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Top bar ──────────────────────────────────────────
                 _buildTopBar(),
                 SizedBox(height: 16.h),
-
-                // ── Progress bar ─────────────────────────────────────
                 _buildProgressBar(actualTotalQuestions),
-                SizedBox(height: 16.h),
-
-                // ── Timer pill ───────────────────────────────────────
+                SizedBox(height: 14.h),
                 _buildTimerPill(),
-                SizedBox(height: 18.h),
-
-                // ── Question card ────────────────────────────────────
+                SizedBox(height: 16.h),
                 _buildQuestionCard(currentQuestion),
                 SizedBox(height: 16.h),
-
-                // ── Options ──────────────────────────────────────────
                 ...List.generate(
                   currentQuestion.optionsList.length,
                   (index) => _buildOptionTile(
@@ -442,9 +595,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                     currentQuestion.optionsList.length,
                   ),
                 ),
-                SizedBox(height: 20.h),
-
-                // ── Stats row ────────────────────────────────────────
+                SizedBox(height: 18.h),
                 _buildStatsRow(),
                 SizedBox(height: 12.h),
               ],
@@ -455,52 +606,57 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ── Top bar ───────────────────────────────────────────────────────────────
   Widget _buildTopBar() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Close button
         _CircleIconButton(
           icon: Icons.close_rounded,
           onTap: () => showCancelQuizDialog(context),
         ),
-
-        // Module badge
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6C5CE7), Color(0xFFA78BFA)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryButtonGradient,
+              borderRadius: BorderRadius.circular(20.r),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryAzure.withValues(alpha: 0.28),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF7C6BFF).withOpacity(0.4),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Text(
-            '🌍  ${widget.moduleName ?? AppStrings.quizTitleMigrations}',
-            style: FontManager.buttonTextRegular().copyWith(
-              color: Colors.white,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.public_rounded, color: Colors.white, size: 15.sp),
+                SizedBox(width: 6.w),
+                Flexible(
+                  child: Text(
+                    widget.moduleName ?? AppStrings.quizTitleMigrations,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white,
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-
-        // Sound toggle
+        SizedBox(width: 10.w),
         _CircleIconButton(
           icon: _isSoundEnabled
               ? Icons.volume_up_rounded
               : Icons.volume_off_rounded,
-          iconColor: _isSoundEnabled ? AppColors.black : Colors.black38,
+          iconColor: _isSoundEnabled
+              ? AppColors.primaryAzure
+              : AppColors.neutralMuted,
           onTap: () {
             setState(() {
               _isSoundEnabled = !_isSoundEnabled;
@@ -512,56 +668,55 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ── Progress bar ──────────────────────────────────────────────────────────
   Widget _buildProgressBar(int total) {
     final progress = (currentQuestionIndex + 1) / total;
     return Row(
       children: [
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(4.r),
+            borderRadius: BorderRadius.circular(999.r),
             child: Container(
-              height: 6.h,
-              color: Colors.black.withOpacity(0.08),
+              height: 8.h,
+              color: Colors.white,
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: progress,
+                widthFactor: progress.clamp(0.0, 1.0),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
+                  duration: const Duration(milliseconds: 450),
                   curve: Curves.easeInOut,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7C6BFF), Color(0xFFA78BFA)],
-                    ),
-                    borderRadius: BorderRadius.circular(4.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF7C6BFF).withOpacity(0.4),
-                        blurRadius: 8,
-                      ),
-                    ],
+                    gradient: AppColors.primaryButtonGradient,
+                    borderRadius: BorderRadius.circular(999.r),
                   ),
                 ),
               ),
             ),
           ),
         ),
-        SizedBox(width: 10.w),
-        Text(
-          '${currentQuestionIndex + 1} / $total',
-          style: FontManager.bodyText().copyWith(
-            color: Colors.black45,
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
+        SizedBox(width: 12.w),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999.r),
+            border: Border.all(color: AppColors.azureBorder),
+          ),
+          child: Text(
+            '${currentQuestionIndex + 1} / $total',
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.neutralDark,
+              fontSize: 11.5.sp,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ],
     );
   }
 
-  // ── Timer pill ────────────────────────────────────────────────────────────
   Widget _buildTimerPill() {
     final urgent = _isTimerUrgent;
+    final pillColor = urgent ? AppColors.errorCoral : AppColors.primaryAzure;
 
     return AnimatedBuilder(
       animation: _timerPulseAnim,
@@ -572,23 +727,17 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         );
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 11.h),
         decoration: BoxDecoration(
-          color: urgent
-              ? const Color(0xFFFF4D6D).withOpacity(0.08)
-              : const Color(0xFFFF6B9D).withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16.r),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18.r),
           border: Border.all(
-            color: urgent
-                ? const Color(0xFFFF4D6D).withOpacity(0.40)
-                : const Color(0xFFFF6B9D).withOpacity(0.30),
-            width: 1.2,
+            color: pillColor.withValues(alpha: 0.35),
+            width: 1.3,
           ),
           boxShadow: [
             BoxShadow(
-              color:
-                  (urgent ? const Color(0xFFFF4D6D) : const Color(0xFFFF6B9D))
-                      .withOpacity(0.10),
+              color: pillColor.withValues(alpha: 0.08),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
@@ -597,21 +746,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.timer_rounded,
-              color: urgent ? const Color(0xFFFF4D6D) : const Color(0xFFFF6B9D),
-              size: 20.sp,
-            ),
+            Icon(Icons.timer_rounded, color: pillColor, size: 20.sp),
             SizedBox(width: 8.w),
             Text(
               formattedTime,
-              style: FontManager.bodyText().copyWith(
-                color: urgent
-                    ? const Color(0xFFFF4D6D)
-                    : const Color(0xFFFF6B9D),
-                fontSize: 28.sp,
+              style: GoogleFonts.plusJakartaSans(
+                color: pillColor,
+                fontSize: 24.sp,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 3,
+                letterSpacing: 2.5,
                 height: 1,
               ),
             ),
@@ -621,7 +764,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ── Question card ─────────────────────────────────────────────────────────
   Widget _buildQuestionCard(QuestionModel question) {
     return FadeTransition(
       opacity: _questionFadeAnim,
@@ -632,55 +774,49 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
           padding: EdgeInsets.all(20.w),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(22.r),
-            border: Border.all(color: Colors.black.withOpacity(0.07), width: 1),
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(color: AppColors.azureBorder, width: 1.3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
+                color: AppColors.neutralDark.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Label
               Row(
                 children: [
                   Container(
-                    width: 3.w,
-                    height: 14.h,
+                    width: 4.w,
+                    height: 16.h,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7C6BFF), Color(0xFFA78BFA)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
+                      gradient: AppColors.primaryButtonGradient,
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
                   SizedBox(width: 8.w),
                   Text(
-                    'QUESTION ${currentQuestionIndex + 1}',
-                    style: FontManager.bodyText().copyWith(
-                      color: const Color(0xFF7C6BFF),
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.8,
+                    'ENQUIRY QUESTION ${currentQuestionIndex + 1}',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.primaryAzure,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 12.h),
-              // Question text
               Text(
                 question.questionText,
-                style: FontManager.headlineText(
-                  fontSize: 17.sp,
-                  spacing: 0,
-                  height: 1.5,
-                  color: AppColors.black,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16.5.sp,
+                  fontWeight: FontWeight.w700,
+                  height: 1.45,
+                  color: AppColors.neutralDark,
                 ),
               ),
             ],
@@ -690,7 +826,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ── Option tile ───────────────────────────────────────────────────────────
   Widget _buildOptionTile(
     int index,
     String text,
@@ -700,7 +835,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     final isSelected = selectedAnswerIndex == index;
     final isCorrect = index == question.correctAnswerIndex;
 
-    // Determine state colors
     Color bgColor;
     Color borderColor;
     Color letterBg;
@@ -708,48 +842,42 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     Widget? trailingIcon;
 
     if (!showAnswerFeedback) {
-      bgColor = isSelected
-          ? const Color(0xFF7C6BFF).withOpacity(0.10)
-          : Colors.white;
+      bgColor = isSelected ? const Color(0xFFE0F2FE) : Colors.white;
       borderColor = isSelected
-          ? const Color(0xFF7C6BFF)
-          : Colors.black.withOpacity(0.10);
-      letterBg = isSelected
-          ? const Color(0xFF7C6BFF).withOpacity(0.15)
-          : Colors.black.withOpacity(0.05);
-      letterColor = isSelected ? const Color(0xFF7C6BFF) : Colors.black54;
+          ? AppColors.primaryAzure
+          : AppColors.slateBorder.withValues(alpha: 0.9);
+      letterBg = isSelected ? AppColors.primaryAzure : AppColors.softSky;
+      letterColor = isSelected ? Colors.white : AppColors.primaryAzure;
       trailingIcon = null;
     } else if (isCorrect) {
-      bgColor = const Color(0xFF00C47A).withOpacity(0.10);
-      borderColor = const Color(0xFF00C47A);
-      letterBg = const Color(0xFF00C47A).withOpacity(0.20);
-      letterColor = const Color(0xFF00C47A);
+      bgColor = const Color(0xFFDCFCE7);
+      borderColor = AppColors.emeraldSuccess;
+      letterBg = AppColors.emeraldSuccess;
+      letterColor = Colors.white;
       trailingIcon = Icon(
         Icons.check_circle_rounded,
-        color: const Color(0xFF00C47A),
-        size: 20.sp,
+        color: AppColors.emeraldSuccess,
+        size: 22.sp,
       );
     } else if (isSelected) {
-      bgColor = const Color(0xFFFF4D6D).withOpacity(0.08);
-      borderColor = const Color(0xFFFF4D6D);
-      letterBg = const Color(0xFFFF4D6D).withOpacity(0.15);
-      letterColor = const Color(0xFFFF4D6D);
+      bgColor = const Color(0xFFFEE2E2);
+      borderColor = AppColors.errorCoral;
+      letterBg = AppColors.errorCoral;
+      letterColor = Colors.white;
       trailingIcon = Icon(
         Icons.cancel_rounded,
-        color: const Color(0xFFFF4D6D),
-        size: 20.sp,
+        color: AppColors.errorCoral,
+        size: 22.sp,
       );
     } else {
       bgColor = Colors.white;
-      borderColor = Colors.black.withOpacity(0.08);
-      letterBg = Colors.black.withOpacity(0.04);
-      letterColor = Colors.black38;
+      borderColor = AppColors.slateBorder;
+      letterBg = const Color(0xFFF1F5F9);
+      letterColor = AppColors.neutralMuted;
       trailingIcon = null;
     }
 
     final letters = ['A', 'B', 'C', 'D'];
-
-    // Staggered slide-up per option
     final staggerDelay = index / total;
     final staggerAnim = CurvedAnimation(
       parent: _optionsStaggerController,
@@ -764,7 +892,7 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       animation: staggerAnim,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, (1 - staggerAnim.value) * 20),
+          offset: Offset(0, (1 - staggerAnim.value) * 18),
           child: Opacity(
             opacity: staggerAnim.value.clamp(0.0, 1.0),
             child: child,
@@ -774,32 +902,21 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       child: Padding(
         padding: EdgeInsets.only(bottom: 10.h),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 280),
+          duration: const Duration(milliseconds: 240),
           curve: Curves.easeOut,
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(18.r),
             border: Border.all(
               color: borderColor,
-              width: showAnswerFeedback ? 1.5 : 1.2,
+              width: showAnswerFeedback ? 1.6 : 1.2,
             ),
-            boxShadow: showAnswerFeedback && (isCorrect || isSelected)
-                ? [
-                    BoxShadow(
-                      color: borderColor.withOpacity(0.25),
-                      blurRadius: 18,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
           ),
           child: Material(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(18.r),
             child: InkWell(
-              borderRadius: BorderRadius.circular(16.r),
-              splashColor: const Color(0xFF7C6BFF).withOpacity(0.15),
-              highlightColor: Colors.transparent,
+              borderRadius: BorderRadius.circular(18.r),
               onTap: showAnswerFeedback
                   ? null
                   : () => handleAnswerSelection(index, question),
@@ -807,35 +924,32 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
                 padding: EdgeInsets.all(14.w),
                 child: Row(
                   children: [
-                    // Letter badge
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 280),
+                      duration: const Duration(milliseconds: 240),
                       width: 34.r,
                       height: 34.r,
                       decoration: BoxDecoration(
                         color: letterBg,
                         borderRadius: BorderRadius.circular(10.r),
-                        border: Border.all(color: borderColor.withOpacity(0.5)),
                       ),
                       child: Center(
                         child: Text(
-                          letters[index],
-                          style: FontManager.bodyText().copyWith(
+                          letters[index % letters.length],
+                          style: GoogleFonts.plusJakartaSans(
                             color: letterColor,
                             fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                     ),
                     SizedBox(width: 14.w),
-                    // Option text
                     Expanded(
                       child: Text(
                         text,
-                        style: FontManager.bodyText().copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.black,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.neutralDark,
                           fontSize: 14.sp,
                         ),
                       ),
@@ -854,159 +968,162 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ── Stats row ─────────────────────────────────────────────────────────────
   Widget _buildStatsRow() {
     final total =
         correctAnswersCount +
         (currentQuestionIndex == 0 && !showAnswerFeedback
             ? 0
             : currentQuestionIndex);
-    final wrongCount = total - correctAnswersCount;
+    final wrongCount = (total - correctAnswersCount).clamp(0, 999);
 
     return Row(
       children: [
         _StatPill(
           label: 'Correct',
           value: '$correctAnswersCount',
-          gradient: const [Color(0xFF00E5A0), Color(0xFF00B894)],
+          gradient: const [Color(0xFF10B981), Color(0xFF059669)],
         ),
         SizedBox(width: 10.w),
         _StatPill(
-          label: 'Wrong',
+          label: 'Incorrect',
           value: '$wrongCount',
-          gradient: const [Color(0xFFFF4D6D), Color(0xFFFF6B9D)],
+          gradient: const [Color(0xFFEF4444), Color(0xFFDC2626)],
         ),
-        // SizedBox(width: 10.w),
-        // _StatPill(
-        //   label: 'Score',
-        //   value: '$pct%',
-        //   gradient: const [Color(0xFF7C6BFF), Color(0xFFA78BFA)],
-        // ),
       ],
     );
   }
 
-  // ── Cancel dialog ─────────────────────────────────────────────────────────
   void showCancelQuizDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return BackdropFilter(
-          filter: ColorFilter.matrix(const [
-            0.2126,
-            0.7152,
-            0.0722,
-            0,
-            0,
-            0.2126,
-            0.7152,
-            0.0722,
-            0,
-            0,
-            0.2126,
-            0.7152,
-            0.0722,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0,
-          ]),
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: EdgeInsets.all(24.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24.r),
-                border: Border.all(color: Colors.black.withOpacity(0.08)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 40,
-                    offset: const Offset(0, 10),
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(color: AppColors.azureBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.neutralDark.withValues(alpha: 0.15),
+                  blurRadius: 32,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(14.r),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF3C7),
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('⚠️', style: TextStyle(fontSize: 36.sp)),
-                  SizedBox(height: 12.h),
-                  Text(
-                    AppStrings.cancelQuizConfirmationTitle,
-                    textAlign: TextAlign.center,
-                    style: FontManager.boldHeading(
-                      fontSize: 18,
-                      color: AppColors.black,
+                  child: Icon(
+                    Icons.pause_circle_filled_rounded,
+                    color: AppColors.accentGoldDark,
+                    size: 32.sp,
+                  ),
+                ),
+                SizedBox(height: 14.h),
+                Text(
+                  'Pause or Exit Quiz?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.neutralDark,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'You can pause and save your progress to resume from the Home Dashboard, or quit now (-5 XP).',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.neutralSlate,
+                    fontSize: 12.5.sp,
+                    fontWeight: FontWeight.w500,
+                    height: 1.45,
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await _saveInProgressSession();
+                      if (dialogContext.mounted) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                      if (context.mounted) {
+                        context.go(AppRoutes.home);
+                      }
+                    },
+                    icon: const Icon(Icons.bookmark_added_rounded),
+                    label: const Text('Save & Resume Later'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryAzure,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 13.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
                     ),
                   ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    AppStrings.cancelQuizDeductionMessage,
-                    textAlign: TextAlign.center,
-                    style: FontManager.bodyText().copyWith(
-                      color: AppColors.grey4B,
-                      fontSize: 13.sp,
-                      height: 1.5,
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                  Row(
-                    children: [
-                      // Keep playing
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => Navigator.of(context).pop(),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 14.h),
-                            decoration: BoxDecoration(
-                              color: AppColors.black,
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: AppColors.blue),
-                            ),
-                            child: Center(
-                              child: Text(
-                                AppStrings.cancelButton,
-                                style: FontManager.buttonText(),
-                              ),
-                            ),
+                ),
+                SizedBox(height: 10.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.neutralDark,
+                          side: const BorderSide(color: AppColors.slateBorder),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: Text(
+                          'Keep Playing',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
                           ),
                         ),
                       ),
-                      SizedBox(width: 12.w),
-                      // Quit
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            _deleteXpAndNavigate();
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 14.h),
-                            decoration: BoxDecoration(
-                              color: AppColors.red,
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Center(
-                              child: Text(
-                                AppStrings.quitButton,
-                                style: FontManager.buttonText().copyWith(
-                                  color: AppColors.white,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
+                    ),
+                    SizedBox(width: 10.w),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                          _deleteXpAndNavigate();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.errorCoral,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: Text(
+                          AppStrings.quitButton,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         );
@@ -1015,9 +1132,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   }
 }
 
-// ── Reusable sub-widgets ───────────────────────────────────────────────────
-
-/// Glass circle icon button
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -1034,20 +1148,23 @@ class _CircleIconButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 38.r,
-        height: 38.r,
+        width: 40.r,
+        height: 40.r,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.06),
+          color: Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black.withOpacity(0.10)),
+          border: Border.all(color: AppColors.azureBorder),
         ),
-        child: Icon(icon, color: iconColor ?? Colors.black87, size: 18.sp),
+        child: Icon(
+          icon,
+          color: iconColor ?? AppColors.neutralDark,
+          size: 19.sp,
+        ),
       ),
     );
   }
 }
 
-/// Stat pill for the bottom row
 class _StatPill extends StatelessWidget {
   final String label;
   final String value;
@@ -1066,15 +1183,8 @@ class _StatPill extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(color: Colors.black.withOpacity(0.08)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.azureBorder),
         ),
         child: Column(
           children: [
@@ -1086,7 +1196,7 @@ class _StatPill extends StatelessWidget {
               ).createShader(bounds),
               child: Text(
                 value,
-                style: TextStyle(
+                style: GoogleFonts.plusJakartaSans(
                   color: Colors.white,
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w800,
@@ -1096,10 +1206,10 @@ class _StatPill extends StatelessWidget {
             SizedBox(height: 2.h),
             Text(
               label.toUpperCase(),
-              style: TextStyle(
-                color: Colors.black45,
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.neutralSlate,
                 fontSize: 9.5.sp,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 letterSpacing: 0.8,
               ),
             ),
@@ -1110,7 +1220,6 @@ class _StatPill extends StatelessWidget {
   }
 }
 
-/// Simple glass text button
 class _GlassButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -1124,21 +1233,12 @@ class _GlassButton extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 14.h),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF7C6BFF), Color(0xFFA78BFA)],
-          ),
+          gradient: AppColors.primaryButtonGradient,
           borderRadius: BorderRadius.circular(14.r),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7C6BFF).withOpacity(0.4),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: GoogleFonts.plusJakartaSans(
             color: Colors.white,
             fontSize: 14.sp,
             fontWeight: FontWeight.w700,

@@ -4,9 +4,11 @@
 <dict>
 	<key>aps-environment</key>
 	<string>development</string>
-	<key>com.apple.developer.applesignin</key>
+	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>Default</string>
+		<string>applinks:geographygeyser.com</string>
+		<string>applinks:www.geographygeyser.com</string>
+		<string>applinks:api.geographygeyser.com</string>
 	</array>
 </dict>
 </plist>

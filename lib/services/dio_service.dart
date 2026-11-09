@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geography_geyser/core/app_logger.dart';
+import 'package:geography_geyser/core/data/static_backend_responder.dart';
 import 'package:geography_geyser/core/network/logging_interceptor.dart';
 import 'package:geography_geyser/main.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
@@ -63,6 +64,14 @@ class DioManager {
     required int statusCode,
     bool skipAuth = false,
   }) async {
+    if (StaticBackendResponder.enabled) {
+      return StaticBackendResponder.handleRequest(
+        url: url,
+        method: method.name,
+        body: body,
+      );
+    }
+
     try {
       final options = Options(
         method: method.name.toUpperCase(),
@@ -152,24 +161,30 @@ class DioManager {
     required int statusCode,
     bool skipAuth = false,
   }) async {
+    if (StaticBackendResponder.enabled) {
+      return StaticBackendResponder.handleRequest(
+        url: url,
+        method: method.name,
+        body: fields,
+      );
+    }
+
     try {
       final formData = FormData();
 
-      // Add text fields
       fields?.forEach((key, value) {
         formData.fields.add(MapEntry(key, value.toString()));
       });
 
-      // Add passed MultipartFiles
       if (files != null && files.isNotEmpty) {
         for (final file in files) {
-          // If field name is already embedded, use it or default to fileFieldName
           formData.files.add(MapEntry(fileFieldName, file));
         }
       }
 
-      // Add file from path if provided
-      if (filePath != null && filePath.isNotEmpty && File(filePath).existsSync()) {
+      if (filePath != null &&
+          filePath.isNotEmpty &&
+          File(filePath).existsSync()) {
         final fileName = filePath.split(Platform.pathSeparator).last;
         formData.files.add(
           MapEntry(
@@ -196,9 +211,9 @@ class DioManager {
         options: options,
       );
 
-      // Handle 401 Unauthorized for Token Refresh
       if (response.statusCode == 401 && options.extra?['retry'] != true) {
-        AppLogger.log("Token expired during multipart, attempting refresh... ($name API)");
+        AppLogger.log(
+            "Token expired during multipart, attempting refresh... ($name API)");
         final isRefreshed = await _refreshToken();
 
         if (isRefreshed) {
@@ -278,17 +293,13 @@ class DioManager {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
           },
         ),
       );
 
       final response = await refreshDio.post(
         ApiService.refreshToken,
-        data: {
-          'refresh_token': refreshToken,
-          'refresh': refreshToken,
-        },
+        data: {'refresh_token': refreshToken},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -302,7 +313,8 @@ class DioManager {
         if (newAccessToken != null) {
           await SecureStorageHelper.setToken(newAccessToken.toString());
           if (newRefreshToken != null) {
-            await SecureStorageHelper.setRefreshToken(newRefreshToken.toString());
+            await SecureStorageHelper.setRefreshToken(
+                newRefreshToken.toString());
           }
           AppLogger.log("Token refreshed successfully via Dio");
           completer.complete(true);

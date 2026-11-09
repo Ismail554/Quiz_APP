@@ -20,9 +20,15 @@ class AppRoutes {
   static const String optionalModules = '/optional-modules';
 
   static const String modules = '/modules';
+  static const String specModules = '/spec-modules';
+  static const String specEqSelection = '/spec-eq';
+  static const String specSubQuizzes = '/spec-sub-quizzes';
+  static const String youtubeQuizzes = '/youtube-quizzes';
+
   static const String selectTime = '/select-time';
   static const String selectQuantity = '/select-quantity';
   static const String quiz = '/quiz';
+  static const String quizById = '/quiz/:quizId';
   static const String quizResult = '/quiz-result';
   static const String quizComplete = '/quiz-complete';
 
@@ -51,9 +57,15 @@ class AppRoutes {
   static const String optionalModulesName = 'optionalModules';
 
   static const String modulesName = 'modules';
+  static const String specModulesName = 'specModules';
+  static const String specEqSelectionName = 'specEqSelection';
+  static const String specSubQuizzesName = 'specSubQuizzes';
+  static const String youtubeQuizzesName = 'youtubeQuizzes';
+
   static const String selectTimeName = 'selectTime';
   static const String selectQuantityName = 'selectQuantity';
   static const String quizName = 'quiz';
+  static const String quizByIdName = 'quizById';
   static const String quizResultName = 'quizResult';
   static const String quizCompleteName = 'quizComplete';
 
@@ -65,7 +77,7 @@ class AppRoutes {
   static const String accountDeleteName = 'accountDelete';
 
   // ---------------------------------------------------------------------------
-  // Helper Path Builders for Deep Links
+  // Helper Path Builders for Deep Links & Navigation
   // ---------------------------------------------------------------------------
   static String verifyOtpPath({String? email}) {
     if (email != null && email.isNotEmpty) {
@@ -85,6 +97,17 @@ class AppRoutes {
     return '$optionalModules?firstLogin=$isFirstLogin';
   }
 
+  static String specEqSelectionPath(String moduleId) {
+    return '$specEqSelection?moduleId=${Uri.encodeComponent(moduleId)}';
+  }
+
+  static String specSubQuizzesPath({
+    required String moduleId,
+    required int eqNumber,
+  }) {
+    return '$specSubQuizzes?moduleId=${Uri.encodeComponent(moduleId)}&eq=$eqNumber';
+  }
+
   static String quizPath({
     String? moduleId,
     String? moduleName,
@@ -94,10 +117,34 @@ class AppRoutes {
     final params = <String, String>{};
     if (moduleId != null) params['moduleId'] = moduleId;
     if (moduleName != null) params['moduleName'] = moduleName;
-    if (totalQuestions != null) params['totalQuestions'] = totalQuestions.toString();
-    if (timeInMinutes != null) params['timeInMinutes'] = timeInMinutes.toString();
+    if (totalQuestions != null) {
+      params['totalQuestions'] = totalQuestions.toString();
+    }
+    if (timeInMinutes != null) {
+      params['timeInMinutes'] = timeInMinutes.toString();
+    }
     if (params.isEmpty) return quiz;
     return '$quiz?${Uri(queryParameters: params).query}';
+  }
+
+  /// Canonical YouTube-to-App deep link & direct quiz path: `/quiz/{quizId}`
+  static String quizByIdPath(
+    String quizId, {
+    String? moduleName,
+    int? totalQuestions,
+    int? timeInMinutes,
+  }) {
+    final params = <String, String>{};
+    if (moduleName != null) params['moduleName'] = moduleName;
+    if (totalQuestions != null) {
+      params['totalQuestions'] = totalQuestions.toString();
+    }
+    if (timeInMinutes != null) {
+      params['timeInMinutes'] = timeInMinutes.toString();
+    }
+    final base = '$quiz/${Uri.encodeComponent(quizId)}';
+    if (params.isEmpty) return base;
+    return '$base?${Uri(queryParameters: params).query}';
   }
 
   static String profilePath({bool hideSettingsCard = false}) {

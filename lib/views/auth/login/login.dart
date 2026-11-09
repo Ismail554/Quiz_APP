@@ -10,6 +10,7 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:geography_geyser/services/pending_deep_link_service.dart';
 import 'package:geography_geyser/views/custom_widgets/apple_login_btn.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
@@ -29,6 +30,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _pendingDeepLink;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPendingDeepLink();
+  }
+
+  Future<void> _checkPendingDeepLink() async {
+    final pending = await PendingDeepLinkService.peekPendingRoute();
+    if (mounted && pending != null) {
+      setState(() {
+        _pendingDeepLink = pending;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -64,6 +81,13 @@ class _LoginScreenState extends State<LoginScreen> {
         message: 'Welcome back to Geography Geyser!',
         isError: false,
       );
+
+      final pendingRoute = await PendingDeepLinkService.consumePendingRoute();
+      if (!mounted) return;
+      if (pendingRoute != null && pendingRoute.isNotEmpty) {
+        context.go(pendingRoute);
+        return;
+      }
 
       final isOptionalModuleSelected =
           response['is_optional_module_selected'] == true ||
@@ -243,34 +267,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: AppColors.primaryAzure,
                                 ),
                               ),
-                              // Padding(
-                              //   padding: EdgeInsets.symmetric(horizontal: 6.w),
-                              //   child: Text(
-                              //     "•",
-                              //     style: TextStyle(
-                              //       color: const Color(0xFF94A3B8),
-                              //       fontSize: 12.sp,
-                              //     ),
-                              //   ),
-                              // ),
-                              // Icon(
-                              //   Icons.star_rounded,
-                              //   size: 14.sp,
-                              //   color: const Color(0xFFF59E0B),
-                              // ),
-                              // SizedBox(width: 3.w),
-                              // Text(
-                              //   "Daily Trivia",
-                              //   style: GoogleFonts.plusJakartaSans(
-                              //     fontSize: 12.sp,
-                              //     fontWeight: FontWeight.w700,
-                              //     color: const Color(0xFFD97706),
-                              //   ),
-                              // ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 6.w),
+                                child: Text(
+                                  "•",
+                                  style: TextStyle(
+                                    color: const Color(0xFF94A3B8),
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.star_rounded,
+                                size: 14.sp,
+                                color: const Color(0xFFF59E0B),
+                              ),
+                              SizedBox(width: 3.w),
+                              Text(
+                                "Daily Trivia",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFD97706),
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        AppSpacing.h20,
+                        AppSpacing.h28,
                       ],
                     ),
                   ),
@@ -303,6 +327,44 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (_pendingDeepLink != null) ...[
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 9.h,
+                              ),
+                              margin: EdgeInsets.only(bottom: 16.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0F2FE),
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
+                                  color: AppColors.primaryAzure.withValues(
+                                    alpha: 0.25,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.link_rounded,
+                                    color: AppColors.primaryAzure,
+                                    size: 18.sp,
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Expanded(
+                                    child: Text(
+                                      'Quiz Link Ready! Sign in to jump straight into your requested Geography Geyser quiz.',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 11.5.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.deepOcean,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           // Card Greeting
                           Text(
                             "Welcome Back! 👋",
@@ -332,7 +394,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             controller: emailController,
                             prefixIcon: Icon(
-                              Icons.mail_outline_rounded,
+                              Icons.alternate_email_rounded,
                               color: AppColors.primaryAzure,
                               size: 20.sp,
                             ),

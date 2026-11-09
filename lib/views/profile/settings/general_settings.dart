@@ -1,19 +1,20 @@
 import 'dart:io';
-import 'package:geography_geyser/models/home_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/core/app_logger.dart';
 import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
-import 'package:geography_geyser/core/font_manager.dart';
+import 'package:geography_geyser/models/home_model.dart';
 import 'package:geography_geyser/provider/home_provider.dart';
-import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/provider/settings_provider/general_settings_provider.dart';
-import 'package:geography_geyser/services/api_service.dart';
+import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/views/custom_widgets/buildTextField.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_login_button.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
+import 'package:geography_geyser/views/custom_widgets/explorer_avatar.dart';
+import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -46,18 +47,14 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
       if (!mounted) return;
 
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-
-      // Load from storage first
       await userProvider.loadUserDataFromStorage();
 
-      // If no data in storage, fetch from API
       if (mounted &&
           userProvider.userModel == null &&
           !userProvider.isLoading) {
         await userProvider.fetchUserData();
       }
 
-      // Populate fields with user data
       if (mounted) {
         _populateFields(userProvider.userModel);
       }
@@ -71,30 +68,13 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
     }
   }
 
-  String _buildImageUrl(String? profilePicUrl) {
-    if (profilePicUrl == null || profilePicUrl.isEmpty) {
-      return '';
-    }
-
-    if (profilePicUrl.startsWith('http://') ||
-        profilePicUrl.startsWith('https://')) {
-      return profilePicUrl;
-    }
-
-    // Handle relative URLs by prepending base URL
-    final cleanUrl = profilePicUrl.startsWith('/')
-        ? profilePicUrl.substring(1)
-        : profilePicUrl;
-    return '${ApiService.baseUrl}/$cleanUrl';
-  }
-
   Future<void> _pickImageFromSource(ImageSource source) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
         maxWidth: 1024,
         maxHeight: 1024,
-        imageQuality: 80,
+        imageQuality: 85,
       );
 
       if (pickedFile != null) {
@@ -117,27 +97,123 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _pickImageFromSource(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Take Photo'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _pickImageFromSource(ImageSource.camera);
-                },
-              ),
-            ],
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext sheetContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 18.w),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.slateBorder,
+                      borderRadius: BorderRadius.circular(999.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  'Change Profile Photo',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.neutralDark,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8.r),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE0F2FE),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.photo_library_rounded,
+                      color: AppColors.primaryAzure,
+                      size: 20.sp,
+                    ),
+                  ),
+                  title: Text(
+                    'Choose from Gallery',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.neutralDark,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _pickImageFromSource(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8.r),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFDCFCE7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: AppColors.emeraldSuccess,
+                      size: 20.sp,
+                    ),
+                  ),
+                  title: Text(
+                    'Take a Photo',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.neutralDark,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _pickImageFromSource(ImageSource.camera);
+                  },
+                ),
+                if (_imageFile != null) ...[
+                  ListTile(
+                    leading: Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFEE2E2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        color: AppColors.errorCoral,
+                        size: 20.sp,
+                      ),
+                    ),
+                    title: Text(
+                      'Remove Selected Photo',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.errorCoral,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      setState(() {
+                        _imageFile = null;
+                      });
+                    },
+                  ),
+                ],
+              ],
+            ),
           ),
         );
       },
@@ -145,7 +221,8 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
   }
 
   Future<void> _updateProfile() async {
-    if (_nameController.text.trim().isEmpty) {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
       CustomSnackBar.show(
         context,
         message: 'Please enter your name',
@@ -163,7 +240,7 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
       );
 
       final success = await profileUpdateProvider.updateProfile(
-        fullName: _nameController.text.trim(),
+        fullName: name,
         profilePic: _imageFile,
       );
 
@@ -172,10 +249,9 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
       if (success) {
         CustomSnackBar.show(
           context,
-          message: profileUpdateProvider.message ?? 'Profile updated!',
+          message: profileUpdateProvider.message ?? 'Profile updated successfully!',
         );
 
-        // Refresh user data after successful update
         final userProvider = Provider.of<UserProvider>(
           context,
           listen: false,
@@ -216,97 +292,204 @@ class _GeneralSettings_ScreenState extends State<GeneralSettings_Screen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgColor,
+    return StitchAmbientScaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.bgColor,
-        title: Text(AppStrings.generalSetting, style: FontManager.titleText()),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: EdgeInsets.all(6.r),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.azureBorder),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 16.sp,
+              color: AppColors.neutralDark,
+            ),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Edit Profile & Account',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w800,
+            color: AppColors.neutralDark,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: Consumer<UserProvider>(
           builder: (context, userProvider, child) {
             final userModel = userProvider.userModel;
             final profilePicUrl = userModel?.profilePic;
+            final currentName = _nameController.text.isNotEmpty
+                ? _nameController.text
+                : (userModel?.fullName ?? 'Geography Explorer');
 
             return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+              child: Column(
+                children: [
+                  // Avatar Section with Signature Glowing Gradient Ring
+                  Center(
+                    child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 50.r,
-                          backgroundImage: _imageFile != null
-                              ? FileImage(_imageFile!)
-                              : (profilePicUrl != null &&
-                                            profilePicUrl.isNotEmpty
-                                        ? NetworkImage(
-                                            _buildImageUrl(profilePicUrl),
-                                          )
-                                        : const AssetImage(
-                                            "assets/images/man.png",
-                                          ))
-                                    as ImageProvider,
-                          onBackgroundImageError: (exception, stackTrace) {
-                            // Handle network image error
-                          },
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 4,
-                          child: GestureDetector(
+                        if (_imageFile != null)
+                          GestureDetector(
                             onTap: _showImagePickerOptions,
-                            child: CircleAvatar(
-                              radius: 16.r,
-                              backgroundColor: AppColors.buttonColor,
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 18.sp,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 96.r,
+                                  height: 96.r,
+                                  padding: EdgeInsets.all(3.r),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: AppColors.primaryGradient,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryAzure.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white,
+                                    ),
+                                    padding: EdgeInsets.all(2.r),
+                                    child: ClipOval(
+                                      child: Image.file(
+                                        _imageFile!,
+                                        width: 96.r,
+                                        height: 96.r,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    padding: EdgeInsets.all(7.r),
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.primaryGradient,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.camera_alt_rounded,
+                                      size: 16.sp,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ExplorerAvatar(
+                            imageUrl: profilePicUrl,
+                            name: currentName,
+                            radius: 46,
+                            showEditBadge: true,
+                            onTap: _showImagePickerOptions,
+                          ),
+                        SizedBox(height: 10.h),
+                        InkWell(
+                          onTap: _showImagePickerOptions,
+                          borderRadius: BorderRadius.circular(10.r),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10.w,
+                              vertical: 4.h,
+                            ),
+                            child: Text(
+                              'Change Photo',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryAzure,
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    AppSpacing.h8,
-                    Text(
-                      AppStrings.choosePhoto,
-                      style: FontManager.titleText(color: AppColors.blue),
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Edit Fields Card
+                  StitchCard(
+                    padding: EdgeInsets.all(20.r),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Personal Information',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.neutralDark,
+                          ),
+                        ),
+                        SizedBox(height: 16.h),
+
+                        // Name Field
+                        BuildTextField(
+                          controller: _nameController,
+                          label: AppStrings.nameLabel,
+                          hint: 'Enter your explorer name',
+                          prefixIcon: Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.primaryAzure,
+                            size: 20.sp,
+                          ),
+                        ),
+                        AppSpacing.h16,
+
+                        // Email Field (Read-only)
+                        BuildTextField(
+                          controller: _emailController,
+                          isReadOnly: true,
+                          label: AppStrings.emailLabel,
+                          hint: 'explorer@geographygeyser.com',
+                          prefixIcon: Icon(
+                            Icons.alternate_email_rounded,
+                            color: AppColors.primaryAzure,
+                            size: 20.sp,
+                          ),
+                        ),
+                      ],
                     ),
-                    AppSpacing.h40,
+                  ),
+                  SizedBox(height: 24.h),
 
-                    // 🧍 Name field
-                    BuildTextField(
-                      controller: _nameController,
-                      label: AppStrings.nameLabel,
-                      hint: AppStrings.nameFieldValue,
-                    ),
-                    AppSpacing.h12,
-
-                    // ✉️ Email field (read-only)
-                    BuildTextField(
-                      controller: _emailController,
-                      isReadOnly: true,
-
-                      label: AppStrings.emailLabel,
-                      hint: AppStrings.emailFieldValue,
-                    ),
-
-                    AppSpacing.h32,
-
-                    // 💾 Save Changes Button
-                    CustomLoginButton(
-                      text: _isLoading
-                          ? "Saving..."
-                          : AppStrings.saveChangesButton,
-                      isLoading: _isLoading,
-                      onPressed: _isLoading ? null : _updateProfile,
-                    ),
-                  ],
-                ),
+                  // Save Changes CTA
+                  CustomLoginButton(
+                    text: _isLoading
+                        ? "Saving Changes..."
+                        : AppStrings.saveChangesButton,
+                    isLoading: _isLoading,
+                    onPressed: _isLoading ? null : _updateProfile,
+                  ),
+                ],
               ),
             );
           },

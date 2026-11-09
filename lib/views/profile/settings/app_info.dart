@@ -1,260 +1,223 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import 'package:geography_geyser/core/app_spacing.dart';
-import 'package:geography_geyser/core/font_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geography_geyser/core/app_colors.dart';
+import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
+import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF9FAFB), // Light grey background
+    return StitchAmbientScaffold(
       appBar: AppBar(
-        title: Text('App Information', style: FontManager.titleText()),
-        backgroundColor: Colors.white,
+        title: Text(
+          'About Geography Geyser',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w800,
+            color: AppColors.neutralDark,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        leading: InkWell(
-          onTap: () {
-            Navigator.pop(context);
-          },
-          child: Icon(Icons.arrow_back_outlined, color: Colors.black),
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18.sp,
+            color: AppColors.neutralDark,
+          ),
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              // Header Section
-              Center(
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 32.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: StitchCard(
+                padding: EdgeInsets.all(22.r),
                 child: Column(
                   children: [
-                    Image.asset(
-                      'assets/images/logo.png',
-                      width: 80.w,
-                      height: 65.w,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20.r),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 76.w,
+                        height: 76.w,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                    // AppSpacing.h16,
+                    SizedBox(height: 12.h),
                     Text(
                       'Geography Geyser',
-                      style: FontManager.bigTitle(fontSize: 20.sp),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.neutralDark,
+                      ),
                     ),
-                    AppSpacing.h4,
+                    SizedBox(height: 4.h),
                     Text(
-                      'Your Pocket Guide to the World',
-                      style: FontManager.bodyText(color: Colors.grey),
+                      'Edexcel A-Level Geography Companion & YouTube Quiz Hub',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.neutralSlate,
+                      ),
                     ),
-                    AppSpacing.h12,
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 4.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(16.r),
-                      ),
-                      child: Text(
-                        'Version 1.0.0',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey.shade800,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    SizedBox(height: 12.h),
+                    const StitchBadge(
+                      label: 'Version 2.0.0 • Production Build',
+                      color: AppColors.primaryAzure,
+                      icon: Icons.verified_rounded,
                     ),
                   ],
                 ),
               ),
-              AppSpacing.h32,
+            ),
+            AppSpacing.h24,
 
-              // Key Features
-              _buildSectionHeader('Key Features'),
-              AppSpacing.h10,
-              Container(
-                decoration: _cardDecoration(),
-                child: Column(
-                  children: [
-                    _buildFeatureItem(
-                      icon: Icons.public,
-                      color: Colors.orange.shade100,
-                      iconColor: Colors.orange,
-                      title: 'Interactive Quizzes',
-                      subtitle:
-                          'Test your knowledge with engaging geography quizzes.',
-                    ),
-                    _buildDivider(),
-                    _buildFeatureItem(
-                      icon: Icons.map_outlined,
-                      color: Colors.blue.shade100,
-                      iconColor: Colors.blue,
-                      title: 'Global Coverage',
-                      subtitle:
-                          'Explore detailed maps and data from around the world.',
-                    ),
-                    _buildDivider(),
-                    _buildFeatureItem(
-                      icon: Icons.school_outlined,
-                      color: Colors.green.shade100,
-                      iconColor: Colors.green,
-                      title: 'Educational Resources',
-                      subtitle:
-                          'Access curated content to boost your learning.',
-                    ),
-                  ],
-                ),
-              ),
-              AppSpacing.h24,
-
-              // About
-              _buildSectionHeader('About'),
-              AppSpacing.h10,
-              Container(
-                padding: EdgeInsets.all(16.r),
-                decoration: _cardDecoration(),
-                child: Text(
-                  "Geography Geyser helps you learn subjects in a fun and easy way. Whether you’re a student, teacher, or just curious about the world, this app makes exploring our planet simple and enjoyable.",
-                  style: TextStyle(
-                    fontFamily: GoogleFonts.roboto().fontFamily,
-                    fontSize: 14.sp,
-                    color: Colors.grey.shade800,
+            _buildSectionHeader('What’s New in Version 2'),
+            AppSpacing.h10,
+            StitchCard(
+              padding: EdgeInsets.all(16.r),
+              child: Column(
+                children: [
+                  _buildFeatureItem(
+                    icon: Icons.account_tree_rounded,
+                    color: AppColors.softSky,
+                    iconColor: AppColors.primaryAzure,
+                    title: 'Specification Quiz Hierarchy',
+                    subtitle:
+                        'Structured around Group A (3 EQs) & Group B (4 EQs) Edexcel A-Level Geography topics.',
                   ),
-                  textAlign: TextAlign.justify,
+                  const Divider(color: Color(0xFFF1F5F9)),
+                  _buildFeatureItem(
+                    icon: Icons.ondemand_video_rounded,
+                    color: const Color(0xFFFEE2E2),
+                    iconColor: const Color(0xFFDC2626),
+                    title: '@GeographyGeyser YouTube Quizzes',
+                    subtitle:
+                        'Watch a Geography Geyser revision video and jump straight into its linked quiz.',
+                  ),
+                  const Divider(color: Color(0xFFF1F5F9)),
+                  _buildFeatureItem(
+                    icon: Icons.link_rounded,
+                    color: const Color(0xFFDCFCE7),
+                    iconColor: AppColors.emeraldSuccess,
+                    title: 'YouTube-to-App Deep Linking',
+                    subtitle:
+                        'Open any video description quiz link directly in the app with automatic session continuity.',
+                  ),
+                ],
+              ),
+            ),
+            AppSpacing.h24,
+
+            _buildSectionHeader('Privacy & Legal Summary'),
+            AppSpacing.h10,
+            StitchCard(
+              padding: EdgeInsets.all(16.r),
+              child: Text(
+                'Geography Geyser respects student privacy. Your quiz scores, XP streaks, and selected optional modules are stored securely to personalize your revision dashboard. You can export or permanently delete your account at any time from Settings → Account Management.',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.neutralSlate,
+                  height: 1.5,
                 ),
               ),
-              AppSpacing.h24,
+            ),
+            AppSpacing.h24,
 
-              // Technical Information
-              _buildSectionHeader('Technical Information'),
-              AppSpacing.h14,
-              Container(
-                padding: EdgeInsets.all(16.r),
-                decoration: _cardDecoration(),
-                child: Column(
-                  children: [
-                    _buildInfoRow('Version', '1.0.0'),
-                    // AppSpacing.h12,
-                    // _buildInfoRow('Build Number', '100'),
-                    AppSpacing.h12,
-                    _buildInfoRow('Platform', 'iOS & Android'),
-                  ],
-                ),
-              ),
-              AppSpacing.h28,
-
-              // Contact & Support
-              _buildSectionHeader('Contact & Support'),
-              AppSpacing.h10,
-              Container(
-                decoration: _cardDecoration(),
-                child: InkWell(
-                  onTap: () async {
-                    final Uri emailLaunchUri = Uri(
-                      scheme: 'mailto',
-                      path: 'simonA@standsureeducation.co.uk',
+            _buildSectionHeader('Creator & Support'),
+            AppSpacing.h10,
+            StitchCard(
+              onTap: () async {
+                final Uri emailLaunchUri = Uri(
+                  scheme: 'mailto',
+                  path: 'simonA@standsureeducation.co.uk',
+                );
+                try {
+                  await launchUrl(emailLaunchUri);
+                } catch (_) {
+                  if (context.mounted) {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'simonA@standsureeducation.co.uk',
                     );
-                    try {
-                      await launchUrl(emailLaunchUri);
-                    } catch (e) {
-                      debugPrint('Could not launch email: $e');
-                      if (context.mounted) {
-                        CustomSnackBar.show(
-                          context,
-                          message:
-                              'Could not launch email app. Please copy the email manually.',
-                          isError: true,
-                        );
-                      }
-                    }
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.all(16.r),
+                  }
+                }
+              },
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12.r),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: Icon(
+                      Icons.mail_outline_rounded,
+                      color: AppColors.accentGoldDark,
+                      size: 22.sp,
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        // Title with better visual hierarchy
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Email Support',
-                              style: FontManager.headerSubtitleText(
-                                color: Colors.black87,
-                              ),
-                            ),
-                            Icon(
-                              Icons.mail_outline,
-                              size: 20.r,
-                              color: Colors.orange,
-                            ),
-                          ],
+                        Text(
+                          'Email Support',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.neutralDark,
+                          ),
                         ),
-
-                        SizedBox(height: 16.r),
-
-                        // Email with better alignment and handling
-                        Container(
-                          width: double.maxFinite,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.r,
-                            vertical: 8.r,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Text(
-                            'simonA@standsureeducation.co.uk',
-                            style: FontManager.bodyText(
-                              fontSize: 16.sp,
-                              color: Colors.orange,
-                              fontWeight: FontWeight.w900,
-                            ),
-                            textAlign: TextAlign.center,
-
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                        SizedBox(height: 2.h),
+                        Text(
+                          'simonA@standsureeducation.co.uk',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12.5.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryAzure,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
+                  Icon(
+                    Icons.open_in_new_rounded,
+                    size: 18.sp,
+                    color: AppColors.neutralMuted,
+                  ),
+                ],
               ),
-              AppSpacing.h48,
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(title, style: FontManager.headerSubtitleText(fontSize: 16.sp));
-  }
-
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12.r),
-      border: Border.all(color: Colors.grey.shade200),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.02),
-          blurRadius: 10,
-          offset: Offset(0, 4),
-        ),
-      ],
+    return Text(
+      title,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 15.sp,
+        fontWeight: FontWeight.w800,
+        color: AppColors.neutralDark,
+      ),
     );
   }
 
@@ -266,51 +229,46 @@ class AboutAppScreen extends StatelessWidget {
     required String subtitle,
   }) {
     return Padding(
-      padding: EdgeInsets.all(16.r),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.all(10.r),
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
             child: Icon(icon, color: iconColor, size: 20.sp),
           ),
-          AppSpacing.w16,
+          SizedBox(width: 14.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: FontManager.headerSubtitleText(fontSize: 14.sp),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.neutralDark,
+                  ),
                 ),
-                AppSpacing.h4,
-                Text(subtitle, style: FontManager.bodyText(color: Colors.grey)),
+                SizedBox(height: 3.h),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.neutralSlate,
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, color: Colors.grey.shade100);
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: FontManager.bodyText(
-            fontSize: 16.sp,
-            color: Colors.grey.shade600,
-          ),
-        ),
-        Text(value, style: FontManager.headerSubtitleText(fontSize: 14.sp)),
-      ],
     );
   }
 }

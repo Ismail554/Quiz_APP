@@ -7,6 +7,7 @@ import 'package:geography_geyser/core/app_spacing.dart';
 import 'package:geography_geyser/core/app_strings.dart';
 import 'package:geography_geyser/provider/auth_provider/login_provider.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
+import 'package:geography_geyser/services/pending_deep_link_service.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 
 class GoogleLoginBtn extends StatefulWidget {
@@ -55,6 +56,14 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
 
                     if (!context.mounted) return;
 
+                    final pendingRoute =
+                        await PendingDeepLinkService.consumePendingRoute();
+                    if (!context.mounted) return;
+                    if (pendingRoute != null && pendingRoute.isNotEmpty) {
+                      context.go(pendingRoute);
+                      return;
+                    }
+
                     final isOptionalModuleSelected =
                         response['is_optional_module_selected'] == true ||
                         response['is_optional_module_selected'] == 'true';
@@ -92,7 +101,9 @@ class _GoogleLoginBtnState extends State<GoogleLoginBtn> {
                     width: 20.w,
                     child: const CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.neutralDark),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.neutralDark,
+                      ),
                     ),
                   )
                 : Row(

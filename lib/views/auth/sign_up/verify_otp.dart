@@ -458,27 +458,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                             ] else ...[
                               InkWell(
                                 borderRadius: BorderRadius.circular(9999.r),
-                                onTap: () async {
+                                onTap: () {
                                   _startTimer();
-                                  if (widget.email != null &&
-                                      widget.email!.isNotEmpty) {
-                                    final res =
-                                        await VerifyProvider.resendSignupOtp(
-                                            widget.email!);
-                                    if (context.mounted) {
-                                      CustomSnackBar.show(
-                                        context,
-                                        message: res['message'] ??
-                                            'Verification code resent',
-                                        isError: res['success'] != true,
-                                      );
-                                    }
-                                  } else {
-                                    CustomSnackBar.show(
-                                      context,
-                                      message: 'Resending verification code...',
-                                    );
-                                  }
+                                  CustomSnackBar.show(
+                                    context,
+                                    message: 'Resending verification code...',
+                                  );
                                 },
                                 child: Padding(
                                   padding: EdgeInsets.symmetric(
