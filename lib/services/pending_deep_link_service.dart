@@ -25,6 +25,18 @@ class PendingDeepLinkService {
 
   static String? peekPendingRouteSync() => _inMemoryPendingRoute;
 
+  static Future<String?> peekPendingRoute() async {
+    if (_inMemoryPendingRoute != null) {
+      return _inMemoryPendingRoute;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_pendingRouteKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<String?> consumePendingRoute() async {
     final mem = _inMemoryPendingRoute;
     _inMemoryPendingRoute = null;

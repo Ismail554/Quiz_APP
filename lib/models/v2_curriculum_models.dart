@@ -92,6 +92,9 @@ class SpecModuleItem {
     required this.enquiryQuestions,
   });
 
+  String get title => name;
+  int get eqCount => enquiryQuestions.length;
+
   int get totalSubQuizzes =>
       enquiryQuestions.fold(0, (sum, eq) => sum + eq.subQuizzes.length);
 }
@@ -172,6 +175,9 @@ class YouTubeQuizItem {
     required this.videoDurationLabel,
     required this.questions,
   });
+
+  int get questionCount => questions.length;
+  int get estimatedMinutes => durationMinutes;
 
   String get thumbnailUrl => 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
   String get youtubeWatchUrl => 'https://www.youtube.com/@GeographyGeyser';

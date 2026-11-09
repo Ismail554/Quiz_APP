@@ -19,7 +19,6 @@ import 'package:geography_geyser/provider/settings_provider/optional_module_prov
 import 'package:geography_geyser/provider/user_performance_provider.dart';
 import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
-import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
 import 'package:geography_geyser/views/custom_widgets/explorer_avatar.dart';
 import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';

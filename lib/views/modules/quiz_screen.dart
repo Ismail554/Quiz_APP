@@ -152,19 +152,19 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       listen: false,
     );
 
+    final totalMinutes = widget.timeInMinutes ?? 10;
     await progressProvider.saveUnfinishedSession(
       UnfinishedQuizSession(
         quizId: widget.moduleId ?? quizProvider.quizData?.quizId ?? 'tectonics',
-        quizTitle:
-            widget.moduleName ??
-            quizProvider.quizData?.subjectName ??
-            'Geography Quiz',
-        moduleName: quizProvider.quizData?.subjectName ?? 'Geography',
+        quizTitle: widget.moduleName ?? 'Geography Quiz',
+        moduleId: widget.moduleId ?? 'tectonics',
+        moduleName: widget.moduleName ?? 'Geography',
         currentQuestionIndex: currentQuestionIndex,
         totalQuestions: effectiveTotal,
-        correctAnswersSoFar: correctAnswersCount,
+        correctAnswersCount: correctAnswersCount,
         timeRemainingSeconds: timeRemaining,
-        updatedAt: DateTime.now(),
+        totalTimeMinutes: totalMinutes,
+        savedAt: DateTime.now(),
         isYouTubeQuiz: (widget.moduleId ?? '').toLowerCase().startsWith('yt-'),
       ),
     );
@@ -252,16 +252,23 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       effectiveTotal,
     );
 
+    final pct = attemptedQuestions > 0
+        ? ((correctAnswersCount / attemptedQuestions) * 100).round()
+        : 0;
+    final grade = pct >= 80 ? 'A*' : (pct >= 70 ? 'A' : (pct >= 60 ? 'B' : (pct >= 50 ? 'C' : 'D')));
     await progressProvider.recordCompletedAttempt(
-      quizId: quizId ?? 'tectonics',
-      quizTitle:
-          widget.moduleName ??
-          quizProvider.quizData?.subjectName ??
-          'Geography Quiz',
-      moduleName: quizProvider.quizData?.subjectName ?? 'Geography',
-      correctAnswers: correctAnswersCount,
-      totalQuestions: attemptedQuestions,
-      isYouTubeQuiz: (quizId ?? '').toLowerCase().startsWith('yt-'),
+      RecentAttemptItem(
+        quizId: quizId ?? 'tectonics',
+        quizTitle: widget.moduleName ?? 'Geography Quiz',
+        moduleId: widget.moduleId ?? 'tectonics',
+        moduleName: widget.moduleName ?? 'Geography',
+        correctAnswers: correctAnswersCount,
+        totalQuestions: attemptedQuestions,
+        xpGained: correctAnswersCount * 10,
+        grade: grade,
+        completedAt: DateTime.now(),
+        isYouTubeQuiz: (quizId ?? '').toLowerCase().startsWith('yt-'),
+      ),
     );
 
     if (quizId != null && quizId.isNotEmpty) {

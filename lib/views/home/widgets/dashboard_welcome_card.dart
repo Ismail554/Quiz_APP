@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/models/home_model.dart';
 import 'package:geography_geyser/models/userstats_model.dart';
 import 'package:geography_geyser/views/custom_widgets/explorer_avatar.dart';

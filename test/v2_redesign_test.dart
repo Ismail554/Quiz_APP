@@ -113,7 +113,8 @@ void main() {
         url: 'https://api.geographygeyser.com/quiz/all-questions/yt-tectonics-plates/',
         method: 'GET',
       );
-      final decodedQuiz = jsonDecode(quizResp.body) as Map<String, dynamic>;
+            expect(quizResp.isRight(), true);
+      final decodedQuiz = jsonDecode(quizResp.getOrElse((_) => '{}')) as Map<String, dynamic>;
       expect(decodedQuiz['questions'], isA<List>());
       expect((decodedQuiz['questions'] as List).isNotEmpty, true);
 
@@ -122,7 +123,8 @@ void main() {
         method: 'POST',
         body: {'correct_answers': 8, 'total_questions': 10},
       );
-      final decodedFinish = jsonDecode(finishResp.body) as Map<String, dynamic>;
+            expect(finishResp.isRight(), true);
+      final decodedFinish = jsonDecode(finishResp.getOrElse((_) => '{}')) as Map<String, dynamic>;
       expect(decodedFinish['score'], 80);
       expect(decodedFinish['grade'], 'A');
       expect(decodedFinish['xp_gained'], greaterThan(0));

@@ -38,6 +38,10 @@ class LocalProgressProvider extends ChangeNotifier {
   bool get dailyReminderEnabled => _dailyReminderEnabled;
   bool get hapticsEnabled => _hapticsEnabled;
   bool get soundEnabled => _soundEnabled;
+  bool get youtubeAlertsEnabled => _notificationsEnabled;
+  Future<void> setYoutubeAlertsEnabled(bool enabled) => setNotificationsEnabled(enabled);
+  bool get soundEffectsEnabled => _soundEnabled;
+  Future<void> setSoundEffectsEnabled(bool enabled) => setSoundEnabled(enabled);
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -166,6 +170,8 @@ class LocalProgressProvider extends ChangeNotifier {
       await prefs.setString(_unfinishedKey, jsonEncode(session.toJson()));
     } catch (_) {}
   }
+
+  Future<void> clearUnfinishedSession() async => clearUnfinishedSessionIfMatches(null);
 
   Future<void> clearUnfinishedSessionIfMatches(String? quizId) async {
     if (_unfinishedSession == null) return;
