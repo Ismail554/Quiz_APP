@@ -12,8 +12,10 @@ import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';
 import 'package:geography_geyser/views/home/widgets/dashboard_available_quizzes_section.dart';
 import 'package:geography_geyser/views/home/widgets/dashboard_continue_learning_card.dart';
+import 'package:geography_geyser/views/home/widgets/dashboard_quick_action_bar.dart';
 import 'package:geography_geyser/views/home/widgets/dashboard_recent_attempts_section.dart';
 import 'package:geography_geyser/views/home/widgets/dashboard_recent_score_card.dart';
+import 'package:geography_geyser/views/home/widgets/dashboard_weekly_streak_bar.dart';
 import 'package:geography_geyser/views/home/widgets/dashboard_welcome_card.dart';
 import 'package:geography_geyser/views/home/widgets/dashboard_youtube_section.dart';
 import 'package:geography_geyser/views/modules/module_home.dart';
@@ -49,7 +51,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   Widget build(BuildContext context) {
     final pages = <Widget>[
       HomeContent(onSwitchTab: _switchTab),
-      const ModuleHomeScreen(hideback: false),
+      const ModuleHomeScreen(showBackButton: false),
       const ProfileScreen(hideSettingsCard: false),
     ];
 
@@ -264,6 +266,25 @@ class _HomeContentState extends State<HomeContent> {
                         user: user,
                         stats: stats,
                         onProfileTap: () => widget.onSwitchTab?.call(2),
+                      ),
+                    ),
+                    SizedBox(height: 14.h),
+
+                    // Quick Action Launchpad
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 360),
+                      child: DashboardQuickActionBar(
+                        onOpenSpec: () => widget.onSwitchTab?.call(1),
+                        onOpenYouTube: () => context.push(AppRoutes.youtubeQuizzes),
+                      ),
+                    ),
+                    SizedBox(height: 14.h),
+
+                    // Weekly Streak Bar
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 370),
+                      child: DashboardWeeklyStreakBar(
+                        streakDays: stats?.dailyStreak ?? 7,
                       ),
                     ),
                     SizedBox(height: 18.h),

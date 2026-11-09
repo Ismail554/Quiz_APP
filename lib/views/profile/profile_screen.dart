@@ -21,6 +21,7 @@ import 'package:geography_geyser/provider/userstats_provider.dart';
 import 'package:geography_geyser/routes/app_routes.dart';
 import 'package:geography_geyser/services/api_service.dart';
 import 'package:geography_geyser/views/custom_widgets/custom_snackbar.dart';
+import 'package:geography_geyser/views/custom_widgets/explorer_avatar.dart';
 import 'package:geography_geyser/views/custom_widgets/stitch_design_widgets.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -581,7 +582,12 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildProfileAvatar(profilePic),
+          ExplorerAvatar(
+            imageUrl: profilePic,
+            name: fullName,
+            radius: 34,
+            heroTag: 'profile_avatar_hero',
+          ),
           SizedBox(width: 16.w),
           Expanded(
             child: Column(
@@ -669,55 +675,6 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Widget _buildProfileAvatar(String? profilePicUrl) {
-    return Container(
-      padding: EdgeInsets.all(2.5.r),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.7),
-          width: 2,
-        ),
-      ),
-      child: CircleAvatar(
-        radius: 34.r,
-        backgroundColor: Colors.white,
-        child: ClipOval(
-          child: (profilePicUrl != null && profilePicUrl.isNotEmpty)
-              ? Image.network(
-                  _buildImageUrl(profilePicUrl),
-                  width: 68.w,
-                  height: 68.w,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Image.asset(
-                    'assets/images/man.png',
-                    width: 68.w,
-                    height: 68.w,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              : Image.asset(
-                  'assets/images/man.png',
-                  width: 68.w,
-                  height: 68.w,
-                  fit: BoxFit.cover,
-                ),
-        ),
-      ),
-    );
-  }
-
-  String _buildImageUrl(String profilePicUrl) {
-    if (profilePicUrl.startsWith('http://') ||
-        profilePicUrl.startsWith('https://')) {
-      return profilePicUrl;
-    }
-    final cleanUrl = profilePicUrl.startsWith('/')
-        ? profilePicUrl.substring(1)
-        : profilePicUrl;
-    return '${ApiService.baseUrl}/$cleanUrl';
   }
 
   Widget _buildProgressMetricsRow(

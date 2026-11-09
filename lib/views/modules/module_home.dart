@@ -12,9 +12,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class ModuleHomeScreen extends StatelessWidget {
+  final bool showBackButton;
   final bool hideback;
 
-  const ModuleHomeScreen({super.key, this.hideback = false});
+  const ModuleHomeScreen({
+    super.key,
+    this.showBackButton = false,
+    this.hideback = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +29,7 @@ class ModuleHomeScreen extends StatelessWidget {
       (sum, m) => sum + m.totalSubQuizzes,
     );
     final totalYtQuizzes = StaticYouTubeData.videos.length;
+    final shouldShowBack = (showBackButton || hideback) && context.canPop();
 
     return StitchAmbientScaffold(
       appBar: AppBar(
@@ -31,7 +37,7 @@ class ModuleHomeScreen extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        leading: hideback
+        leading: shouldShowBack
             ? IconButton(
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,

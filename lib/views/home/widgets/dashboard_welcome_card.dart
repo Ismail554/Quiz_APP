@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geography_geyser/core/app_colors.dart';
 import 'package:geography_geyser/models/home_model.dart';
 import 'package:geography_geyser/models/userstats_model.dart';
-import 'package:geography_geyser/services/api_service.dart';
+import 'package:geography_geyser/views/custom_widgets/explorer_avatar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class DashboardWelcomeCard extends StatelessWidget {
@@ -20,16 +20,23 @@ class DashboardWelcomeCard extends StatelessWidget {
 
   String _greetingByHour() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  String _formatFirstName(String? fullName) {
+    if (fullName == null || fullName.trim().isEmpty) return 'Explorer';
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    return parts.isNotEmpty ? parts[0] : 'Explorer';
   }
 
   @override
   Widget build(BuildContext context) {
-    final fullName = (user?.fullName?.trim().isNotEmpty == true)
+    final rawName = (user?.fullName?.trim().isNotEmpty == true)
         ? user!.fullName!
         : 'Alex Rivera';
+    final firstName = _formatFirstName(rawName);
     final totalXp = stats?.totalXp ?? 2450;
     final streak = stats?.dailyStreak ?? 7;
     final strongest = (stats?.strongestModule.trim().isNotEmpty == true)
@@ -39,62 +46,70 @@ class DashboardWelcomeCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: AppColors.heroCardGradient,
-        borderRadius: BorderRadius.circular(24.r),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0369A1), Color(0xFF0284C7), Color(0xFF38BDF8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryAzure.withValues(alpha: 0.26),
-            blurRadius: 24,
+            color: const Color(0xFF0284C7).withValues(alpha: 0.32),
+            blurRadius: 28,
             offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: const Color(0xFF52B1FF).withValues(alpha: 0.18),
+            blurRadius: 14,
+            spreadRadius: 1,
           ),
         ],
       ),
       child: Stack(
         children: [
+          // Background ambient circular gradient highlights
           Positioned(
-            right: -25.w,
-            top: -25.h,
+            right: -20.w,
+            top: -20.h,
             child: Container(
-              width: 120.w,
-              height: 120.h,
+              width: 140.w,
+              height: 140.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.16),
+                    Colors.white.withValues(alpha: 0.0),
+                  ],
+                ),
               ),
             ),
           ),
           Positioned(
-            right: 40.w,
-            bottom: -35.h,
+            right: 32.w,
+            bottom: -28.h,
             child: Icon(
               Icons.public_rounded,
-              size: 110.sp,
-              color: Colors.white.withValues(alpha: 0.07),
+              size: 120.sp,
+              color: Colors.white.withValues(alpha: 0.08),
             ),
           ),
+
           Padding(
             padding: EdgeInsets.all(20.r),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top Row: Avatar + Greeting + Streak Pill
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    GestureDetector(
+                    ExplorerAvatar(
+                      imageUrl: user?.profilePic,
+                      name: rawName,
+                      radius: 27,
+                      heroTag: 'profile_avatar_hero',
                       onTap: onProfileTap,
-                      child: Hero(
-                        tag: 'profile_avatar_hero',
-                        child: Container(
-                          padding: EdgeInsets.all(2.5.r),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              width: 2,
-                            ),
-                          ),
-                          child: _buildAvatar(user?.profilePic),
-                        ),
-                      ),
                     ),
                     SizedBox(width: 14.w),
                     Expanded(
@@ -108,47 +123,55 @@ class DashboardWelcomeCard extends StatelessWidget {
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12.5.sp,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.88),
+                                  color: Colors.white.withValues(alpha: 0.90),
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 3.h),
+                          SizedBox(height: 2.h),
                           Text(
-                            fullName,
+                            firstName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 20.sp,
+                              fontSize: 22.sp,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
-                              letterSpacing: -0.3,
+                              letterSpacing: -0.4,
                             ),
                           ),
-                          SizedBox(height: 4.h),
+                          SizedBox(height: 2.h),
                           Text(
                             'Edexcel A-Level Geography Explorer',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 11.5.sp,
                               fontWeight: FontWeight.w500,
-                              color: Colors.white.withValues(alpha: 0.80),
+                              color: Colors.white.withValues(alpha: 0.82),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // Streak Flame Pill
+                    // Gamified Streak Pill
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 11.w,
                         vertical: 7.h,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
+                        color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color: Colors.white.withValues(alpha: 0.30),
+                          width: 1.2,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -156,13 +179,13 @@ class DashboardWelcomeCard extends StatelessWidget {
                           Icon(
                             Icons.local_fire_department_rounded,
                             color: const Color(0xFFFBBF24),
-                            size: 18.sp,
+                            size: 19.sp,
                           ),
                           SizedBox(width: 4.w),
                           Text(
                             '${streak}d',
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13.sp,
+                              fontSize: 13.5.sp,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
                             ),
@@ -172,50 +195,64 @@ class DashboardWelcomeCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 16.h),
+                SizedBox(height: 18.h),
+
+                // Gamified Status & XP Strip
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 14.w,
-                    vertical: 10.h,
+                    vertical: 11.h,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.14),
+                    color: Colors.black.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.14),
+                      color: Colors.white.withValues(alpha: 0.16),
+                      width: 1.1,
                     ),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.emoji_events_rounded,
-                        color: const Color(0xFFFBBF24),
-                        size: 18.sp,
+                      // XP Badge
+                      Container(
+                        padding: EdgeInsets.all(5.r),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.22),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.bolt_rounded,
+                          color: const Color(0xFFFBBF24),
+                          size: 16.sp,
+                        ),
                       ),
-                      SizedBox(width: 6.w),
+                      SizedBox(width: 8.w),
                       Text(
                         '$totalXp XP',
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13.sp,
+                          fontSize: 13.5.sp,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
                       ),
+
                       Container(
                         margin: EdgeInsets.symmetric(horizontal: 12.w),
                         width: 1,
-                        height: 14.h,
+                        height: 16.h,
                         color: Colors.white.withValues(alpha: 0.25),
                       ),
+
+                      // Top Module Badge
                       Icon(
                         Icons.workspace_premium_rounded,
                         color: const Color(0xFF7DD3FC),
-                        size: 17.sp,
+                        size: 18.sp,
                       ),
                       SizedBox(width: 6.w),
                       Expanded(
                         child: Text(
-                          'Top Module: $strongest',
+                          'Strongest: $strongest',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.plusJakartaSans(
@@ -233,39 +270,6 @@ class DashboardWelcomeCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildAvatar(String? profilePicUrl) {
-    if (profilePicUrl != null && profilePicUrl.isNotEmpty) {
-      final imageUrl =
-          profilePicUrl.startsWith('http://') ||
-              profilePicUrl.startsWith('https://')
-          ? profilePicUrl
-          : '${ApiService.baseUrl}/${profilePicUrl.startsWith('/') ? profilePicUrl.substring(1) : profilePicUrl}';
-      return CircleAvatar(
-        radius: 26.r,
-        backgroundColor: Colors.white24,
-        child: ClipOval(
-          child: Image.network(
-            imageUrl,
-            width: 52.r,
-            height: 52.r,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Image.asset(
-              'assets/images/man.png',
-              width: 52.r,
-              height: 52.r,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-      );
-    }
-    return CircleAvatar(
-      radius: 26.r,
-      backgroundColor: Colors.white24,
-      backgroundImage: const AssetImage('assets/images/man.png'),
     );
   }
 }

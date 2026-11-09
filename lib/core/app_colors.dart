@@ -37,9 +37,11 @@ class AppColors {
   static const Color primarySky = Color(0xFF52B1FF);
   static const Color deepOcean = Color(0xFF0369A1);
   static const Color accentGold = Color(0xFFF59E0B);
+  static const Color accentGoldDark = Color(0xFFD97706);
   static const Color accentAmberLight = Color(0xFFFEF3C7);
   static const Color neutralDark = Color(0xFF0F172A);
   static const Color neutralSlate = Color(0xFF334155);
+  static const Color neutralMuted = Color(0xFF94A3B8);
   static const Color softSky = Color(0xFFF0F9FF);
   static const Color azureSurface = Color(0xFFE0F2FE);
   static const Color azureBorder = Color(0xFFE0F2FE);
@@ -49,6 +51,8 @@ class AppColors {
   static const Color glowAzure = Color(0x400284C7);
 
   /* ==================== Semantic & Difficulty Tokens ==================== */
+  static const Color emeraldSuccess = Color(0xFF10B981);
+  static const Color errorCoral = Color(0xFFF43F5E);
   static const Color easyEmerald = Color(0xFF10B981);
   static const Color easyEmeraldBg = Color(0xFFD1FAE5);
   static const Color mediumAmber = Color(0xFFF59E0B);
@@ -65,7 +69,19 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
+  static const LinearGradient primaryButtonGradient = LinearGradient(
+    colors: [Color(0xFF0284C7), Color(0xFF38BDF8)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static const LinearGradient heroCardGradient = LinearGradient(
+    colors: [Color(0xFF0369A1), Color(0xFF0284C7), Color(0xFF38BDF8)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient oceanHeaderGradient = LinearGradient(
     colors: [Color(0xFF0369A1), Color(0xFF0284C7), Color(0xFF38BDF8)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

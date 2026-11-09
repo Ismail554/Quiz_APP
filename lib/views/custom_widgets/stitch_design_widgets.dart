@@ -12,6 +12,10 @@ class StitchAmbientScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final Widget? bottomNavigationBar;
   final Color? backgroundColor;
+  final bool? resizeToAvoidBottomInset;
+  final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
+  final bool extendBody;
 
   const StitchAmbientScaffold({
     super.key,
@@ -19,6 +23,10 @@ class StitchAmbientScaffold extends StatelessWidget {
     this.appBar,
     this.bottomNavigationBar,
     this.backgroundColor,
+    this.resizeToAvoidBottomInset,
+    this.floatingActionButton,
+    this.floatingActionButtonLocation,
+    this.extendBody = false,
   });
 
   @override
@@ -27,6 +35,10 @@ class StitchAmbientScaffold extends StatelessWidget {
       backgroundColor: backgroundColor ?? AppColors.softSky,
       appBar: appBar,
       bottomNavigationBar: bottomNavigationBar,
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+      floatingActionButton: floatingActionButton,
+      floatingActionButtonLocation: floatingActionButtonLocation,
+      extendBody: extendBody,
       body: Stack(
         children: [
           Positioned(
