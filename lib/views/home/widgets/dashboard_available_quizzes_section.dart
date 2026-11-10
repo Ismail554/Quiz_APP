@@ -61,9 +61,11 @@ class DashboardAvailableQuizzesSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          StitchBadge(
-                            label: '${quiz.moduleName} • EQ${quiz.eqNumber}',
-                            color: accent,
+                          Flexible(
+                            child: StitchBadge(
+                              label: '${quiz.moduleName} • EQ${quiz.eqNumber}',
+                              color: accent,
+                            ),
                           ),
                           SizedBox(width: 6.w),
                           DifficultyBadge(

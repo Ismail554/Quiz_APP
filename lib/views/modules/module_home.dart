@@ -372,26 +372,30 @@ class _PathwayHeroCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(20.r),
-                          ),
-                          child: Text(
-                            optionTag,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
+                        Flexible(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10.w,
+                              vertical: 4.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              optionTag,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                         ),
-                        const Spacer(),
+                        SizedBox(width: 8.w),
                         Container(
                           padding: EdgeInsets.all(9.r),
                           decoration: BoxDecoration(
@@ -426,21 +430,34 @@ class _PathwayHeroCard extends StatelessWidget {
                         height: 1.4,
                       ),
                     ),
-                    SizedBox(height: 18.h),
-                    Row(
+                    SizedBox(height: 14.h),
+                    Wrap(
+                      spacing: 8.w,
+                      runSpacing: 6.h,
                       children: [
                         _MiniWhitePill(text: badgeLeft),
-                        SizedBox(width: 8.w),
                         _MiniWhitePill(text: badgeRight),
-                        const Spacer(),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
                         Container(
                           padding: EdgeInsets.symmetric(
                             horizontal: 14.w,
-                            vertical: 9.h,
+                            vertical: 8.5.h,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(14.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -490,6 +507,8 @@ class _MiniWhitePill extends StatelessWidget {
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: GoogleFonts.plusJakartaSans(
           fontSize: 10.5.sp,
           fontWeight: FontWeight.w700,

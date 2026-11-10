@@ -61,9 +61,11 @@ class DashboardContinueLearningCard extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 8.w),
-              StitchBadge(
-                label: session.moduleName,
-                color: AppColors.deepOcean,
+              Flexible(
+                child: StitchBadge(
+                  label: session.moduleName,
+                  color: AppColors.deepOcean,
+                ),
               ),
               const Spacer(),
               InkWell(

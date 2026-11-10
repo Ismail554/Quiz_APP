@@ -327,12 +327,16 @@ class StitchBadge extends StatelessWidget {
             Icon(icon, size: 12.sp, color: color),
             SizedBox(width: 4.w),
           ],
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w700,
-              color: color,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ),
         ],
